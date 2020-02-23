@@ -38,7 +38,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/gl3w/include)
 include_directories(${CMAKE_BINARY_DIR}/libs/gl3w/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/imgui)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/glm)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/Game)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/sources/Game)
 
 ##############################################################
 # Externa libs
@@ -57,6 +57,5 @@ add_library(imgui ${IMGUI_SOURCES} ${IMGUI_DIR}/examples/imgui_impl_opengl3.cpp 
 # Oquonie
 #####################################################################
 file(GLOB_RECURSE SOURCES sources/*.cpp sources/*.h)
-file(GLOB_RECURSE GAME_SOURCES Game/*.cpp Game/*.h)
-add_executable(Oquonie ${SOURCES} ${GAME_SOURCES})
+add_executable(Oquonie ${SOURCES})
 target_link_libraries(Oquonie gl3w glfw imgui ${OPENGL_LIBRARIES})
