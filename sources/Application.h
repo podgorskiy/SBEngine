@@ -12,6 +12,8 @@ public:
 	void Draw(float time);
 	void Resize(int width, int height);
 
+	void OnKeyAction(int key, char asci, int action, int mods);
+
 private:
 	unsigned int m_program;
 

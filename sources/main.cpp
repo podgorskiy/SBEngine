@@ -46,18 +46,42 @@ int main()
 			app->Resize(width, height);
 		});
 
-		glfwSetKeyCallback(window, [](GLFWwindow*, int key, int, int action, int mods)
+		glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int, int action, int mods)
 		{
-			ImGuiIO& io = ImGui::GetIO();
-			if (action == GLFW_PRESS)
-				io.KeysDown[key] = true;
-			if (action == GLFW_RELEASE)
-				io.KeysDown[key] = false;
+			Application* app = static_cast<Application*>(glfwGetWindowUserPointer(window));
+			if (ImGui::IsAnyItemHovered())
+			{
+				ImGuiIO& io = ImGui::GetIO();
+				if (action == GLFW_PRESS)
+					io.KeysDown[key] = true;
+				if (action == GLFW_RELEASE)
+					io.KeysDown[key] = false;
 
-			io.KeyCtrl = io.KeysDown[GLFW_KEY_LEFT_CONTROL] || io.KeysDown[GLFW_KEY_RIGHT_CONTROL];
-			io.KeyShift = io.KeysDown[GLFW_KEY_LEFT_SHIFT] || io.KeysDown[GLFW_KEY_RIGHT_SHIFT];
-			io.KeyAlt = io.KeysDown[GLFW_KEY_LEFT_ALT] || io.KeysDown[GLFW_KEY_RIGHT_ALT];
-			io.KeySuper = io.KeysDown[GLFW_KEY_LEFT_SUPER] || io.KeysDown[GLFW_KEY_RIGHT_SUPER];
+				io.KeyCtrl = io.KeysDown[GLFW_KEY_LEFT_CONTROL] || io.KeysDown[GLFW_KEY_RIGHT_CONTROL];
+				io.KeyShift = io.KeysDown[GLFW_KEY_LEFT_SHIFT] || io.KeysDown[GLFW_KEY_RIGHT_SHIFT];
+				io.KeyAlt = io.KeysDown[GLFW_KEY_LEFT_ALT] || io.KeysDown[GLFW_KEY_RIGHT_ALT];
+				io.KeySuper = io.KeysDown[GLFW_KEY_LEFT_SUPER] || io.KeysDown[GLFW_KEY_RIGHT_SUPER];
+			}
+			else
+			{
+				char asci = 0;
+				if (key == 32
+					|| key == 39
+					|| (key >= 44 && key <= 57)
+					|| key == 59
+					|| key == 61
+					|| (key >= 65 && key <= 93)
+					|| key == 96)
+				{
+					asci = key;
+				}
+				if (key == GLFW_KEY_ESCAPE)
+				{
+					asci = '\x27';
+				}
+
+				app->OnKeyAction(key, asci, action, mods);
+			}
 		});
 
 		glfwSetCharCallback(window, [](GLFWwindow*, unsigned int c)

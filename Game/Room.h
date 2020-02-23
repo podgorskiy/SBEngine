@@ -119,7 +119,8 @@ public:
 	std::vector<int> m_steps;
 	std::string m_audio;
 	std::string m_theme;
+	bool m_is_known;
+	std::vector<EventPtr> m_events;
 private:
 	int m_id;
-	std::vector<EventPtr> m_events;
 };

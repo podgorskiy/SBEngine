@@ -1,5 +1,6 @@
 #include "Game.h"
 #include "Oquonie.h"
+#include "Player.h"
 #include <stdio.h>
 
 
@@ -28,8 +29,8 @@ void Game::New()
 
 //	    Oquonie::GetInstance()->m_spellbook.reset()
 //
-//	    Oquonie::GetInstance()->m_player.location = 29
-//	    Oquonie::GetInstance()->m_player.set_id('necomedre')
+	Oquonie::GetInstance()->m_player->m_location = 29;
+	Oquonie::GetInstance()->m_player->SetId("necomedre");
 
 	printf("Created a new game.\n");
 }

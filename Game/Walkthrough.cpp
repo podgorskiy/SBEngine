@@ -1,5 +1,8 @@
 #include "Walkthrough.h"
 #include "Oquonie.h"
+#include "Game.h"
+#include "Stage.h"
+#include "Player.h"
 
 /*
   let U = 'U'; let D = 'D'; let L = 'L'; let R = 'R'
@@ -135,5 +138,5 @@ void Walkthrough::Release()
 		Oquonie::GetInstance()->m_game->New();
 	}
 
-	//Oquonie::GetInstance()->m_stage.EnterRoom(Oquonie::GetInstance()->m_player.location)
+	Oquonie::GetInstance()->m_stage->EnterRoom(Oquonie::GetInstance()->m_player->m_location);
 }

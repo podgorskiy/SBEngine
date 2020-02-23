@@ -7,9 +7,6 @@
 class Event;
 typedef std::shared_ptr<Event> EventPtr;
 
-class Animator;
-typedef std::shared_ptr<Animator> AnimatorPtr;
-
 
 class Event: public Tile, public Host
 {

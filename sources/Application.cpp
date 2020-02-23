@@ -14,7 +14,10 @@
 #include <Wall.h>
 #include <Oquonie.h>
 #include <World.h>
+#include <Keyboard.h>
 
+
+Keyboard keyboard;
 
 GLuint CompileShader(const char* src, GLint type)
 {
@@ -47,7 +50,7 @@ Application::Application()
 	const char* OpenGLversion = (const char*)glGetString(GL_VERSION);
 	const char* GLSLversion = (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION);
 
-	printf("OpenGL %s\n GLSL: %s\n\n", OpenGLversion, GLSLversion);
+	printf("OpenGL %s\nGLSL: %s\n\n", OpenGLversion, GLSLversion);
 
 
 	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -143,10 +146,8 @@ Application::Application()
 
 	m_uniform_texture = glGetUniformLocation(m_program, "u_texture");
 
-	Oquonie* oquonie = new Oquonie();
-	oquonie->Install();
-
-	oquonie->Start();
+	Oquonie::GetInstance()->Install();
+	Oquonie::GetInstance()->Start();
 
 	printf("\n");
 }
@@ -240,6 +241,18 @@ void Application::Draw(float time)
 //	glBindTexture(GL_TEXTURE_2D, 0);
 
 	glUseProgram(0);
+}
+
+void Application::OnKeyAction(int key, char asci, int action, int mods)
+{
+	if (action == 0)
+	{
+		keyboard.ListenOnKeyDown(asci);
+	}
+	else if (action == 1)
+	{
+		keyboard.ListenOnKeyUp(asci);
+	}
 }
 
 void Application::Resize(int width, int height)

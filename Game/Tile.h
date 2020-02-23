@@ -1,6 +1,12 @@
 #pragma once
 #include <string>
+#include <memory>
 #include <stdlib.h>
+
+
+class Tile;
+typedef std::shared_ptr<Tile> TilePtr;
+
 
 class Tile
 {
@@ -30,6 +36,8 @@ public:
 		// TODO element.animate() opacity 0 -> 1, top offset -> origin, speed
     }
 
+	int m_x;
+	int m_y;
 protected:
 	static std::pair<int, int> PositionAt(int x, int y)
 	{
@@ -97,8 +105,6 @@ protected:
 	    return zIndex;
 	}
 
-	int m_x;
-	int m_y;
 	int m_id;
 	std::string m_class_name;
 };

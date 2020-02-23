@@ -1,10 +1,15 @@
 #pragma once
+#include "Animation.h"
+#include "Host.h"
+
 #include <string>
 #include <vector>
 #include <map>
 #include <set>
-#include "Animation.h"
-#include "Host.h"
+
+
+class Animator;
+typedef std::shared_ptr<Animator> AnimatorPtr;
 
 
 class Animator
@@ -12,6 +17,12 @@ class Animator
 public:
 	Animator(Host* host): m_host(host), m_state("idle"), m_orientation(-1)
 	{
+	}
+
+	void Add(const Animation& animation)
+	{
+        m_animations[animation.m_name] = animation;
+        m_animations[animation.m_name].host = m_host;
 	}
 
 	void Animate()
@@ -56,9 +67,9 @@ public:
         }
 	}
 
+	std::string m_state;
 private:
 	Host* m_host;
-	std::string m_state;
 	int m_orientation;
 	std::string m_last_art_id;
 	std::map<std::string, Animation> m_animations;
