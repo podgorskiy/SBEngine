@@ -16,6 +16,8 @@ public:
 
 	void Update();
 	void StopPlaying(AudioContext* ctx);
+
+	void Reset(AudioContext* ctx);
 private:
 	void InitContext(AudioContext& ctx);
 	void DeleteContext(AudioContext& ctx);

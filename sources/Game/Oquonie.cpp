@@ -18,7 +18,7 @@ Oquonie::Oquonie()
 	m_game = std::make_shared<Game>();
 	m_world = std::make_shared<World>();
 	m_music = std::make_shared<Music>();
-//		m_dialog = new Dialog();
+	m_dialog = std::make_shared<Dialog>();
 //		m_overlay = new Overlay();
 //		m_interface = new Interface();
 	m_stage = std::make_shared<Stage>();
@@ -35,7 +35,7 @@ void Oquonie::Install()
 	// TODO document.body.appendChild(m_element)
 
 	m_world->Install();
-//	    m_dialog.install()
+	m_dialog->Install();
 //	    m_overlay.install()
 //	    m_interface.install()
 	m_stage->Install();

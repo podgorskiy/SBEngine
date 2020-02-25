@@ -1,6 +1,8 @@
 #include "Player.h"
 #include "Oquonie.h"
 #include "Stage.h"
+#include "Music.h"
+#include "Dialog.h"
 #include <glm/glm.hpp>
 
 
@@ -24,11 +26,11 @@ void Player::SetId(const std::string& new_id)
 
 void Player::TryMove(int x, int y)
 {
-//	if (Oquonie::GetInstance()->m_dialog->content)
-//	{
-//		Oquonie::GetInstance()->m_dialog->Hide();
-//		return;
-//	}
+	if (!Oquonie::GetInstance()->m_dialog->m_content.empty())
+	{
+		Oquonie::GetInstance()->m_dialog->Hide();
+		return;
+	}
 //	if (Oquonie::GetInstance()->m_overlay->content)
 //	{
 //		Oquonie::GetInstance()->m_overlay->Hide()
@@ -99,7 +101,7 @@ void Player::TryMove(int x, int y)
 		if (!mid_walk)
 		{
 			// BumpUp(x, y)
-			// oquonie.music.play_effect('bump.2')
+            Oquonie::GetInstance()->m_music->PlayEffect("bump.2");
 		}
 	}
 	else if (target_floor == 0)
@@ -108,14 +110,14 @@ void Player::TryMove(int x, int y)
 		if (!mid_walk)
 		{
 			// BumpUp(x, y)
-			// oquonie.music.play_effect('bump.3')
+            Oquonie::GetInstance()->m_music->PlayEffect("bump.3");
 		}
 	}
 	else
 	{
 		MoveBy(x, y);
 		printf("Moved to: Floor(%d, %d)\n", m_x, m_y);
-		// oquonie.music.play_effect('walk')
+            Oquonie::GetInstance()->m_music->PlayEffect("walk");
 	}
 
 	for (auto tile: target_tiles)

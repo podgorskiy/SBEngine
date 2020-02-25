@@ -21,6 +21,9 @@ typedef std::shared_ptr<Player> PlayerPtr;
 class Walkthrough;
 typedef std::shared_ptr<Walkthrough> WalkthroughPtr;
 
+class Dialog;
+typedef std::shared_ptr<Dialog> DialogPtr;
+
 
 class Oquonie
 {
@@ -45,9 +48,9 @@ public:
 	StagePtr m_stage;
 	PlayerPtr m_player;
 	MusicPtr m_music;
+	DialogPtr m_dialog;
 private:
 //	ArtbookPtr m_artbook;
-//	DialogPtr m_dialog;
 //	OverlayPtr m_overlay;
 //	InterfacePtr m_interface;
 //	SpellbookPtr m_spellbook;

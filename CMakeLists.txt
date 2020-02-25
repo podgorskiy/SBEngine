@@ -36,6 +36,15 @@ else (OPENAL_FOUND)
 endif (OPENAL_FOUND)
 
 
+FUNCTION(PREPEND var prefix)
+    SET(listVar "")
+    FOREACH(f ${ARGN})
+        LIST(APPEND listVar "${prefix}/${f}")
+    ENDFOREACH(f)
+    SET(${var} "${listVar}" PARENT_SCOPE)
+ENDFUNCTION(PREPEND)
+
+
 set(DEBUG_OPTIONS -g -Wall)
 set(RELEASE_OPTIONS -Ofast -fPIC -funsafe-math-optimizations -fno-strict-aliasing -fno-rtti -ffast-math -flto -msse2 -msse3 -msse4)
 
@@ -64,8 +73,8 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/lz4/lib)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/zlib)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/libnyquist/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/libnyquist/third_party/minimp3)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/rtaudio/include)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/rtaudio)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/libnyquist/third_party/libogg/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/libnyquist/third_party/libvorbis/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/sources/Game)
 
 ##############################################################
@@ -108,17 +117,28 @@ file(GLOB PUGIXML_SOURCES libs/pugixml/src/*.cpp libs/pugixml/src/*.hpp)
 add_library(pugixml ${PUGIXML_SOURCES})
 #####################################################################
 
+#####################################################################
+# libvorbis
+#####################################################################
+set(VORBIS_SOURCES analysis.c bitrate.c block.c codebook.c envelope.c floor0.c floor1.c info.c lpc.c lsp.c mapping0.c psy.c registry.c res0.c sharedbook.c smallft.c synthesis.c vorbisenc.c vorbisfile.c window.c mdct.c)
+PREPEND(VORBIS_SOURCES libs/libnyquist/third_party/libvorbis/src ${VORBIS_SOURCES})
+add_library(vorbis ${VORBIS_SOURCES})
+target_include_directories(vorbis PRIVATE libs/libnyquist/third_party/libvorbis/src)
+#####################################################################
+
+#####################################################################
+# libogg
+#####################################################################
+set(OGG_SOURCES bitwise.c framing.c)
+PREPEND(OGG_SOURCES libs/libnyquist/third_party/libogg/src ${OGG_SOURCES})
+add_library(ogg ${OGG_SOURCES})
+#####################################################################
 
 #####################################################################
 # Oquonie
 #####################################################################
 file(GLOB_RECURSE SOURCES sources/*.cpp sources/*.h)
 add_executable(Oquonie ${SOURCES})
-target_link_libraries(Oquonie gl3w glfw imgui pugixml fsal lz4 zlib_static stdc++fs ${OPENGL_LIBRARIES} ${OPENAL_LIBRARY})
+target_link_libraries(Oquonie gl3w glfw imgui pugixml fsal lz4 zlib_static stdc++fs vorbis ogg ${OPENGL_LIBRARIES} ${OPENAL_LIBRARY})
 target_compile_options(Oquonie PRIVATE -lstdc++fs -Wno-switch)
-
-add_executable(player sources/Audio.cpp)
-target_link_libraries(player fsal stdc++fs ${OPENAL_LIBRARY})
-
-target_compile_options(player PRIVATE -lstdc++fs -Wno-switch)
-target_link_options(player PRIVATE -s -static-libstdc++)
+target_link_options(Oquonie PRIVATE -static-libstdc++)

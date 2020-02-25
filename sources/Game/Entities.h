@@ -1,7 +1,9 @@
 #pragma once
 #include "Oquonie.h"
 #include "Player.h"
+#include "Music.h"
 #include "Stage.h"
+#include "Dialog.h"
 #include <functional>
 #include <algorithm>
 
@@ -30,7 +32,7 @@ public:
 	{
         if (m_id != 0)
         {
-        	// oquonie.music.play_effect('bump.1');
+        	Oquonie::GetInstance()->m_music->PlayEffect("bump.1");
         }
         // if (oquonie.player.location == 43) { this.rez_easteregg() }
 	}
@@ -64,11 +66,11 @@ public:
 	    if (m_requirement != Oquonie::GetInstance()->m_player->m_id && Oquonie::GetInstance()->m_player->m_id != "nastazie")
 	    {
 			printf("Gate requires: %s, is %s\n", m_requirement.c_str(), Oquonie::GetInstance()->m_player->m_id.c_str());
-			// oquonie.dialog.show('owl', ['door', 'locked', this.requirement])
+			Oquonie::GetInstance()->m_dialog->Show("owl", {"door", "locked", m_requirement});
 			return;
 	    }
 	    Oquonie::GetInstance()->m_stage->EnterRoom(m_room, m_to_x, m_to_y);
-	    //oquonie.music.play_effect('bump.2')
+        Oquonie::GetInstance()->m_music->PlayEffect("bump.2");
 	}
 
 	virtual void OnSight()
@@ -120,7 +122,7 @@ public:
 	            break;
 	        }
         }
-        // oquonie.music.play_effect('bump.2')
+        Oquonie::GetInstance()->m_music->PlayEffect("bump.2");
 	}
 
 	void AddDestination(const std::function<bool()>& fn, int room, int to_x, int to_y)

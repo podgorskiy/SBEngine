@@ -41,20 +41,12 @@ public:
 
 	AudioContext* FetchAudio(const std::string& name, const std::string& role, const std::string& src, bool loop = false)
 	{
-	    std::string audio_id = role + '_' + name;
-	    if (audio_catalog.find(audio_id) == audio_catalog.end())
-	    {
-	    	fsal::FileSystem fs;
-	        audio_catalog[audio_id] = m_audio.PlayFile(fs.Open(src), loop);
-	    }
-	    // this.audio_catalog[audio_id].currentTime = 0
-	    return audio_catalog[audio_id];
+		fsal::FileSystem fs;
+	    return m_audio.PlayFile(fs.Open(src), loop);
 	}
 
 	Audio m_audio;
 	bool m_is_muted = false;
-
-	std::map<std::string, AudioContext*> audio_catalog;
 
 	AudioContext* m_track_ambient = nullptr;
 	AudioContext* m_track_effect = nullptr;

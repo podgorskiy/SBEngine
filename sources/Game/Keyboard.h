@@ -3,6 +3,7 @@
 #include <string>
 #include <stdio.h>
 #include "Oquonie.h"
+#include "Dialog.h"
 
 
 class Keyboard
@@ -79,7 +80,7 @@ public:
 	void KeyEscape()
 	{
         printf("escape\n");
-        //Oquonie::GetInstance()->m_dialog.hide()
+        Oquonie::GetInstance()->m_dialog->Hide();
         //Oquonie::GetInstance()->overlay.hide()
     }
 
