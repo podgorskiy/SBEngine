@@ -9,6 +9,7 @@ option (GLFW_BUILD_EXAMPLES OFF)
 option (GLFW_BUILD_TESTS OFF)
 option (GLFW_INSTALL OFF)
 option (BUILD_EXAMPLE OFF)
+option (BUILD_SHARED_LIBS OFF)
 
 option (USE_MSVC_RUNTIME_LIBRARY_DLL OFF)
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared libraries" FORCE)
@@ -35,6 +36,13 @@ else (OPENAL_FOUND)
 endif (OPENAL_FOUND)
 
 
+set(DEBUG_OPTIONS -g -Wall)
+set(RELEASE_OPTIONS -Ofast -fPIC -funsafe-math-optimizations -fno-strict-aliasing -fno-rtti -ffast-math -flto -msse2 -msse3 -msse4)
+
+add_compile_options(
+        "$<$<CONFIG:RELEASE>:${RELEASE_OPTIONS}>"
+        "$<$<CONFIG:DEBUG>:${DEBUG_OPTIONS}>")
+
 ##############################################################
 # Generating OpenGL profile
 ##############################################################
@@ -55,6 +63,9 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/pugixml/src)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/lz4/lib)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/zlib)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/libnyquist/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/libnyquist/third_party/minimp3)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/rtaudio/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/rtaudio)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/sources/Game)
 
 ##############################################################
@@ -64,6 +75,7 @@ add_subdirectory (libs/glfw)
 add_subdirectory (libs/gl3w)
 add_subdirectory (libs/fsal)
 add_subdirectory (libs/libnyquist)
+add_subdirectory (libs/rtaudio)
 
 
 #####################################################################
@@ -104,4 +116,11 @@ add_library(pugixml ${PUGIXML_SOURCES})
 #####################################################################
 file(GLOB_RECURSE SOURCES sources/*.cpp sources/*.h)
 add_executable(Oquonie ${SOURCES})
-target_link_libraries(Oquonie gl3w glfw imgui pugixml fsal lz4 zlib_static libnyquist ${OPENGL_LIBRARIES} ${OPENAL_LIBRARY})
+target_link_libraries(Oquonie gl3w glfw imgui pugixml fsal lz4 zlib_static stdc++fs ${OPENGL_LIBRARIES} ${OPENAL_LIBRARY})
+target_compile_options(Oquonie PRIVATE -lstdc++fs -Wno-switch)
+
+add_executable(player sources/Audio.cpp)
+target_link_libraries(player fsal stdc++fs ${OPENAL_LIBRARY})
+
+target_compile_options(player PRIVATE -lstdc++fs -Wno-switch)
+target_link_options(player PRIVATE -s -static-libstdc++)
