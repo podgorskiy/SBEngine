@@ -6,6 +6,9 @@
 class Game;
 typedef std::shared_ptr<Game> GamePtr;
 
+class Music;
+typedef std::shared_ptr<Music> MusicPtr;
+
 class World;
 typedef std::shared_ptr<World> WorldPtr;
 
@@ -41,9 +44,9 @@ public:
 	WorldPtr m_world;
 	StagePtr m_stage;
 	PlayerPtr m_player;
+	MusicPtr m_music;
 private:
 //	ArtbookPtr m_artbook;
-//	MusicPtr m_music;
 //	DialogPtr m_dialog;
 //	OverlayPtr m_overlay;
 //	InterfacePtr m_interface;

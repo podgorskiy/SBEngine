@@ -12,7 +12,7 @@ public:
 	void Init();
 	void Destroy();
 
-	AudioContext* PlayFile(fsal::File file);
+	AudioContext* PlayFile(fsal::File file, bool loop = false);
 
 	void Update();
 	void StopPlaying(AudioContext* ctx);

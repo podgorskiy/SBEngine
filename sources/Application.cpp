@@ -15,6 +15,8 @@
 #include <Oquonie.h>
 #include <World.h>
 #include <Keyboard.h>
+#include <Music.h>
+#include "Audio.h"
 
 
 Keyboard keyboard;
@@ -46,6 +48,9 @@ GLuint CompileShader(const char* src, GLint type)
 Application::Application()
 {
 	gl3wInit();
+	fsal::FileSystem fs;
+	fs.PushSearchPath("resources");
+	fs.PushSearchPath("../resources");
 
 	const char* OpenGLversion = (const char*)glGetString(GL_VERSION);
 	const char* GLSLversion = (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION);
@@ -166,6 +171,8 @@ inline void* ToVoidPointer(int offset)
 
 void Application::Draw(float time)
 {
+	Oquonie::GetInstance()->m_music->m_audio.Update();
+
 	ImGui::Begin("IntroductionToComputerGraphics");
 	ImGui::Text("Face culling.");
 

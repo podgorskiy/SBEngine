@@ -2,6 +2,7 @@
 #include "World.h"
 #include "Stage.h"
 #include "Game.h"
+#include "Music.h"
 #include "Walkthrough.h"
 
 
@@ -16,7 +17,7 @@ Oquonie::Oquonie()
 //		m_artbook = new Artbook();
 	m_game = std::make_shared<Game>();
 	m_world = std::make_shared<World>();
-//		m_music = new Music();
+	m_music = std::make_shared<Music>();
 //		m_dialog = new Dialog();
 //		m_overlay = new Overlay();
 //		m_interface = new Interface();

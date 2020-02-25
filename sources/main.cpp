@@ -7,7 +7,7 @@
 #include "examples/imgui_impl_glfw.h"
 #include "examples/imgui_impl_opengl3.h"
 
-int _main()
+int main()
 {
 	GLFWwindow* window;
 

@@ -1,6 +1,7 @@
 #include "Stage.h"
 #include "Oquonie.h"
 #include "World.h"
+#include "Music.h"
 
 
 Stage::Stage(): m_room(nullptr)
@@ -77,7 +78,7 @@ void Stage::EnterRoom(int room_id, int x, int y)
         }
     }
 
-    // Oquonie::GetInstance()->m_music->PlayAmbient(audio);
+    Oquonie::GetInstance()->m_music->PlayAmbient(audio);
 }
 
 std::vector<EventPtr> Stage::TilesAt(int x, int y)

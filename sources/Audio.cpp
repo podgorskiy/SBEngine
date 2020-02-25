@@ -33,6 +33,8 @@ struct AudioContext
 
 	bool last_byte_was_read = false;
 	bool last_byte_was_decoded = false;
+
+	bool loop = false;
 };
 
 
@@ -110,12 +112,13 @@ void Audio::DeleteContext(AudioContext& ctx)
     alDeleteBuffers(buffers_count, ctx.buffers);
 }
 
-AudioContext* Audio::PlayFile(fsal::File file)
+AudioContext* Audio::PlayFile(fsal::File file, bool loop)
 {
 	auto ctx = new AudioContext;
 	m_contexts.push_back(ctx);
 	InitContext(*ctx);
 	ctx->file = std::move(file);
+	ctx->loop = loop;
 }
 
 void Audio::StopPlaying(AudioContext* ctx)
@@ -207,15 +210,29 @@ void Audio::Update()
 			alGetSourcei(ctx->source, AL_SOURCE_STATE, &state);
 			if (state != AL_PLAYING)
 			{
-				DeleteContext(*ctx);
-				delete m_contexts[i];
-				m_contexts[i] = nullptr;
-				if (i + 1 != m_contexts.size())
+				if (ctx->loop)
 				{
-					m_contexts[i] = m_contexts[m_contexts.size() - 1];
-					--i;
+				    ctx->data_start = 0;
+				    ctx->data_end = 0;
+					ctx->current = 0;
+					ctx->last = 0;
+					ctx->buffers_in_queue = 0;
+					ctx->last_byte_was_read = false;
+					ctx->last_byte_was_decoded = false;
+					ctx->file.Seek(0);
 				}
-				m_contexts.resize(m_contexts.size() - 1);
+				else
+				{
+					DeleteContext(*ctx);
+					delete m_contexts[i];
+					m_contexts[i] = nullptr;
+					if (i + 1 != m_contexts.size())
+					{
+						m_contexts[i] = m_contexts[m_contexts.size() - 1];
+						--i;
+					}
+					m_contexts.resize(m_contexts.size() - 1);
+				}
 			}
 		}
 	}
