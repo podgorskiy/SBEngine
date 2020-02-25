@@ -74,8 +74,6 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/sources/Game)
 add_subdirectory (libs/glfw)
 add_subdirectory (libs/gl3w)
 add_subdirectory (libs/fsal)
-add_subdirectory (libs/libnyquist)
-add_subdirectory (libs/rtaudio)
 
 
 #####################################################################

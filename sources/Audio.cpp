@@ -1,14 +1,39 @@
+#include "Audio.h"
+
 #define MINIMP3_IMPLEMENTATION
 #define MINIMP3_ONLY_MP3
 #include "minimp3.h"
-
-#include <fsal.h>
 
 #include <AL/al.h>
 #include <AL/alc.h>
 #include <stdio.h>
 #include <glm/glm.hpp>
 #include <unistd.h>
+
+
+static constexpr int buffers_count = 20;
+
+struct AudioContext
+{
+	fsal::File file;
+    uint32_t buffers[buffers_count];
+    unsigned int source;
+    mp3dec_t mp3d;
+    mp3dec_frame_info_t info;
+    short pcm[MINIMP3_MAX_SAMPLES_PER_FRAME];
+
+    uint8_t data_buffer[1024 * 16 * 2];
+
+    int data_start = 0;
+    int data_end = 0;
+
+	int current = 0;
+	int last = 0;
+	int buffers_in_queue = 0;
+
+	bool last_byte_was_read = false;
+	bool last_byte_was_decoded = false;
+};
 
 
 static void list_audio_devices(const ALCchar *devices)
@@ -27,17 +52,14 @@ static void list_audio_devices(const ALCchar *devices)
         printf("----------\n");
 }
 
-int main()
+void Audio::Init()
 {
-	float     listenerVolume = 100.f;
 	glm::vec3 listenerPosition (0.f, 0.f, 0.f);
 	glm::vec3 listenerDirection(0.f, 0.f, -1.f);
 	glm::vec3 listenerUpVector (0.f, 1.f, 0.f);
 
-	ALCdevice* device;
-
-	device = alcOpenDevice(nullptr);
-	if (!device)
+	m_device = alcOpenDevice(nullptr);
+	if (!m_device)
 	{
 		printf("Error\n");
 	}
@@ -46,7 +68,7 @@ int main()
 
 	ALCcontext *context;
 
-	context = alcCreateContext(device, NULL);
+	context = alcCreateContext(m_device, NULL);
 	if (!alcMakeContextCurrent(context))
 	{
 		printf("Error\n");
@@ -62,97 +84,159 @@ int main()
     alListener3f(AL_POSITION, listenerPosition.x, listenerPosition.y, listenerPosition.z);
     alListenerfv(AL_ORIENTATION, orientation);
 	alListener3f(AL_VELOCITY, 0, 0, 0);
+}
 
-    unsigned int source;
-    alGenSources(1, &source);
-    alSourcei(source, AL_BUFFER, 0);
+void Audio::Destroy()
+{
+	alcCloseDevice(m_device);
+}
 
+void Audio::InitContext(AudioContext& ctx)
+{
+    alGenSources(1, &ctx.source);
+    alSourcei(ctx.source, AL_BUFFER, 0);
+    alGenBuffers(buffers_count, ctx.buffers);
+    mp3dec_init(&ctx.mp3d);
+    ctx.data_start = 0;
+    ctx.data_end = 0;
+	ctx.current = 0;
+	ctx.last = 0;
+	ctx.buffers_in_queue = 0;
+}
 
-    constexpr int buffers_count = 20;
-    ALuint buffers[buffers_count];
-    alGenBuffers(buffers_count, buffers);
+void Audio::DeleteContext(AudioContext& ctx)
+{
+    alDeleteSources(1, &ctx.source);
+    alDeleteBuffers(buffers_count, ctx.buffers);
+}
 
-    std::vector<uint8_t> soundData;
+AudioContext* Audio::PlayFile(fsal::File file)
+{
+	auto ctx = new AudioContext;
+	m_contexts.push_back(ctx);
+	InitContext(*ctx);
+	ctx->file = std::move(file);
+}
 
-    static mp3dec_t mp3d;
-    mp3dec_init(&mp3d);
-
-    mp3dec_frame_info_t info;
-    short pcm[MINIMP3_MAX_SAMPLES_PER_FRAME];
-
-    fsal::FileSystem fs;
-    auto file = fs.Open("/home/stpidhorskyi/Utsu-P - ALGORITHM 4th FULL ALBUM HD.mp3");
-
-    uint8_t data_buffer[1024 * 16 * 2];
-    int data_start = 0;
-    int data_end = 0;
-
-	int current = 0;
-	int last = 0;
-	int buffers_in_queue = 0;
-
-	bool terminate = false;
-	for (int i = 0; !terminate; ++i)
+void Audio::StopPlaying(AudioContext* ctx)
+{
+	for (int i = 0; i < m_contexts.size(); ++i)
 	{
-		while (buffers_in_queue < buffers_count)
+		if (ctx == m_contexts[i])
+		{
+			alSourcei(ctx->source, AL_SOURCE_STATE, AL_STOPPED);
+			DeleteContext(*ctx);
+			delete ctx;
+			m_contexts[i] = nullptr;
+			if (i + 1 != m_contexts.size())
+			{
+				m_contexts[i] = m_contexts[m_contexts.size() - 1];
+			}
+			m_contexts.resize(m_contexts.size() - 1);
+			break;
+		}
+	}
+}
+
+void Audio::Update()
+{
+	for (int i = 0; i < m_contexts.size(); ++i)
+	{
+		auto ctx = m_contexts[i];
+		if (ctx == nullptr)
+			continue;
+
+		bool just_read_first = true;
+		while (ctx->buffers_in_queue < buffers_count && !ctx->last_byte_was_decoded)
 		{
 			size_t read_bytes = 0;
-			size_t size_to_read = 1024 * 16 - (data_end - data_start);
+			size_t size_to_read = 1024 * 16 - (ctx->data_end - ctx->data_start);
 
-			if (size_to_read > 0)
+			if (size_to_read > 0 && !ctx->last_byte_was_read)
 			{
-				if (size_to_read + data_end > 1024 * 16 * 2)
+				if (size_to_read + ctx->data_end > 1024 * 16 * 2)
 				{
-					size_t size = data_end - data_start;
-					memmove(data_buffer, data_buffer + data_start, size);
-					data_end = size;
-					data_start = 0;
+					size_t size = ctx->data_end - ctx->data_start;
+					memmove(ctx->data_buffer, ctx->data_buffer + ctx->data_start, size);
+					ctx->data_end = size;
+					ctx->data_start = 0;
 				}
 
-				file.Read(data_buffer + data_end, size_to_read, &read_bytes);
-				data_end += read_bytes;
+				ctx->file.Read(ctx->data_buffer + ctx->data_end, size_to_read, &read_bytes);
+				ctx->data_end += read_bytes;
 			}
 
-			size_t buffer_size = data_end - data_start;
-			int samples = mp3dec_decode_frame(&mp3d, data_buffer + data_start, buffer_size, pcm, &info);
-			data_start += info.frame_bytes;
+			size_t buffer_size = ctx->data_end - ctx->data_start;
+			int samples = mp3dec_decode_frame(&ctx->mp3d, ctx->data_buffer + ctx->data_start, buffer_size, ctx->pcm, &ctx->info);
+			ctx->data_start += ctx->info.frame_bytes;
 
-			terminate = file.Tell() == file.GetSize();
-			if (terminate)
-				break;
+			ctx->last_byte_was_read = ctx->file.Tell() == ctx->file.GetSize();
+			ctx->last_byte_was_decoded = buffer_size == 0;
 
-            ALenum format = info.channels == 1 ?  AL_FORMAT_MONO16 : AL_FORMAT_STEREO16;
-			alBufferData(buffers[current], format, pcm, 4 * samples, info.hz);
-			alSourceQueueBuffers(source, 1, buffers + current);
+            ALenum format = ctx->info.channels == 1 ?  AL_FORMAT_MONO16 : AL_FORMAT_STEREO16;
+			alBufferData(ctx->buffers[ctx->current], format, ctx->pcm, 4 * samples, ctx->info.hz);
+			alSourceQueueBuffers(ctx->source, 1, ctx->buffers + ctx->current);
 
-			++buffers_in_queue;
-			++current;
-			current = current % buffers_count;
+			++ctx->buffers_in_queue;
+			++ctx->current;
+			ctx->current = ctx->current % buffers_count;
+
+			if (just_read_first)
+			{
+				ALint state = 0;
+				alGetSourcei(ctx->source, AL_SOURCE_STATE, &state);
+				if (state != AL_PLAYING)
+					alSourcePlay(ctx->source);
+				just_read_first = false;
+			}
 		}
-		ALint state = 0;
-		alGetSourcei(source, AL_SOURCE_STATE, &state);
-		if (state != AL_PLAYING)
-			alSourcePlay(source);
-
 		int processed = 0;
-		alGetSourcei(source, AL_BUFFERS_PROCESSED, &processed);
+		alGetSourcei(ctx->source, AL_BUFFERS_PROCESSED, &processed);
 
 		for (int i = 0; i < processed; ++i)
 		{
-			alSourceUnqueueBuffers(source, 1, buffers + last);
-			++last;
-			last = last % buffers_count;
-			--buffers_in_queue;
+			alSourceUnqueueBuffers(ctx->source, 1, ctx->buffers + ctx->last);
+			++ctx->last;
+			ctx->last = ctx->last % buffers_count;
+			--ctx->buffers_in_queue;
 		}
-		usleep(200000);
+
+		if (ctx->buffers_in_queue == 0 && ctx->last_byte_was_decoded)
+		{
+			ALint state = 0;
+			alGetSourcei(ctx->source, AL_SOURCE_STATE, &state);
+			if (state != AL_PLAYING)
+			{
+				DeleteContext(*ctx);
+				delete m_contexts[i];
+				m_contexts[i] = nullptr;
+				if (i + 1 != m_contexts.size())
+				{
+					m_contexts[i] = m_contexts[m_contexts.size() - 1];
+					--i;
+				}
+				m_contexts.resize(m_contexts.size() - 1);
+			}
+		}
 	}
-
-    ALint state = AL_PLAYING;
-
-    while(state == AL_PLAYING)
-    {
-        alGetSourcei(source, AL_SOURCE_STATE, &state);
-    }
-
-	alcCloseDevice(device);
 }
+
+//
+//int main()
+//{
+//    fsal::FileSystem fs;
+//    auto file = fs.Open("/home/stpidhorskyi/Utsu-P - ALGORITHM 4th FULL ALBUM HD.mp3");
+//
+//    Audio audio;
+//
+//    audio.Init();
+//    audio.PlayFile(file);
+//
+//    int i = 0;
+//
+//	for (;;)
+//	{
+//		audio.Update();
+//		usleep(1000);
+//	}
+//}
