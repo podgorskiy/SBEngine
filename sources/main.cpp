@@ -77,7 +77,7 @@ int main()
 				}
 				if (key == GLFW_KEY_ESCAPE)
 				{
-					asci = '\x27';
+					asci = 27;
 				}
 
 				app->OnKeyAction(key, asci, action, mods);

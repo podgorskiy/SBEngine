@@ -376,8 +376,8 @@ void Audio::Update()
 				}
 				else
 				{
-					// DeleteContext(*ctx);
-					// delete m_contexts[i];
+					DeleteContext(*ctx);
+					delete m_contexts[i];
 					m_contexts[i] = nullptr;
 					if (i + 1 != m_contexts.size())
 					{
