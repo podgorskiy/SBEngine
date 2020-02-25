@@ -2,6 +2,7 @@
 #include "Oquonie.h"
 #include "World.h"
 #include "Music.h"
+#include <spdlog/spdlog.h>
 
 
 Stage::Stage(): m_room(nullptr)
@@ -22,13 +23,13 @@ void Stage::Install()
 
 void Stage::EnterRoom(int room_id, int x, int y)
 {
-	printf("Entering Room: %d\n", room_id);
+	spdlog::info("Entering Room: {}", room_id);
 
 	auto world = Oquonie::GetInstance()->m_world;
 
 	if (world->m_rooms.find(room_id) == world->m_rooms.end())
 	{
-		printf("Missing room:(%d)\n", room_id);
+		spdlog::error("Missing room:({})", room_id);
 		return;
 	}
 

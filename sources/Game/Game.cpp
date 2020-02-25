@@ -1,6 +1,7 @@
 #include "Game.h"
 #include "Oquonie.h"
 #include "Player.h"
+#include <spdlog/spdlog.h>
 #include <stdio.h>
 
 
@@ -9,12 +10,12 @@ Game::Game()
 
 void Game::Save()
 {
-	printf("Saving..\n");
+	spdlog::info("Saving..");
 }
 
 void Game::Load()
 {
-	printf("Loading..\n");
+	spdlog::info("Loading..");
 }
 
 bool Game::IsFound()
@@ -25,12 +26,12 @@ bool Game::IsFound()
 
 void Game::New()
 {
-	printf("New Game..\n");
+	spdlog::info("New Game..");
 
 //	    Oquonie::GetInstance()->m_spellbook.reset()
 //
 	Oquonie::GetInstance()->m_player->m_location = 29;
 	Oquonie::GetInstance()->m_player->SetId("necomedre");
 
-	printf("Created a new game.\n");
+	spdlog::info("Created a new game.");
 }

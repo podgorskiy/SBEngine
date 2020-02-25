@@ -3,6 +3,8 @@
 #include "Music.h"
 #include <string>
 #include <stdio.h>
+#include <spdlog/spdlog.h>
+
 
 class Dialog
 {
@@ -26,7 +28,7 @@ public:
 
 	void Show(const std::string& host_name, const std::vector<std::string>& message, std::string path = "", std::string audio_name = "")
 	{
-        printf("Dialog with: %s", host_name.c_str());
+        spdlog::info("Dialog with: {}", host_name.c_str());
 
         if (path.empty())
         {

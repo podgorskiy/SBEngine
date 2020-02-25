@@ -1,6 +1,7 @@
 #include "Application.h"
 #include <GL/gl3w.h>
 #include <stdio.h>
+#include <spdlog/spdlog.h>
 #include <glm/glm.hpp>
 #include <fstream>
 #include <sstream>
@@ -35,10 +36,10 @@ GLuint CompileShader(const char* src, GLint type)
 
 	if (infoLen > 1)
 	{
-		printf("%s during shader compilation.\n ", compiled == GL_TRUE ? "Warning" : "Error");
+		spdlog::warn("{} during shader compilation.", compiled == GL_TRUE ? "Warning" : "Error");
 		char* buf = new char[infoLen];
 		glGetShaderInfoLog(shader, infoLen, NULL, buf);
-		printf("Compilation log: %s\n", buf);
+		spdlog::warn("Compilation log: {}", buf);
 		delete[] buf;
 	}
 	
@@ -55,7 +56,7 @@ Application::Application()
 	const char* OpenGLversion = (const char*)glGetString(GL_VERSION);
 	const char* GLSLversion = (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION);
 
-	printf("OpenGL %s\nGLSL: %s\n\n", OpenGLversion, GLSLversion);
+	spdlog::info("OpenGL {} GLSL: {}", OpenGLversion, GLSLversion);
 
 
 	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -129,7 +130,7 @@ Application::Application()
 		{
 			char* buf = new char[infoLen];
 			glGetProgramInfoLog(m_program, infoLen, NULL, buf);
-			printf("Linking error: \n%s\n", buf);
+			spdlog::info("Linking error: \n{}", buf);
 			delete[] buf;
 		}
 	}
@@ -153,8 +154,6 @@ Application::Application()
 
 	Oquonie::GetInstance()->Install();
 	Oquonie::GetInstance()->Start();
-
-	printf("\n");
 }
 
 

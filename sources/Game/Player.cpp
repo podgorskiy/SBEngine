@@ -3,6 +3,7 @@
 #include "Stage.h"
 #include "Music.h"
 #include "Dialog.h"
+#include <spdlog/spdlog.h>
 #include <glm/glm.hpp>
 
 
@@ -85,7 +86,7 @@ void Player::TryMove(int x, int y)
 
 			for (auto collider: colliders)
 			{
-				printf("Blocked by: %s\n", collider->GetHostHame().c_str());
+				spdlog::info("Blocked by: {}", collider->GetHostHame().c_str());
 
 				if (collider->ElicitsCollisionBump())
 				{
@@ -97,7 +98,7 @@ void Player::TryMove(int x, int y)
 	}
 	else if (destination[0] > 1 || destination[0] < -1 || destination[1] > 1 || destination[1] < -1)
 	{
-		printf("Blocked by: Edge\n");
+		spdlog::info("Blocked by: Edge");
 		if (!mid_walk)
 		{
 			// BumpUp(x, y)
@@ -106,7 +107,7 @@ void Player::TryMove(int x, int y)
 	}
 	else if (target_floor == 0)
 	{
-		printf("Blocked by: Floor(%d)\n", target_floor);
+		spdlog::info("Blocked by: Floor({})", target_floor);
 		if (!mid_walk)
 		{
 			// BumpUp(x, y)
@@ -116,7 +117,7 @@ void Player::TryMove(int x, int y)
 	else
 	{
 		MoveBy(x, y);
-		printf("Moved to: Floor(%d, %d)\n", m_x, m_y);
+		spdlog::info("Moved to: Floor({}, {})", m_x, m_y);
             Oquonie::GetInstance()->m_music->PlayEffect("walk");
 	}
 

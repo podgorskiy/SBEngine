@@ -5,6 +5,7 @@
 #define MINIMP3_ONLY_MP3
 #include "minimp3.h"
 
+#include <spdlog/spdlog.h>
 #include <AL/al.h>
 #include <AL/alc.h>
 #include <stdio.h>
@@ -81,15 +82,13 @@ static void list_audio_devices(const ALCchar *devices)
         const ALCchar *device = devices, *next = devices + 1;
         size_t len = 0;
 
-        printf("Devices list:\n");
-        printf("----------\n");
+        spdlog::info("Devices list:");
         while (device && *device != '\0' && next && *next != '\0') {
-                printf("%s\n", device);
+                spdlog::info("\t{}", device);
                 len = strlen(device);
                 device += (len + 1);
                 next += (len + 2);
         }
-        printf("----------\n");
 }
 
 void Audio::Init()
@@ -101,7 +100,7 @@ void Audio::Init()
 	m_device = alcOpenDevice(nullptr);
 	if (!m_device)
 	{
-		printf("Error\n");
+		spdlog::error("Error during opening OpenAL device");
 	}
 
 	list_audio_devices(alcGetString(NULL, ALC_DEVICE_SPECIFIER));
@@ -111,7 +110,7 @@ void Audio::Init()
 	context = alcCreateContext(m_device, NULL);
 	if (!alcMakeContextCurrent(context))
 	{
-		printf("Error\n");
+		spdlog::error("Error during making context current, OpenAL");
 	}
 
     float orientation[] = {listenerDirection.x,

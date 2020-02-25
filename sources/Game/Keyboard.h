@@ -1,9 +1,10 @@
 #pragma once
+#include "Oquonie.h"
+#include "Dialog.h"
+#include <spdlog/spdlog.h>
 #include <vector>
 #include <string>
 #include <stdio.h>
-#include "Oquonie.h"
-#include "Dialog.h"
 
 
 class Keyboard
@@ -20,10 +21,10 @@ public:
 	{
         if (!m_locks.empty())
         {
-        	printf("Keyboard has locks:\n");
+        	spdlog::info("Keyboard has locks:");
         	for (const auto& lock: m_locks)
 	        {
-        	    printf("\t%s\n", lock.c_str());
+        	    spdlog::info("\t{}", lock.c_str());
 	        }
 
         	return;
@@ -50,43 +51,43 @@ public:
 
 	void KeySpace()
 	{
-        printf("space\n");
+        spdlog::info("space");
     }
 
 	void KeyArrowUp()
 	{
-        printf("arrow.up\n");
+        spdlog::info("arrow.up");
         Oquonie::GetInstance()->m_player->TryMove(0, 1);
     }
 
 	void KeyArrowDown()
 	{
-        printf("arrow.down\n");
+        spdlog::info("arrow.down");
         Oquonie::GetInstance()->m_player->TryMove(0, -1);
     }
 
 	void KeyArrowLeft()
 	{
-        printf("arrow.left\n");
+        spdlog::info("arrow.left");
         Oquonie::GetInstance()->m_player->TryMove(-1, 0);
     }
 
 	void KeyArrowRight()
 	{
-        printf("arrow.right\n");
+        spdlog::info("arrow.right");
         Oquonie::GetInstance()->m_player->TryMove(1, 0);
     }
 
 	void KeyEscape()
 	{
-        printf("escape\n");
+        spdlog::info("escape");
         Oquonie::GetInstance()->m_dialog->Hide();
         //Oquonie::GetInstance()->overlay.hide()
     }
 
 	void Lock(const std::string& lock_name)
 	{
-        printf("Added lock: %s\n", lock_name.c_str());
+        spdlog::info("Added lock: {}", lock_name.c_str());
         m_locks.push_back(lock_name);
 	}
 
@@ -99,13 +100,13 @@ public:
 			{
 				m_locks.erase(m_locks.begin() + i);
 				--i;
-                printf("Unlocked: %s\n", lock_name.c_str());
+                spdlog::info("Unlocked: {}", lock_name.c_str());
                 unlocked = true;
 			}
         }
         if (!unlocked)
         {
-            printf("No lock named: %s\n", lock_name.c_str());
+            spdlog::info("No lock named: {}", lock_name.c_str());
         }
 	}
 

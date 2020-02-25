@@ -4,6 +4,7 @@
 #include "Game.h"
 #include "Music.h"
 #include "Walkthrough.h"
+#include <spdlog/spdlog.h>
 
 
 Oquonie* Oquonie::GetInstance()
@@ -44,7 +45,7 @@ void Oquonie::Install()
 
 void Oquonie::Start()
 {
-	printf("Starting Oquonie\n");
+	spdlog::info("Starting Oquonie");
 	// TODO this.element.style.opacity = 1
 
 	m_walkthrough->Start();

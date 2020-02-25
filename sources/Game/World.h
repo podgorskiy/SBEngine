@@ -17,7 +17,6 @@ public:
 
 	void CreateNecomedre();
 
-
 	void CreateNephtaline();
 
 	void CreateNeomine();

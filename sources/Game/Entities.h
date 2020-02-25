@@ -4,6 +4,7 @@
 #include "Music.h"
 #include "Stage.h"
 #include "Dialog.h"
+#include <spdlog/spdlog.h>
 #include <functional>
 #include <algorithm>
 
@@ -65,7 +66,7 @@ public:
 	{
 	    if (m_requirement != Oquonie::GetInstance()->m_player->m_id && Oquonie::GetInstance()->m_player->m_id != "nastazie")
 	    {
-			printf("Gate requires: %s, is %s\n", m_requirement.c_str(), Oquonie::GetInstance()->m_player->m_id.c_str());
+			spdlog::info("Gate requires: {}, is {}", m_requirement.c_str(), Oquonie::GetInstance()->m_player->m_id.c_str());
 			Oquonie::GetInstance()->m_dialog->Show("owl", {"door", "locked", m_requirement});
 			return;
 	    }

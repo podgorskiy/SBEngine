@@ -1,6 +1,7 @@
 #include "Texture.h"
 #include <GL/gl3w.h>
 #include <stdio.h>
+#include <spdlog/spdlog.h>
 #include <glm/glm.hpp>
 #include <fstream>
 #include <sstream>
@@ -86,7 +87,7 @@ TexturePtr Texture::LoadTexture(const std::string& path)
 
 	if (version != 0x03525650)
 	{
-		printf("Error reading texture\n");
+		spdlog::info("Error reading texture");
 		return TexturePtr();
 	}
 

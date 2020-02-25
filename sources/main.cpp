@@ -65,6 +65,22 @@ int main()
 			else
 			{
 				char asci = 0;
+				switch(key)
+				{
+					case GLFW_KEY_UP:
+						asci = 38;
+						break;
+					case GLFW_KEY_DOWN:
+						asci = 40;
+						break;
+					case GLFW_KEY_LEFT:
+						asci = 37;
+						break;
+					case GLFW_KEY_RIGHT:
+						asci = 39;
+					default:
+						break;
+				}
 				if (key == 32
 					|| key == 39
 					|| (key >= 44 && key <= 57)

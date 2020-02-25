@@ -3,6 +3,7 @@
 #include "Game.h"
 #include "Stage.h"
 #include "Player.h"
+#include <spdlog/spdlog.h>
 
 /*
   let U = 'U'; let D = 'D'; let L = 'L'; let R = 'R'
@@ -118,7 +119,7 @@
 
 void Walkthrough::Start()
 {
-	printf("Walkthrough has started.\n");
+	spdlog::info("Walkthrough has started.");
 	Oquonie::GetInstance()->speed = 50;
 	Release();
 }
@@ -129,12 +130,12 @@ void Walkthrough::Release()
 
 	if (Oquonie::GetInstance()->m_game->IsFound())
 	{
-		printf("Found a saved game!\n");
+		spdlog::info("Found a saved game!");
 		Oquonie::GetInstance()->m_game->Load();
 	}
 	else
 	{
-		printf("Found no saved game?\n");
+		spdlog::info("Found no saved game?");
 		Oquonie::GetInstance()->m_game->New();
 	}
 
