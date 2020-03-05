@@ -12,6 +12,10 @@ public:
 	{
 		m_audio.Init();
 	}
+	~Music()
+	{
+		m_audio.Destroy();
+	}
 
 	void PlayInterface(const std::string& name)
 	{
@@ -48,6 +52,7 @@ public:
 		{
 	        return m_audio.PlayFile(file, loop);
 		}
+		return nullptr;
 	}
 
 	Audio m_audio;
