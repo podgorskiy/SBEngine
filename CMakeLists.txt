@@ -32,7 +32,14 @@ if (OPENAL_FOUND)
 	message("OpenAL Correctly Found")
 	include_directories(${OPENAL_INCLUDE_DIR})
 else (OPENAL_FOUND)
-	message("OpenAL environment missing")
+	if(MSVC)
+	set(OPENAL_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libs/openal/include)
+	link_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/openal/libs/Win64/)
+	set(OPENAL_LIBRARY OpenAL32)
+	include_directories(${OPENAL_INCLUDE_DIR})
+	else()
+		message("OpenAL environment missing")
+	endif()
 endif (OPENAL_FOUND)
 
 
@@ -45,8 +52,11 @@ FUNCTION(PREPEND var prefix)
 ENDFUNCTION(PREPEND)
 
 
-set(DEBUG_OPTIONS -g -Wall)
-set(RELEASE_OPTIONS -Ofast -fPIC -funsafe-math-optimizations -fno-strict-aliasing -fno-rtti -ffast-math -flto -msse2 -msse3 -msse4)
+if(MSVC)
+else()
+	set(DEBUG_OPTIONS -g -Wall)
+	set(RELEASE_OPTIONS -Ofast -fPIC -funsafe-math-optimizations -fno-strict-aliasing -fno-rtti -ffast-math -flto -msse2 -msse3 -msse4)
+endif()
 
 add_compile_options(
         "$<$<CONFIG:RELEASE>:${RELEASE_OPTIONS}>"
@@ -139,6 +149,12 @@ add_library(ogg ${OGG_SOURCES})
 #####################################################################
 file(GLOB_RECURSE SOURCES sources/*.cpp sources/*.h)
 add_executable(Oquonie ${SOURCES})
-target_link_libraries(Oquonie gl3w glfw imgui pugixml fsal lz4 zlib_static stdc++fs vorbis ogg ${OPENGL_LIBRARIES} ${OPENAL_LIBRARY})
-target_compile_options(Oquonie PRIVATE -lstdc++fs -Wno-switch)
-target_link_options(Oquonie PRIVATE -static-libstdc++)
+target_link_libraries(Oquonie gl3w glfw imgui pugixml fsal lz4 zlib_static vorbis ogg ${OPENGL_LIBRARIES} ${OPENAL_LIBRARY})
+
+if(MSVC)
+else()
+	target_link_libraries(Oquonie stdc++fs)
+	target_compile_options(Oquonie PRIVATE -lstdc++fs -Wno-switch)
+	target_link_options(Oquonie PRIVATE -static-libstdc++)
+endif()
+
