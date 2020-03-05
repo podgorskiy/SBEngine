@@ -1,4 +1,5 @@
 #include "Audio.h"
+#define OV_EXCLUDE_STATIC_CALLBACKS
 #include <vorbis/vorbisfile.h>
 
 #define MINIMP3_IMPLEMENTATION
@@ -160,19 +161,19 @@ void Audio::InitContext(AudioContext& ctx)
 		ctx.ogg_file = new OggVorbis_File;
 		memset(ctx.ogg_file, 0, sizeof(OggVorbis_File));
 
-		if (auto r = ov_test_callbacks(&ctx.file, ctx.ogg_file, nullptr, 0, callbacks) != 0)
+		if (ov_test_callbacks(&ctx.file, ctx.ogg_file, nullptr, 0, callbacks) != 0)
 		{
 			throw std::runtime_error("File is not a valid ogg vorbis file");
 		}
 
-        if (auto r = ov_test_open(ctx.ogg_file) != 0)
+        if (ov_test_open(ctx.ogg_file) != 0)
         {
             throw std::runtime_error("ov_test_open failed");
         }
 
         vorbis_info * ovInfo = ov_info(ctx.ogg_file, -1);
 
-        if (auto r = ov_streams(ctx.ogg_file) != 1)
+        if (ov_streams(ctx.ogg_file) != 1)
         {
             throw std::runtime_error( "Unsupported: file contains multiple bitstreams");
         }
@@ -210,7 +211,7 @@ AudioContext* Audio::PlayFile(fsal::File file, bool loop)
 
 void Audio::StopPlaying(AudioContext* ctx)
 {
-	for (int i = 0; i < m_contexts.size(); ++i)
+	for (int i = 0, l = m_contexts.size(); i < l; ++i)
 	{
 		if (ctx == m_contexts[i])
 		{
@@ -218,11 +219,11 @@ void Audio::StopPlaying(AudioContext* ctx)
 			DeleteContext(*ctx);
 			delete ctx;
 			m_contexts[i] = nullptr;
-			if (i + 1 != m_contexts.size())
+			if (i + 1 != l)
 			{
-				m_contexts[i] = m_contexts[m_contexts.size() - 1];
+				m_contexts[i] = m_contexts[l - 1];
 			}
-			m_contexts.resize(m_contexts.size() - 1);
+			m_contexts.resize(l - 1);
 			break;
 		}
 	}
@@ -230,16 +231,16 @@ void Audio::StopPlaying(AudioContext* ctx)
 
 void Audio::Reset(AudioContext* ctx)
 {
-	for (int i = 0; i < m_contexts.size(); ++i)
+	for (int i = 0, l = m_contexts.size(); i < l; ++i)
 	{
 		if (ctx == m_contexts[i])
 		{
 			m_contexts[i] = nullptr;
-			if (i + 1 != m_contexts.size())
+			if (i + 1 != l)
 			{
-				m_contexts[i] = m_contexts[m_contexts.size() - 1];
+				m_contexts[i] = m_contexts[l - 1];
 			}
-			m_contexts.resize(m_contexts.size() - 1);
+			m_contexts.resize(l - 1);
 			break;
 		}
 	}
@@ -264,7 +265,7 @@ void Audio::Reset(AudioContext* ctx)
 
 void Audio::Update()
 {
-	for (int i = 0; i < m_contexts.size(); ++i)
+	for (size_t i = 0; i < m_contexts.size(); ++i)
 	{
 		auto ctx = m_contexts[i];
 		if (ctx == nullptr)
