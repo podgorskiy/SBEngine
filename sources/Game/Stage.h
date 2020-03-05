@@ -30,6 +30,8 @@ public:
 
 	void Center(int x, int y);
 
+	void SetTheme(const std::string& theme);
+
 	RoomPtr m_room;
 private:
 };

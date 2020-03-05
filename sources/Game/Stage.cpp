@@ -56,9 +56,9 @@ void Stage::EnterRoom(int room_id, int x, int y)
     Oquonie::GetInstance()->m_player->MoveAt(x, y);
 
     int numPillars = 0; //Oquonie::GetInstance()->m_spellbook.pillars.size();
-    // std::string theme = (numPillars >= 5 && m_room.theme != "pillars") ? "black" : m_room.theme;
+    std::string theme = (numPillars >= 5 && m_room->m_theme != "pillars") ? "black" : m_room->m_theme;
 
-    // SetTheme(theme);
+    SetTheme(theme);
 
     Look();
 
@@ -140,6 +140,15 @@ void Stage::Center(int x, int y)
     // this.move_parallax(this.parallax_over, 1.0, xSlant, ySlant)
     // this.move_parallax(this.parallax_under, 0.125, xSlant, ySlant)
 }
+
+
+void Stage::SetTheme(const std::string& theme)
+{
+    // oquonie.element.setAttribute('class', theme)
+    // $(this.room.element).css('z-index', (theme == 'pillars' ? 1000 : 3000))
+	spdlog::info("Setting theme: {}", theme);
+}
+
 
 void Stage::Look()
 {
