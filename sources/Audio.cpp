@@ -10,7 +10,7 @@
 #include <AL/alc.h>
 #include <stdio.h>
 #include <glm/glm.hpp>
-#include <unistd.h>
+//#include <unistd.h>
 
 
 static constexpr int buffers_count = 20;
@@ -68,6 +68,7 @@ static int seekOgg(void* fh, ogg_int64_t to, int type)
 
 static int closeOgg(void* fh)
 {
+	return 0;
 }
 
 static long tellOgg(void* fh)
@@ -205,6 +206,7 @@ AudioContext* Audio::PlayFile(fsal::File file, bool loop)
 	ctx->file = std::move(file);
 	InitContext(*ctx);
 	ctx->loop = loop;
+	return ctx;
 }
 
 void Audio::StopPlaying(AudioContext* ctx)
