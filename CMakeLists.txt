@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 2.8)
 
 cmake_policy(SET CMP0072 NEW)
-cmake_policy(SET CMP0048 OLD)
+cmake_policy(SET CMP0048 NEW)
+cmake_policy(SET CMP0079 NEW)
+
 
 project(Oquonie)
 
@@ -81,10 +83,9 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/spdlog/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/pugixml/src)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/lz4/lib)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/zlib)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/libnyquist/include)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/libnyquist/third_party/minimp3)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/libnyquist/third_party/libogg/include)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/libnyquist/third_party/libvorbis/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/minimp3)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/libogg/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/libvorbis/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/sources/Game)
 
 ##############################################################
@@ -131,16 +132,16 @@ add_library(pugixml ${PUGIXML_SOURCES})
 # libvorbis
 #####################################################################
 set(VORBIS_SOURCES analysis.c bitrate.c block.c codebook.c envelope.c floor0.c floor1.c info.c lpc.c lsp.c mapping0.c psy.c registry.c res0.c sharedbook.c smallft.c synthesis.c vorbisenc.c vorbisfile.c window.c mdct.c)
-PREPEND(VORBIS_SOURCES libs/libnyquist/third_party/libvorbis/src ${VORBIS_SOURCES})
+PREPEND(VORBIS_SOURCES libs/libvorbis/src ${VORBIS_SOURCES})
 add_library(vorbis ${VORBIS_SOURCES})
-target_include_directories(vorbis PRIVATE libs/libnyquist/third_party/libvorbis/src)
+target_include_directories(vorbis PRIVATE libs/libvorbis/src)
 #####################################################################
 
 #####################################################################
 # libogg
 #####################################################################
 set(OGG_SOURCES bitwise.c framing.c)
-PREPEND(OGG_SOURCES libs/libnyquist/third_party/libogg/src ${OGG_SOURCES})
+PREPEND(OGG_SOURCES libs/libogg/src ${OGG_SOURCES})
 add_library(ogg ${OGG_SOURCES})
 #####################################################################
 

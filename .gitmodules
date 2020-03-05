@@ -28,6 +28,3 @@
 [submodule "libs/zlib"]
 	path = libs/zlib
 	url = https://github.com/madler/zlib.git
-[submodule "libs/libnyquist"]
-	path = libs/libnyquist
-	url = https://github.com/ddiakopoulos/libnyquist.git

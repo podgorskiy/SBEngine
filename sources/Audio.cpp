@@ -10,7 +10,6 @@
 #include <AL/alc.h>
 #include <stdio.h>
 #include <glm/glm.hpp>
-//#include <unistd.h>
 
 
 static constexpr int buffers_count = 20;
