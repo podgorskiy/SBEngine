@@ -1,3 +1,4 @@
+#include "Render/Geometry.h"
 #include <string>
 #include <glm/glm.hpp>
 
@@ -20,7 +21,5 @@ public:
 	void Draw();
 	void UnBind();
 private:
-	unsigned int m_vertexBufferObject;
-	unsigned int m_indexBufferObject;
-	unsigned int m_indexSize;
+	Render::Geometry m_geometry;
 };

@@ -21,7 +21,10 @@ private:
 	unsigned int u_model;
 	
 	unsigned int m_attrib_pos;
+	unsigned int m_attrib_normal;
 	unsigned int m_attrib_uv;
+	unsigned int m_attrib_tangent;
+	unsigned int m_attrib_color;
 
 	unsigned int u_projection;
 	unsigned int m_uniform_texture;
@@ -29,4 +32,6 @@ private:
 
 	int m_width;
 	int m_height;
+	Object m_obj;
+	TexturePtr m_texture;
 };

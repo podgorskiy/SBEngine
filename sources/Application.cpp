@@ -76,7 +76,7 @@ Application::Application()
 		void main()
 		{
 			vec4 pos = u_modelView * vec4(a_position, 1.0);
-			v_uv = vec2(a_uv.x, a_uv.y);
+			v_uv = a_uv;
 			gl_Position = u_projection * pos;
 		}
 	)";
@@ -90,23 +90,9 @@ Application::Application()
 
 		void main()
 		{
-			vec3 color = vec3(1.0);
+			vec3 color = texture2D(u_texture, v_uv);
+			color = pow(color, vec3(2.2));
 			gl_FragColor = vec4(pow(color, vec3(1.0/2.2)), 1.0);
-		}
-	)";
-
-	const char* skybox_fragment_shader_src = R"(
-		// light and material properties
-		varying vec3 v_E;
-		uniform mat4 u_modelView;
-
-		uniform samplerCube u_cubemap;
-
-		void main()
-		{
-			vec3 E = normalize(vec3(vec4(v_E, 0.0) * u_modelView));
-			vec3 frag_colour = textureCube(u_cubemap, E).xyz;
-			gl_FragColor = vec4(frag_colour, 1.0);
 		}
 	)";
 
@@ -142,7 +128,9 @@ Application::Application()
 	glDeleteShader(fragment_shader_handle);
 
 	m_attrib_pos = glGetAttribLocation(m_program, "a_position");
+	m_attrib_normal = glGetAttribLocation(m_program, "a_normal");
 	m_attrib_uv = glGetAttribLocation(m_program, "a_uv");
+	m_attrib_tangent = glGetAttribLocation(m_program, "a_tangent");
 
 	u_modelView = glGetUniformLocation(m_program, "u_modelView");
 	u_projection = glGetUniformLocation(m_program, "u_projection");
@@ -151,6 +139,9 @@ Application::Application()
 	u_projection = glGetUniformLocation(m_program, "u_projection");
 
 	m_uniform_texture = glGetUniformLocation(m_program, "u_texture");
+
+	m_obj.Load("LeePerrySmith.obj");
+	m_texture = Texture::LoadTexture("albido.pvr");
 
 	Oquonie::GetInstance()->Install();
 	Oquonie::GetInstance()->Start();
@@ -220,6 +211,7 @@ void Application::Draw(float time)
 	glm::mat4 modelView = view * model;
 
 	glUseProgram(m_program);
+	m_texture->Bind(0);
 
 	glUniformMatrix4fv(u_projection, 1, GL_FALSE, &projection[0][0]);
 	glUniformMatrix4fv(u_modelView, 1, GL_FALSE, &view[0][0]);
@@ -227,24 +219,32 @@ void Application::Draw(float time)
 	glUniform3fv(u_camera_pos, 1, &camera_pos[0]);
 
 	glUniform1i(m_uniform_texture, 0);
-//
-//	m_obj.Bind();
-//
-//	glEnableVertexAttribArray(m_attrib_pos);
-//	glVertexAttribPointer(m_attrib_pos, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), ToVoidPointer(0));
-//
-//	glEnableVertexAttribArray(m_attrib_uv);
-//	glVertexAttribPointer(m_attrib_uv, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), ToVoidPointer(1 * sizeof(glm::vec3)));
-//
-//	m_obj.Draw();
-//
-//	glDisableVertexAttribArray(m_attrib_pos);
-//	glDisableVertexAttribArray(m_attrib_uv);
-//
-//	m_obj.UnBind();
-//
-//	glActiveTexture(GL_TEXTURE0 + 0);
-//	glBindTexture(GL_TEXTURE_2D, 0);
+
+	m_obj.Bind();
+
+	glEnableVertexAttribArray(m_attrib_pos);
+	glVertexAttribPointer(m_attrib_pos, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), ToVoidPointer(0));
+
+	glEnableVertexAttribArray(m_attrib_normal);
+	glVertexAttribPointer(m_attrib_normal, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), ToVoidPointer(sizeof(glm::vec3)));
+
+	glEnableVertexAttribArray(m_attrib_uv);
+	glVertexAttribPointer(m_attrib_uv, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), ToVoidPointer(2 * sizeof(glm::vec3)));
+
+	glEnableVertexAttribArray(m_attrib_tangent);
+	glVertexAttribPointer(m_attrib_tangent, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), ToVoidPointer(2 * sizeof(glm::vec3) + sizeof(glm::vec2)));
+
+	m_obj.Draw();
+
+	glDisableVertexAttribArray(m_attrib_pos);
+	glDisableVertexAttribArray(m_attrib_normal);
+	glDisableVertexAttribArray(m_attrib_uv);
+	glDisableVertexAttribArray(m_attrib_tangent);
+
+	m_obj.UnBind();
+
+	glActiveTexture(GL_TEXTURE0 + 0);
+	glBindTexture(GL_TEXTURE_2D, 0);
 
 	glUseProgram(0);
 }

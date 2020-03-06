@@ -4,6 +4,8 @@ cmake_policy(SET CMP0072 NEW)
 cmake_policy(SET CMP0048 NEW)
 cmake_policy(SET CMP0079 NEW)
 
+configure_file(albido.pvr albido.pvr COPYONLY)
+configure_file(LeePerrySmith.obj LeePerrySmith.obj COPYONLY)
 
 project(Oquonie)
 

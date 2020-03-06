@@ -135,22 +135,13 @@ void Object::Load(std::string path)
 		vertices[i].tangent = glm::normalize(vertices[i].tangent - vertices[i].normal * glm::dot(vertices[i].normal, vertices[i].tangent));
 	}
 
-	glBindBuffer(GL_ARRAY_BUFFER, m_vertexBufferObject);
-	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_indexBufferObject);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(int), indices.data(), GL_STATIC_DRAW);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	m_geometry.FillBuffers(vertices.data(), vertices.size(), sizeof(Vertex), indices.data(), indices.size(), 4);
 }
 
 
 // The code below creates a box mesh
 void Object::MakeBox()
 {
-	glGenBuffers(1, &m_vertexBufferObject);
-	glGenBuffers(1, &m_indexBufferObject);
-
 	std::vector<Vertex> vertices;
 	for (int i = 0; i < 6; ++i)
 	{
@@ -178,28 +169,21 @@ void Object::MakeBox()
 
 	m_indexSize = indices.size();
 
-	glBindBuffer(GL_ARRAY_BUFFER, m_vertexBufferObject);
-	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_indexBufferObject);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(int), indices.data(), GL_STATIC_DRAW);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	m_geometry.FillBuffers(vertices.data(), vertices.size(), sizeof(Vertex), indices.data(), indices.size(), 4);
 }
 
 void Object::Draw()
 {
-	glDrawElements(GL_TRIANGLES, m_indexSize, GL_UNSIGNED_INT, 0);
+	m_geometry.DrawElements();
+	m_geometry.UnBind();
 }
 
 void Object::Bind()
 {
-	glBindBuffer(GL_ARRAY_BUFFER, m_vertexBufferObject);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_indexBufferObject);
+	m_geometry.Bind();
 }
 
 void Object::UnBind()
 {
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	m_geometry.UnBind();
 }
