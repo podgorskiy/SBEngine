@@ -9,9 +9,6 @@
 
 void Object::Load(std::string path)
 {
-	glGenBuffers(1, &m_vertexBufferObject);
-	glGenBuffers(1, &m_indexBufferObject);
-
 	std::map<int, int> vertex_cache;
 	std::vector<Vertex> vertices;
 	std::vector<glm::vec3> positions;
@@ -72,9 +69,7 @@ void Object::Load(std::string path)
 		}
 	}
 
-	m_indexSize = indices.size();
-
-	for (int f = 0; f < m_indexSize / 3; ++f)
+	for (int f = 0; f < indices.size() / 3; ++f)
 	{
 		int i = indices[3 * f + 0];
 		int j = indices[3 * f + 1];
@@ -91,7 +86,7 @@ void Object::Load(std::string path)
 	}
 
 
-	for (long f = 0; f < m_indexSize / 3; f++)
+	for (long f = 0; f < indices.size() / 3; f++)
 	{
 		int i = indices[3 * f + 0];
 		int j = indices[3 * f + 1];
@@ -127,7 +122,6 @@ void Object::Load(std::string path)
 		vertices[j].tangent += sdir;
 		vertices[k].tangent += sdir;
 	}
-
 
 	for (int i = 0; i < vertices.size(); ++i)
 	{
@@ -166,8 +160,6 @@ void Object::MakeBox()
 		indices.push_back(i * 4 + 2);
 		indices.push_back(i * 4 + 3);
 	}
-
-	m_indexSize = indices.size();
 
 	m_geometry.FillBuffers(vertices.data(), vertices.size(), sizeof(Vertex), indices.data(), indices.size(), 4);
 }
