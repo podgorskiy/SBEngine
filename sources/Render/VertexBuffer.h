@@ -3,15 +3,13 @@
 
 namespace Render
 {
-	class Geometry
+	class VertexBuffer
 	{
-		Geometry( const Geometry& ) = delete; // non construction-copyable
-		Geometry& operator=( const Geometry& ) = delete; // non copyable
+		VertexBuffer( const VertexBuffer& ) = delete; // non construction-copyable
+		VertexBuffer& operator=( const VertexBuffer& ) = delete; // non copyable
 	public:
-		Geometry();
-		~Geometry();
-
-		void DeleteBuffers();
+		VertexBuffer();
+		~VertexBuffer();
 
 		void FillBuffers(
 			const void*	VertexArray,
@@ -39,7 +37,6 @@ namespace Render
 
 		int GetVertexSize() const;
 		int GetIndexSize() const;
-		int GetStride() const { return m_stride; }
 
 	private:
 		int m_numOfVertices;

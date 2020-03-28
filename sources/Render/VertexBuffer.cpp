@@ -1,21 +1,16 @@
-#include "Geometry.h"
+#include "VertexBuffer.h"
 #include <GL/gl3w.h>
 
 using namespace Render;
 
 
-Geometry::Geometry() :
+VertexBuffer::VertexBuffer() :
 		m_numOfVertices(-1),
 		m_numOfIndices(-1),
 		m_indexType(-1),
 		m_vertexBufferHandle(-1),
 		m_indexBufferHandle(-1)
 {
-}
-
-Geometry::~Geometry()
-{
-	DeleteBuffers();
 }
 
 static void DeleteBuffer(unsigned int& handle)
@@ -28,13 +23,13 @@ static void DeleteBuffer(unsigned int& handle)
 	}
 }
 
-void Geometry::DeleteBuffers()
+VertexBuffer::~VertexBuffer()
 {
 	DeleteBuffer(m_vertexBufferHandle);
 	DeleteBuffer(m_indexBufferHandle);
 }
 
-void Geometry::FillBuffers(
+void VertexBuffer::FillBuffers(
 		const void*	VertexArray,
 		int			numOfVertices,
 		int			verticesStride,
@@ -56,7 +51,7 @@ void Geometry::FillBuffers(
 	FillIndexBuffer(indexArray, numOfIndices);
 }
 
-void Geometry::FillVertexBuffer(
+void VertexBuffer::FillVertexBuffer(
 		const void*	VertexArray,
 		int			numOfVertices,
 		bool		dynamic)
@@ -70,7 +65,7 @@ void Geometry::FillVertexBuffer(
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void Geometry::FillIndexBuffer(
+void VertexBuffer::FillIndexBuffer(
 	const void*	indexArray,
 	int			numOfIndices,
 	bool		dynamic)
@@ -84,29 +79,29 @@ void Geometry::FillIndexBuffer(
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
-void Geometry::Bind() const
+void VertexBuffer::Bind() const
 {
 	glBindBuffer(GL_ARRAY_BUFFER, m_vertexBufferHandle);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_indexBufferHandle);
 }
 
-void Geometry::UnBind()
+void VertexBuffer::UnBind()
 {
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
-void Geometry::DrawElements() const
+void VertexBuffer::DrawElements() const
 {
 	glDrawElements(GL_TRIANGLES, m_numOfIndices, m_indexType, 0);
 }
 
-int Geometry::GetVertexSize() const
+int VertexBuffer::GetVertexSize() const
 {
 	return m_stride;
 }
 
-int Geometry::GetIndexSize() const
+int VertexBuffer::GetIndexSize() const
 {
 	switch(m_indexType)
 	{
@@ -115,5 +110,33 @@ int Geometry::GetIndexSize() const
 		case GL_UNSIGNED_INT:
 			return sizeof(unsigned int);
 		default: return 0;
+	}
+}
+
+#include <doctest.h>
+
+TEST_CASE("[Render] VertexBuffer")
+{
+	SUBCASE("Basic1")
+	{
+		VertexBuffer vb;
+		char buff[256];
+		vb.FillBuffers(buff, 8, 8, buff, 64, 4, false);
+		vb.Bind();
+		vb.DrawElements();
+		vb.UnBind();
+		CHECK_EQ(vb.GetIndexSize(), 4);
+		CHECK_EQ(vb.GetVertexSize(), 8);
+	}
+	SUBCASE("Basic2")
+	{
+		VertexBuffer vb;
+		char buff[256];
+		vb.FillBuffers(buff, 8, 8, buff, 128, 2, false);
+		vb.Bind();
+		vb.DrawElements();
+		vb.UnBind();
+		CHECK_EQ(vb.GetIndexSize(), 2);
+		CHECK_EQ(vb.GetVertexSize(), 8);
 	}
 }
