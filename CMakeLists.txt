@@ -15,6 +15,8 @@ option (GLFW_INSTALL OFF)
 option (BUILD_EXAMPLE OFF)
 option (BUILD_SHARED_LIBS OFF)
 
+option(TESTS "Build tests" ON)
+
 option (USE_MSVC_RUNTIME_LIBRARY_DLL OFF)
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared libraries" FORCE)
 
@@ -89,6 +91,9 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/minimp3)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/libogg/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/libvorbis/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/sources/Game)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/sources)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/doctest/doctest)
+
 
 ##############################################################
 # Externa libs
@@ -147,12 +152,18 @@ PREPEND(OGG_SOURCES libs/libogg/src ${OGG_SOURCES})
 add_library(ogg ${OGG_SOURCES})
 #####################################################################
 
+
 #####################################################################
 # Oquonie
 #####################################################################
 file(GLOB_RECURSE SOURCES sources/*.cpp sources/*.h)
-add_executable(Oquonie ${SOURCES})
+if (TESTS)
+	file(GLOB_RECURSE TESTS tests/*.cpp)
+endif()
+
+add_executable(Oquonie ${SOURCES} ${TESTS})
 target_link_libraries(Oquonie gl3w glfw imgui pugixml fsal lz4 zlib_static vorbis ogg ${OPENGL_LIBRARIES} ${OPENAL_LIBRARY})
+
 
 if(MSVC)
 else()
