@@ -1,6 +1,8 @@
 #pragma once
 #include "Shader.h"
+#include "Types.h"
 #include <GL/gl3w.h>
+#include <glm/glm.hpp>
 #include <vector>
 #include <string>
 #include <inttypes.h>
@@ -12,6 +14,7 @@ namespace Render
 {
 	class VertexSpec
 	{
+		friend class VertexSpecMaker;
 	public:
 		struct Attribute
 		{
@@ -44,7 +47,7 @@ namespace Render
 			}
 		}
 
-		void Enable()
+		void Enable(const void* ptr = nullptr)
 		{
 			for (int i = 0; m_attributes[i].components != 0; ++i)
 			{
@@ -52,7 +55,7 @@ namespace Render
 				glEnableVertexAttribArray(attr.handle);
 				auto offset_ = static_cast<size_t>(attr.offset);
 				glVertexAttribPointer(attr.handle, attr.components, attr.type, attr.normalized, attr.stride,
-				                      (void*) offset_);
+				                      (uint8_t*)ptr + offset_);
 			}
 		}
 
@@ -66,5 +69,58 @@ namespace Render
 		}
 
 		Attribute m_attributes[16];
+	};
+
+	class VertexSpecMaker
+	{
+		VertexSpec spec;
+		int num = 0;
+		int offset = 0;
+	public:
+		template<typename T>
+		class TypeDesc
+		{
+		public:
+			TypeDesc(): type(VarType::GetGLMapping<T>()), num(1), size(sizeof(T)){}
+			const unsigned int type;
+			const unsigned int num;
+			const unsigned int size;
+		};
+
+		template<int C, typename T>
+		class TypeDesc<glm::vec<C, T> >
+		{
+		public:
+			TypeDesc(): type(VarType::GetGLMapping<T>()), num(C), size(sizeof(T) * C){}
+			const unsigned int type;
+			const unsigned int num;
+			const unsigned int size;
+		};
+
+		template<typename T>
+		VertexSpecMaker& PushType(const std::string& name, bool normalized=false)
+		{
+			TypeDesc<T> tdesc;
+			spec.m_attributes[num].type = tdesc.type;
+			spec.m_attributes[num].name = name;
+			spec.m_attributes[num].offset = offset;
+			offset += tdesc.size;
+			spec.m_attributes[num].components = tdesc.num;
+			spec.m_attributes[num].normalized = normalized;
+			num += 1;
+			return *this;
+		}
+
+		VertexSpecMaker()
+		{}
+
+		operator VertexSpec()
+		{
+			for (int i = 0; i < num; ++i)
+			{
+				spec.m_attributes[i].stride = offset;
+			}
+			return spec;
+		}
 	};
 }

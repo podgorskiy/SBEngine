@@ -8,6 +8,7 @@
 #include <vector>
 #include <map>
 #include <glm/gtc/matrix_transform.hpp>
+#include "Render/DebugRenderer.h"
 
 #define DOCTEST_CONFIG_IMPLEMENT
 #include <doctest.h>
@@ -24,6 +25,8 @@
 
 
 Keyboard keyboard;
+Render::DebugRenderer dr;
+
 
 Application::Application(int argc, const char* const* argv)
 {
@@ -105,6 +108,7 @@ Application::Application(int argc, const char* const* argv)
 
 	m_obj.Load("LeePerrySmith.obj");
 	m_obj.Collect(m_program);
+	dr.Init();
 
 	m_texture = Texture::LoadTexture("albido.pvr");
 
@@ -194,6 +198,31 @@ void Application::Draw(float time)
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	glUseProgram(0);
+
+	auto viewProjection = projection * view;
+
+	Render::DrawCoordinateSystemOrigin(dr, viewProjection);
+
+	for (int j = 0; j < 10; ++j)
+	{
+		glm::mat4 teapot_coordinate_system = glm::rotate(glm::mat4(1.0f), j / 10.0f * 2.0f * 3.14f, glm::vec3(0.0, 1.0, 0.0)) *
+		                                     glm::translate(glm::mat4(1.0), glm::vec3(0, 0, 30.0));
+
+		Render::DrawCoordinateSystemOrigin(dr, viewProjection * teapot_coordinate_system);
+
+
+		for (int i = 0; i < 10; ++i)
+		{
+			glm::mat4 translate = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.0, 7.0));
+			glm::mat4 scale = glm::scale(glm::mat4(1.0), glm::vec3(0.5, 0.5, 1.5));
+			glm::mat4 rotate = glm::rotate(glm::mat4(1.0), i / 10.0f * 2.0f * 3.14f + time, glm::vec3(1.0, 0.0, 0.0));
+
+			glm::mat4 box_coordinate_system = rotate * translate;
+
+			Render::DrawCoordinateSystemOrigin(dr, viewProjection * teapot_coordinate_system * box_coordinate_system,
+			                           2.0f);
+		}
+	}
 }
 
 void Application::OnKeyAction(int key, char asci, int action, int mods)

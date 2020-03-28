@@ -1,4 +1,5 @@
 #include "VertexBuffer.h"
+#include <assert.h>
 #include <GL/gl3w.h>
 
 using namespace Render;
@@ -11,6 +12,27 @@ VertexBuffer::VertexBuffer() :
 		m_vertexBufferHandle(-1),
 		m_indexBufferHandle(-1)
 {
+}
+
+VertexBuffer::VertexBuffer(int verticesStride, int indexSize) : m_stride(verticesStride),
+		m_numOfVertices(-1),
+		m_numOfIndices(-1),
+		m_indexType(-1),
+		m_vertexBufferHandle(-1),
+		m_indexBufferHandle(-1)
+{
+	if (indexSize == 2)
+	{
+		m_indexType = GL_UNSIGNED_SHORT;
+	}
+	else if (indexSize == 4)
+	{
+		m_indexType = GL_UNSIGNED_INT;
+	}
+	else
+	{
+		assert(false);
+	}
 }
 
 static void DeleteBuffer(unsigned int& handle)
@@ -46,6 +68,10 @@ void VertexBuffer::FillBuffers(
 	{
 		m_indexType = GL_UNSIGNED_INT;
 	}
+	else
+	{
+		assert(false);
+	}
 	m_stride = verticesStride;
 	FillVertexBuffer(VertexArray, numOfVertices, dynamic);
 	FillIndexBuffer(indexArray, numOfIndices);
@@ -65,6 +91,16 @@ void VertexBuffer::FillVertexBuffer(
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
+void VertexBuffer::FillVertexBuffer(
+		const void*	VertexArray,
+		int			numOfVertices,
+		int         verticesStride,
+		bool		dynamic)
+{
+	m_stride = verticesStride;
+	FillVertexBuffer(VertexArray, numOfVertices, dynamic);
+}
+
 void VertexBuffer::FillIndexBuffer(
 	const void*	indexArray,
 	int			numOfIndices,
@@ -77,6 +113,27 @@ void VertexBuffer::FillIndexBuffer(
 	int indexBufferSize = GetIndexSize()*numOfIndices;
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexBufferSize, indexArray, dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+}
+
+void VertexBuffer::FillIndexBuffer(
+	const void*	indexArray,
+	int			numOfIndices,
+	int         indexSize,
+	bool		dynamic)
+{
+	if (indexSize == 2)
+	{
+		m_indexType = GL_UNSIGNED_SHORT;
+	}
+	else if (indexSize == 4)
+	{
+		m_indexType = GL_UNSIGNED_INT;
+	}
+	else
+	{
+		assert(false);
+	}
+	FillIndexBuffer(indexArray, numOfIndices, dynamic);
 }
 
 void VertexBuffer::Bind() const

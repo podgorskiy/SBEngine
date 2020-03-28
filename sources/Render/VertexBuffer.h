@@ -9,6 +9,7 @@ namespace Render
 		VertexBuffer& operator=( const VertexBuffer& ) = delete; // non copyable
 	public:
 		VertexBuffer();
+		VertexBuffer(int verticesStride, int indexSize);
 		~VertexBuffer();
 
 		void FillBuffers(
@@ -25,9 +26,21 @@ namespace Render
 			int			numOfVertices,
 			bool		dynamic = false);
 
+		void FillVertexBuffer(
+			const void*	VertexArray,
+			int			numOfVertices,
+			int         verticesStride,
+			bool		dynamic = false);
+
 		void FillIndexBuffer(
 			const void*	indexArray,
 			int			numOfIndices,
+			bool		dynamic = false);
+
+		void FillIndexBuffer(
+			const void*	indexArray,
+			int			numOfIndices,
+			int         indexSize,
 			bool		dynamic = false);
 
 		void Bind() const;
