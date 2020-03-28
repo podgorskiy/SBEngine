@@ -1,4 +1,5 @@
-#include "Render/Geometry.h"
+#include "Render/VertexBuffer.h"
+#include "Render/VertexSpec.h"
 #include <string>
 #include <glm/glm.hpp>
 
@@ -17,9 +18,12 @@ public:
 
 	void MakeBox();
 
+	void Collect(Render::ProgramPtr program);
+
 	void Bind();
 	void Draw();
 	void UnBind();
 private:
-	Render::Geometry m_geometry;
+	Render::VertexBuffer m_geometry;
+	Render::VertexSpec m_vertexSpec;
 };

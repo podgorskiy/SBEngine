@@ -9,6 +9,9 @@
 #include <map>
 #include <glm/gtc/matrix_transform.hpp>
 
+#define DOCTEST_CONFIG_IMPLEMENT
+#include <doctest.h>
+
 #include "imgui.h"
 #include "examples/imgui_impl_opengl3.h"
 #include <Tile.h>
@@ -22,33 +25,31 @@
 
 Keyboard keyboard;
 
-GLuint CompileShader(const char* src, GLint type)
-{
-	GLuint shader = glCreateShader(type);
-
-	glShaderSource(shader, 1, &src, NULL);
-
-	glCompileShader(shader);
-	GLint compiled = 0;
-	glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
-	GLint infoLen = 0;
-	glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infoLen);
-
-	if (infoLen > 1)
-	{
-		spdlog::warn("{} during shader compilation.", compiled == GL_TRUE ? "Warning" : "Error");
-		char* buf = new char[infoLen];
-		glGetShaderInfoLog(shader, infoLen, NULL, buf);
-		spdlog::warn("Compilation log: {}", buf);
-		delete[] buf;
-	}
-	
-	return shader;
-}
-
-Application::Application()
+Application::Application(int argc, const char* const* argv)
 {
 	gl3wInit();
+
+	{
+		doctest::Context context;
+		// defaults
+		context.setOption("rand-seed", 1);
+		context.setOption("order-by", "file");
+
+		context.applyCommandLine(argc, argv);
+
+		// overrides
+		context.setOption("no-breaks", true); // don't break in the debugger when assertions fail
+
+		int res = context.run(); // run queries, or run tests unless --no-run is specified
+
+		if (context.shouldExit()) // important - query flags (and --exit) rely on the user doing this
+		{
+			exit(res);
+		}
+
+		context.clearFilters(); // removes all filters added up to this point
+	}
+
 	fsal::FileSystem fs;
 	fs.PushSearchPath("resources");
 	fs.PushSearchPath("../resources");
@@ -90,57 +91,21 @@ Application::Application()
 
 		void main()
 		{
-			vec3 color = texture2D(u_texture, v_uv);
+			vec3 color = texture2D(u_texture, v_uv).rgb;
 			color = pow(color, vec3(2.2));
 			gl_FragColor = vec4(pow(color, vec3(1.0/2.2)), 1.0);
 		}
 	)";
 
-	int vertex_shader_handle = CompileShader(vertex_shader_src, GL_VERTEX_SHADER);
-	int fragment_shader_handle = CompileShader(fragment_shader_src, GL_FRAGMENT_SHADER);
+	m_program = Render::MakeProgram(vertex_shader_src, fragment_shader_src);
 
-	m_program = glCreateProgram();
-
-	glAttachShader(m_program, vertex_shader_handle);
-	glAttachShader(m_program, fragment_shader_handle);
-
-	glLinkProgram(m_program);
-
-	int linked;
-	glGetProgramiv(m_program, GL_LINK_STATUS, &linked);
-	if (!linked)
-	{
-		GLint infoLen = 0;
-		glGetProgramiv(m_program, GL_INFO_LOG_LENGTH, &infoLen);
-		if (infoLen > 1)
-		{
-			char* buf = new char[infoLen];
-			glGetProgramInfoLog(m_program, infoLen, NULL, buf);
-			spdlog::info("Linking error: \n{}", buf);
-			delete[] buf;
-		}
-	}
-
-	glDetachShader(m_program, vertex_shader_handle);
-	glDetachShader(m_program, fragment_shader_handle);
-
-	glDeleteShader(vertex_shader_handle);
-	glDeleteShader(fragment_shader_handle);
-
-	m_attrib_pos = glGetAttribLocation(m_program, "a_position");
-	m_attrib_normal = glGetAttribLocation(m_program, "a_normal");
-	m_attrib_uv = glGetAttribLocation(m_program, "a_uv");
-	m_attrib_tangent = glGetAttribLocation(m_program, "a_tangent");
-
-	u_modelView = glGetUniformLocation(m_program, "u_modelView");
-	u_projection = glGetUniformLocation(m_program, "u_projection");
-
-	u_modelView = glGetUniformLocation(m_program, "u_modelView");
-	u_projection = glGetUniformLocation(m_program, "u_projection");
-
-	m_uniform_texture = glGetUniformLocation(m_program, "u_texture");
+	u_modelView = m_program->GetUniformLocation("u_modelView");
+	u_projection = m_program->GetUniformLocation("u_projection");
+	m_uniform_texture = m_program->GetUniformLocation("u_texture");
 
 	m_obj.Load("LeePerrySmith.obj");
+	m_obj.Collect(m_program);
+
 	m_texture = Texture::LoadTexture("albido.pvr");
 
 	Oquonie::GetInstance()->Install();
@@ -150,7 +115,6 @@ Application::Application()
 
 Application::~Application()
 {
-	glDeleteProgram(m_program);
 }
 
 inline void* ToVoidPointer(int offset)
@@ -210,7 +174,7 @@ void Application::Draw(float time)
 	glm::mat4 model = glm::mat4(1.0f);
 	glm::mat4 modelView = view * model;
 
-	glUseProgram(m_program);
+	m_program->Use();
 	m_texture->Bind(0);
 
 	glUniformMatrix4fv(u_projection, 1, GL_FALSE, &projection[0][0]);
@@ -222,24 +186,7 @@ void Application::Draw(float time)
 
 	m_obj.Bind();
 
-	glEnableVertexAttribArray(m_attrib_pos);
-	glVertexAttribPointer(m_attrib_pos, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), ToVoidPointer(0));
-
-	glEnableVertexAttribArray(m_attrib_normal);
-	glVertexAttribPointer(m_attrib_normal, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), ToVoidPointer(sizeof(glm::vec3)));
-
-	glEnableVertexAttribArray(m_attrib_uv);
-	glVertexAttribPointer(m_attrib_uv, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), ToVoidPointer(2 * sizeof(glm::vec3)));
-
-	glEnableVertexAttribArray(m_attrib_tangent);
-	glVertexAttribPointer(m_attrib_tangent, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), ToVoidPointer(2 * sizeof(glm::vec3) + sizeof(glm::vec2)));
-
 	m_obj.Draw();
-
-	glDisableVertexAttribArray(m_attrib_pos);
-	glDisableVertexAttribArray(m_attrib_normal);
-	glDisableVertexAttribArray(m_attrib_uv);
-	glDisableVertexAttribArray(m_attrib_tangent);
 
 	m_obj.UnBind();
 

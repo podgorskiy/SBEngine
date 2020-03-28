@@ -1,12 +1,13 @@
 #pragma once
 #include "Object.h"
 #include "Texture.h"
+#include "Render/Shader.h"
 #include <glm/glm.hpp>
 
 class Application
 {
 public:
-	Application();
+	Application(int argc, const char* const* argv);
 	~Application();
 
 	void Draw(float time);
@@ -15,16 +16,10 @@ public:
 	void OnKeyAction(int key, char asci, int action, int mods);
 
 private:
-	unsigned int m_program;
+	Render::ProgramPtr m_program;
 
 	unsigned int u_modelView;
 	unsigned int u_model;
-	
-	unsigned int m_attrib_pos;
-	unsigned int m_attrib_normal;
-	unsigned int m_attrib_uv;
-	unsigned int m_attrib_tangent;
-	unsigned int m_attrib_color;
 
 	unsigned int u_projection;
 	unsigned int m_uniform_texture;

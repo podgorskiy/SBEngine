@@ -130,6 +130,27 @@ void Object::Load(std::string path)
 	}
 
 	m_geometry.FillBuffers(vertices.data(), vertices.size(), sizeof(Vertex), indices.data(), indices.size(), 4);
+
+	m_vertexSpec = Render::VertexSpec({
+			                                  {
+			                                  	"a_position", 3, GL_FLOAT, 0, sizeof(float) * (3 + 3 + 2 + 3), 0, 0
+			                                  },
+			                                  {
+			                                  	"a_normal", 3, GL_FLOAT, 0, sizeof(float) * (3 + 3 + 2 + 3), sizeof(float) * (3), 0
+			                                  },
+			                                  {
+			                                  	"a_uv", 2, GL_FLOAT, 0, sizeof(float) * (3 + 3 + 2 + 3), sizeof(float) * (3 + 3), 0
+			                                  },
+			                                  {
+			                                  	"a_tangent", 3, GL_FLOAT, 0, sizeof(float) * (3 + 3 + 2 + 3), sizeof(float) * (3 + 3 + 2), 0
+			                                  }
+	});
+}
+
+
+void Object::Collect(Render::ProgramPtr program)
+{
+	m_vertexSpec.CollectHandles(program);
 }
 
 
@@ -173,9 +194,11 @@ void Object::Draw()
 void Object::Bind()
 {
 	m_geometry.Bind();
+	m_vertexSpec.Enable();
 }
 
 void Object::UnBind()
 {
 	m_geometry.UnBind();
+	m_vertexSpec.Disable();
 }
