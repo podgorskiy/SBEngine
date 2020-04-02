@@ -16,19 +16,13 @@
 // 3. This notice may not be removed or altered from any source distribution.
 //
 
-#ifndef NANOVG_H
-#define NANOVG_H
+#pragma once
+#include "aabb.h"
+#include <glm/glm.hpp>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #define NVG_PI 3.14159265358979323846264338327f
 
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable: 4201)  // nonstandard extension used : nameless struct/union
-#endif
 
 typedef struct NVGcontext NVGcontext;
 
@@ -40,11 +34,20 @@ struct NVGcolor {
 		};
 	};
 };
+
 typedef struct NVGcolor NVGcolor;
 
 struct NVGpaint {
-	float xform[6];
-	float extent[2];
+	union
+	{
+		float xform[6];
+		glm::mat3x2 xform_;
+	};
+	union
+	{
+		float extent[2];
+		glm::vec2 extent_;
+	};
 	float radius;
 	float feather;
 	NVGcolor innerColor;
@@ -408,6 +411,14 @@ NVGpaint nvgLinearGradient(NVGcontext* ctx, float sx, float sy, float ex, float 
 NVGpaint nvgBoxGradient(NVGcontext* ctx, float x, float y, float w, float h,
 						float r, float f, NVGcolor icol, NVGcolor ocol);
 
+// Creates and returns a box gradient. Box gradient is a feathered rounded rectangle, it is useful for rendering
+// drop shadows or highlights for boxes. Parameters (x,y) define the top-left corner of the rectangle,
+// (w,h) define the size of the rectangle, r defines the corner radius, and f feather. Feather defines how blurry
+// the border of the rectangle is. Parameter icol specifies the inner color and ocol the outer color of the gradient.
+// The gradient is transformed by the current transform when it is passed to nvgFillPaint() or nvgStrokePaint().
+NVGpaint nvgBoxGradient(NVGcontext* ctx, glm::aabb2 box,
+						float r, float f, NVGcolor icol, NVGcolor ocol);
+
 // Creates and returns a radial gradient. Parameters (cx,cy) specify the center, inr and outr specify
 // the inner and outer radius of the gradient, icol specifies the start color and ocol the end color.
 // The gradient is transformed by the current transform when it is passed to nvgFillPaint() or nvgStrokePaint().
@@ -488,13 +499,22 @@ void nvgPathWinding(NVGcontext* ctx, int dir);
 void nvgArc(NVGcontext* ctx, float cx, float cy, float r, float a0, float a1, int dir);
 
 // Creates new rectangle shaped sub-path.
+void nvgRect(NVGcontext* ctx, glm::aabb2 box);
+
+// Creates new rectangle shaped sub-path.
 void nvgRect(NVGcontext* ctx, float x, float y, float w, float h);
 
 // Creates new rounded rectangle shaped sub-path.
 void nvgRoundedRect(NVGcontext* ctx, float x, float y, float w, float h, float r);
 
+// Creates new rectangle shaped sub-path.
+void nvgRoundedRect(NVGcontext* ctx, glm::aabb2 box, float r);
+
 // Creates new rounded rectangle shaped sub-path with varying radii for each corner.
 void nvgRoundedRectVarying(NVGcontext* ctx, float x, float y, float w, float h, float radTopLeft, float radTopRight, float radBottomRight, float radBottomLeft);
+
+// Creates new rounded rectangle shaped sub-path with varying radii for each corner.
+void nvgRoundedRectVarying(NVGcontext* ctx, glm::aabb2 box, float radTopLeft, float radTopRight, float radBottomRight, float radBottomLeft);
 
 // Creates new ellipse shaped sub-path.
 void nvgEllipse(NVGcontext* ctx, float cx, float cy, float rx, float ry);
@@ -508,121 +528,6 @@ void nvgFill(NVGcontext* ctx);
 // Fills the current path with current stroke style.
 void nvgStroke(NVGcontext* ctx);
 
-
-//
-// Text
-//
-// NanoVG allows you to load .ttf files and use the font to render text.
-//
-// The appearance of the text can be defined by setting the current text style
-// and by specifying the fill color. Common text and font settings such as
-// font size, letter spacing and text align are supported. Font blur allows you
-// to create simple text effects such as drop shadows.
-//
-// At render time the font face can be set based on the font handles or name.
-//
-// Font measure functions return values in local space, the calculations are
-// carried in the same resolution as the final rendering. This is done because
-// the text glyph positions are snapped to the nearest pixels sharp rendering.
-//
-// The local space means that values are not rotated or scale as per the current
-// transformation. For example if you set font size to 12, which would mean that
-// line height is 16, then regardless of the current scaling and rotation, the
-// returned line height is always 16. Some measures may vary because of the scaling
-// since aforementioned pixel snapping.
-//
-// While this may sound a little odd, the setup allows you to always render the
-// same way regardless of scaling. I.e. following works regardless of scaling:
-//
-//		const char* txt = "Text me up.";
-//		nvgTextBounds(vg, x,y, txt, NULL, bounds);
-//		nvgBeginPath(vg);
-//		nvgRoundedRect(vg, bounds[0],bounds[1], bounds[2]-bounds[0], bounds[3]-bounds[1]);
-//		nvgFill(vg);
-//
-// Note: currently only solid color fill is supported for text.
-
-// Creates font by loading it from the disk from specified file name.
-// Returns handle to the font.
-int nvgCreateFont(NVGcontext* ctx, const char* name, const char* filename);
-
-// fontIndex specifies which font face to load from a .ttf/.ttc file.
-int nvgCreateFontAtIndex(NVGcontext* ctx, const char* name, const char* filename, const int fontIndex);
-
-// Creates font by loading it from the specified memory chunk.
-// Returns handle to the font.
-int nvgCreateFontMem(NVGcontext* ctx, const char* name, unsigned char* data, int ndata, int freeData);
-
-// fontIndex specifies which font face to load from a .ttf/.ttc file.
-int nvgCreateFontMemAtIndex(NVGcontext* ctx, const char* name, unsigned char* data, int ndata, int freeData, const int fontIndex);
-
-// Finds a loaded font of specified name, and returns handle to it, or -1 if the font is not found.
-int nvgFindFont(NVGcontext* ctx, const char* name);
-
-// Adds a fallback font by handle.
-int nvgAddFallbackFontId(NVGcontext* ctx, int baseFont, int fallbackFont);
-
-// Adds a fallback font by name.
-int nvgAddFallbackFont(NVGcontext* ctx, const char* baseFont, const char* fallbackFont);
-
-// Resets fallback fonts by handle.
-void nvgResetFallbackFontsId(NVGcontext* ctx, int baseFont);
-
-// Resets fallback fonts by name.
-void nvgResetFallbackFonts(NVGcontext* ctx, const char* baseFont);
-
-// Sets the font size of current text style.
-void nvgFontSize(NVGcontext* ctx, float size);
-
-// Sets the blur of current text style.
-void nvgFontBlur(NVGcontext* ctx, float blur);
-
-// Sets the letter spacing of current text style.
-void nvgTextLetterSpacing(NVGcontext* ctx, float spacing);
-
-// Sets the proportional line height of current text style. The line height is specified as multiple of font size.
-void nvgTextLineHeight(NVGcontext* ctx, float lineHeight);
-
-// Sets the text align of current text style, see NVGalign for options.
-void nvgTextAlign(NVGcontext* ctx, int align);
-
-// Sets the font face based on specified id of current text style.
-void nvgFontFaceId(NVGcontext* ctx, int font);
-
-// Sets the font face based on specified name of current text style.
-void nvgFontFace(NVGcontext* ctx, const char* font);
-
-// Draws text string at specified location. If end is specified only the sub-string up to the end is drawn.
-float nvgText(NVGcontext* ctx, float x, float y, const char* string, const char* end);
-
-// Draws multi-line text string at specified location wrapped at the specified width. If end is specified only the sub-string up to the end is drawn.
-// White space is stripped at the beginning of the rows, the text is split at word boundaries or when new-line characters are encountered.
-// Words longer than the max width are slit at nearest character (i.e. no hyphenation).
-void nvgTextBox(NVGcontext* ctx, float x, float y, float breakRowWidth, const char* string, const char* end);
-
-// Measures the specified text string. Parameter bounds should be a pointer to float[4],
-// if the bounding box of the text should be returned. The bounds value are [xmin,ymin, xmax,ymax]
-// Returns the horizontal advance of the measured text (i.e. where the next character should drawn).
-// Measured values are returned in local coordinate space.
-float nvgTextBounds(NVGcontext* ctx, float x, float y, const char* string, const char* end, float* bounds);
-
-// Measures the specified multi-text string. Parameter bounds should be a pointer to float[4],
-// if the bounding box of the text should be returned. The bounds value are [xmin,ymin, xmax,ymax]
-// Measured values are returned in local coordinate space.
-void nvgTextBoxBounds(NVGcontext* ctx, float x, float y, float breakRowWidth, const char* string, const char* end, float* bounds);
-
-// Calculates the glyph x positions of the specified text. If end is specified only the sub-string will be used.
-// Measured values are returned in local coordinate space.
-int nvgTextGlyphPositions(NVGcontext* ctx, float x, float y, const char* string, const char* end, NVGglyphPosition* positions, int maxPositions);
-
-// Returns the vertical metrics based on the current text style.
-// Measured values are returned in local coordinate space.
-void nvgTextMetrics(NVGcontext* ctx, float* ascender, float* descender, float* lineh);
-
-// Breaks the specified text into lines. If end is specified only the sub-string will be used.
-// White space is stripped at the beginning of the rows, the text is split at word boundaries or when new-line characters are encountered.
-// Words longer than the max width are slit at nearest character (i.e. no hyphenation).
-int nvgTextBreakLines(NVGcontext* ctx, const char* string, const char* end, float breakRowWidth, NVGtextRow* rows, int maxRows);
 
 //
 // Internal Render API
@@ -689,9 +594,3 @@ void nvgDebugDumpPathCache(NVGcontext* ctx);
 #endif
 
 #define NVG_NOTUSED(v) for (;;) { (void)(1 ? (void)0 : ( (void)(v) ) ); break; }
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif // NANOVG_H
