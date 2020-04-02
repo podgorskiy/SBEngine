@@ -52,6 +52,8 @@ namespace Render
 			for (int i = 0; m_attributes[i].components != 0; ++i)
 			{
 				Attribute& attr = m_attributes[i];
+				if (attr.handle == -1)
+					continue;
 				glEnableVertexAttribArray(attr.handle);
 				auto offset_ = static_cast<size_t>(attr.offset);
 				glVertexAttribPointer(attr.handle, attr.components, attr.type, attr.normalized, attr.stride,
@@ -64,6 +66,8 @@ namespace Render
 			for (int i = 0; m_attributes[i].components != 0; ++i)
 			{
 				Attribute& attr = m_attributes[i];
+				if (attr.handle == -1)
+					continue;
 				glDisableVertexAttribArray(attr.handle);
 			}
 		}

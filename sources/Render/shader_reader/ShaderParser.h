@@ -1,6 +1,6 @@
 #pragma once
 #include "Lexer.h"
-#include "ErrorHandler.h"
+#include "ErrorHandlers.h"
 #include "MaterialSource.h"
 #include <spdlog/spdlog.h>
 

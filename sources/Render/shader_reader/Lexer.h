@@ -1,6 +1,6 @@
 #pragma once
 #include "SymbolSequence.h"
-#include "ErrorHandler.h"
+#include "ErrorHandlers.h"
 #include <string>
 
 namespace ShaderReader

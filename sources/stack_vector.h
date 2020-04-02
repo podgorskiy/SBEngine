@@ -86,7 +86,7 @@ namespace stack
 		typedef typename tvector::const_reverse_iterator const_reverse_iterator;
 		typedef typename tvector::difference_type difference_type;
 
-		vector():  _vector(FixedAllocator<T, Size>(m_data, &m_size))
+		vector():  m_size(0), _vector(FixedAllocator<T, Size>(m_data, &m_size))
 		{
 			_vector.reserve(Size);
 			memset(m_data, 0, sizeof(T) * Size);

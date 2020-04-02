@@ -25,7 +25,7 @@ namespace glm
 
 		T size() const { return maxp - minp; }
 
-		T center() const { return (maxp + minp) / vec3::type(2); }
+		T center() const { return (maxp + minp) / T(2); }
 
 		// Returns true if bounds positive volume
 		bool is_positive() const { return glm::all(glm::lessThan(minp, maxp)); }

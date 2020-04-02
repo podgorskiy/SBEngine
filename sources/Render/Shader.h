@@ -1,6 +1,7 @@
 #pragma once
 #include "Types.h"
 #include <vector>
+#include <array>
 #include <map>
 #include <memory>
 
@@ -39,10 +40,11 @@ namespace Render
 	class Uniform
 	{
 	public:
-		Uniform(int handle, VarType::Type type, int num): m_handle(handle), m_type(type), m_num(num)
-		{};
+		Uniform(): m_handle(-1), m_type(VarType::INVALID), m_num(0) {}
+		Uniform(int handle, VarType::Type type, int num): m_handle(handle), m_type(type), m_num(num) {};
 
 		Uniform(const Uniform& other) = default;
+		Uniform& operator=(const Uniform&) = default;
 
 		bool valid() const { return m_handle != -1; }
 
@@ -54,12 +56,15 @@ namespace Render
 		void ApplyValue(const T& value) const;
 
 		template<typename T>
+		void ApplyValue(const T* value, int count = 1) const;
+
+		template<typename T>
 		void ApplyValue(const std::vector<T>& value) const;
 
+		int m_handle;
 	protected:
-		const int m_handle;
-		const VarType::Type m_type;
-		const int m_num;
+		VarType::Type m_type;
+		uint16_t m_num;
 	};
 
 
@@ -80,18 +85,26 @@ namespace Render
 
 		void Use() const;
 
-		int GetAttribLocation(const char *name) const;
+		int GetAttribLocation(const char* name) const;
 
-		int GetUniformLocation(const char *name) const;
+		int GetUniformLocation(const char* name) const;
+
+		Uniform GetUniform(const char* name);
+
+		Uniform GetUniform(int id) const { return m_uniforms[id]; }
+
+		const auto& UniformMap() const { return m_uniformMap; }
 
 	private:
 		bool LinkImpl();
 		void InitUniforms();
 
 		std::vector<Uniform> m_uniforms;
+		std::map<std::string, uint16_t> m_uniformMap;
 
 		GLHandle m_program;
 	};
+
 
 	typedef std::shared_ptr<Program> ProgramPtr;
 

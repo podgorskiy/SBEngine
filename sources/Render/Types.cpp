@@ -113,6 +113,11 @@ bool VarType::IsUnsignedInteger(Render::VarType::Type t)
 	return t == VarType::UNSIGNED_BYTE || t == VarType::UNSIGNED_SHORT || t == VarType::UNSIGNED_INT;
 }
 
+bool VarType::IsSampler(Render::VarType::Type t)
+{
+	return t == VarType::SAMPLER_1D || t == VarType::SAMPLER_2D || t == VarType::SAMPLER_3D || t == VarType::SAMPLER_CUBE || t == VarType::SAMPLER_1D_SHADOW || t == VarType::SAMPLER_2D_SHADOW;
+}
+
 
 
 #include <doctest.h>

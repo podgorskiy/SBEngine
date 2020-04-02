@@ -82,6 +82,19 @@ namespace Render
 		debug.Draw(transform);
 	}
 
+	inline void DrawRect(DebugRenderer& debug, glm::vec2 min, glm::vec2 max, const glm::mat4& transform)
+	{
+		debug.PushVertex(glm::vec3(min, 0.0f), DebugRenderer::Red());
+		debug.PushVertex(glm::vec3(max.x, min.y, 0.0f), DebugRenderer::Red());
+		debug.PushVertex(glm::vec3(max.x, min.y, 0.0f), DebugRenderer::Red());
+		debug.PushVertex(glm::vec3(max, 0.0f), DebugRenderer::Red());
+		debug.PushVertex(glm::vec3(max, 0.0f), DebugRenderer::Red());
+		debug.PushVertex(glm::vec3(min.x, max.y, 0.0f), DebugRenderer::Red());
+		debug.PushVertex(glm::vec3(min.x, max.y, 0.0f), DebugRenderer::Red());
+		debug.PushVertex(glm::vec3(min, 0.0f), DebugRenderer::Red());
+		debug.EmitLines();
+		debug.Draw(transform);
+	}
 
 	inline void DrawCross(DebugRenderer& debug, const glm::ivec3& color, const glm::mat4& transform, float size = 20.0f)
 	{

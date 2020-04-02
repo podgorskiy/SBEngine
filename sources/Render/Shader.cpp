@@ -73,7 +73,8 @@ namespace Render
 			{
 				++source;
 			}
-			printf("%3d:\t%.*s\n", line++, int(source - start), start);
+			std::string l(start, source);
+			spdlog::info("{:3d}:\t{}", line++, l);
 
 			if (*source == '\0')
 			{

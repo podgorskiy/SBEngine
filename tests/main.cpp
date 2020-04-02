@@ -1,7 +1,9 @@
 // Tests
 #include <fsal.h>
 #include <spdlog/spdlog.h>
+#include <glm/glm.hpp>
 #include "doctest.h"
+#include "stack_vector.h"
 
 
 TEST_CASE("[fsal] Filepaths")
@@ -82,5 +84,43 @@ TEST_CASE("[fsal] MountZIP")
 		{
 			spdlog::info("\t{}", s.c_str());
 		}
+	}
+}
+
+TEST_CASE("[stack] vector")
+{
+	stack::vector<glm::vec2, 17> v;
+
+	CHECK(v.size() == 0);
+
+
+	CHECK(sizeof(v) > 16 * sizeof(glm::vec2));
+
+	spdlog::info("Vector size: {}", sizeof(v));
+
+	v.push_back(glm::vec2(1.0f, 0.0f));
+	v.push_back(glm::vec2(1.0f, 2.0f));
+
+	CHECK(v[0] == glm::vec2(1.0f, 0.0f));
+	CHECK(v[1] == glm::vec2(1.0f, 2.0f));
+
+	v.push_back(glm::vec2(1.0f, 0.0f));
+	v.push_back(glm::vec2(1.0f, 2.0f));
+
+	v.clear();
+	v.push_back(glm::vec2(1.0f, 2.0f));
+	CHECK(v[0] == glm::vec2(1.0f, 2.0f));
+
+	v.pop_back();
+	v.push_back(glm::vec2(1.0f, 3.0f));
+	CHECK(v[0] == glm::vec2(1.0f, 3.0f));
+
+	for (int i = 0; i < 20; ++i)
+	{
+		v.push_back(glm::vec2(1.0f, 0.0f));
+		CHECK(v.back() == glm::vec2(1.0f, 0.0f));
+
+		v.push_back(glm::vec2(1.0f, 2.0f));
+		CHECK(v.back() == glm::vec2(1.0f, 2.0f));
 	}
 }

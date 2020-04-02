@@ -1,4 +1,5 @@
 #pragma once
+#include <inttypes.h>
 #ifdef BYTE
 #undef BYTE
 #endif
@@ -7,7 +8,7 @@ namespace Render
 {
 	struct VarType
 	{
-		enum Type
+		enum Type: uint16_t
 		{
 			INVALID = 0,
 			BYTE,
@@ -60,5 +61,6 @@ namespace Render
 		static bool IsInteger(VarType::Type t);
 		static bool IsSignedInteger(VarType::Type t);
 		static bool IsUnsignedInteger(VarType::Type t);
+		static bool IsSampler(VarType::Type t);
 	};
 }

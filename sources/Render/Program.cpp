@@ -5,6 +5,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/quaternion.hpp>
 #include <type_traits>
+#include <map>
 
 
 namespace Render
@@ -59,7 +60,7 @@ namespace Render
 			GLuint location = glGetUniformLocation(m_program, name);
 			Uniform u(location, VarType::FromGLMapping(type), num);
 			m_uniforms.push_back(u);
-			//m_uniformsNames[name] = static_cast<int>(m_uniforms.size()) - 1;
+			m_uniformMap[name] = static_cast<int>(m_uniforms.size()) - 1;
 		}
 	}
 
@@ -116,11 +117,17 @@ namespace Render
 	{
 		return glGetUniformLocation(m_program, name);
 	}
-//
-//	int Program::GetUniformLocation(const char *name) const
-//	{
-//		return glGetUniformLocation(m_program, name);
-//	}
+
+	Uniform Program::GetUniform(const char* name)
+	{
+		std::string n(name);
+		auto it = m_uniformMap.find(name);
+		if (it != m_uniformMap.end())
+		{
+			return m_uniforms[it->second];
+		}
+		return Uniform(-1, VarType::INVALID, 0);
+	}
 
 	ProgramPtr MakeProgram(const char* vertex_shader, const char* fragment_shader)
 	{
@@ -144,40 +151,73 @@ namespace Render
 		spdlog::error("Unsupported type");
 		assert(false);
 	}
-	
+
+	template<typename T>
+	void Uniform::ApplyValue(const T* value, int count) const
+	{
+		spdlog::error("Unsupported type");
+		assert(false);
+	}
+
 	template<>
 	void Uniform::ApplyValue<int>(const int& value) const
 	{
-		assert(VarType::IsSignedInteger(m_type));
+		assert(VarType::IsSignedInteger(m_type) || VarType::IsSampler(m_type) );
 		glUniform1iv(m_handle, 1, reinterpret_cast<const GLint*>(&value));
+	}
+
+	template<>
+	void Uniform::ApplyValue<int>(const int* value, int count) const
+	{
+		assert(VarType::IsSignedInteger(m_type) || VarType::IsSampler(m_type) );
+		glUniform1iv(m_handle, count, reinterpret_cast<const GLint*>(value));
 	}
 
 	template<>
 	void Uniform::ApplyValue<unsigned int>(const unsigned int& value) const
 	{
-		assert(VarType::IsUnsignedInteger(m_type));
+		assert(VarType::IsUnsignedInteger(m_type) || VarType::IsSampler(m_type) );
 		glUniform1uiv(m_handle, 1, reinterpret_cast<const unsigned int*>(&value));
+	}
+
+	template<>
+	void Uniform::ApplyValue<unsigned int>(const unsigned int* value, int count) const
+	{
+		assert(VarType::IsUnsignedInteger(m_type) || VarType::IsSampler(m_type) );
+		glUniform1uiv(m_handle, count, reinterpret_cast<const unsigned int*>(value));
 	}
 
 #define ADD_SPEC(C, T, T2, TA) \
 	template<> \
-	inline void Uniform::ApplyValue<TA>(const TA& value) const \
+	void Uniform::ApplyValue<TA>(const TA& value) const \
 	{ \
 		assert(m_type == VarType::GetType<TA>()); \
 		glUniform##C##T##v(m_handle, 1, reinterpret_cast<const T2*>(&value)); \
+	} \
+	template<> \
+	void Uniform::ApplyValue<TA>(const TA* value, int count) const \
+	{ \
+		assert(m_type == VarType::GetType<TA>()); \
+		glUniform##C##T##v(m_handle, count, reinterpret_cast<const T2*>(value)); \
 	}
 
 #define ADD_SPEC_M(C, T, T2, TA) \
 	template<> \
-	inline void Uniform::ApplyValue<TA>(const TA& value) const \
+	void Uniform::ApplyValue<TA>(const TA& value) const \
 	{ \
 		assert(m_type == VarType::GetType<TA>()); \
 		glUniformMatrix##C##T##v(m_handle, 1, false, reinterpret_cast<const T2*>(&value)); \
+	} \
+	template<> \
+	void Uniform::ApplyValue<TA>(const TA* value, int count) const \
+	{ \
+		assert(m_type == VarType::GetType<TA>()); \
+		glUniformMatrix##C##T##v(m_handle, 1, false, reinterpret_cast<const T2*>(value)); \
 	}
 
 #define ADD_SPEC_A(C, T, T2, TA) \
 	template<> \
-	inline void Uniform::ApplyValue<TA>(const std::vector<TA>& value) const \
+	void Uniform::ApplyValue<TA>(const std::vector<TA>& value) const \
 	{ \
 		assert(m_type == VarType::GetType<TA>()); \
 		glUniform##C##T##v(m_handle, static_cast<GLsizei>(value.size()), reinterpret_cast<const T2*>(value.data())); \
@@ -253,6 +293,9 @@ TEST_CASE("[Render] Shaders")
 		CHECK_NE(projection, -1);
 		CHECK_NE(uniform_texture, -1);
 		CHECK_EQ(does_not_exist, -1);
+
+		program->GetUniform("u_texture").ApplyValue(1);
+		program->GetUniform("u_projection").ApplyValue(glm::mat4(1.0));
 
 //		REQUIRE_THROWS({
 //			Render::Uniform aa(-1, Render::VarType::BYTE, 1);
