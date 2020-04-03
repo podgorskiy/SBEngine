@@ -82,6 +82,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/gl3w/include)
 include_directories(${CMAKE_BINARY_DIR}/libs/gl3w/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/imgui)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/glm)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/stb)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/fsal/sources)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/spdlog/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/pugixml/src)
@@ -156,7 +157,7 @@ add_library(ogg ${OGG_SOURCES})
 #####################################################################
 # Oquonie
 #####################################################################
-file(GLOB_RECURSE SOURCES sources/*.cpp sources/*.h)
+file(GLOB_RECURSE SOURCES sources/*.cpp  sources/*.c sources/*.h)
 if (TESTS)
 	file(GLOB_RECURSE TESTS tests/*.cpp)
 endif()

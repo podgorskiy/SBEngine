@@ -2266,7 +2266,6 @@ void nvgStroke(NVGcontext* ctx)
 	const NVGpath* path;
 	int i;
 
-
 	if (strokeWidth < ctx->fringeWidth) {
 		// If the stroke width is less than pixel size, use alpha to emulate coverage.
 		// Since coverage is area, scale by alpha*alpha.

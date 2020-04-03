@@ -1,9 +1,11 @@
 // Tests
+#include "stack_vector.h"
+#include "priority_queue.h"
 #include <fsal.h>
 #include <spdlog/spdlog.h>
 #include <glm/glm.hpp>
 #include "doctest.h"
-#include "stack_vector.h"
+#include <map>
 
 
 TEST_CASE("[fsal] Filepaths")
@@ -124,3 +126,82 @@ TEST_CASE("[stack] vector")
 		CHECK(v.back() == glm::vec2(1.0f, 2.0f));
 	}
 }
+
+
+TEST_CASE("[priority_queue] Basic")
+{
+	PriorityQueue<int> q;
+
+	q.push(2);
+	q.push(5);
+	q.push(8);
+	q.push(2);
+	q.push(8);
+	q.push(5);
+	q.push(-5);
+	q.push(4);
+	q.push(10);
+
+	int v[] = {-5, 2, 2, 4, 5, 5, 8, 8, 10};
+	int i = 0;
+
+	while(q.size() > 0)
+	{
+		int r = q.pop();
+		spdlog::info("{}", r);
+		CHECK_EQ(r, v[i++]);
+	}
+}
+
+
+struct MyObject{
+	int val;
+	std::string name;
+    bool operator < (const MyObject&  other) const
+    {
+        return this->val < other.val;
+    }
+};
+
+
+struct MyObjectComp
+{
+	MyObjectComp(const std::vector<MyObject>& objects): objects(objects) {}
+
+    bool operator()(int it1, int it2) const
+    {
+    	return objects[it1] < objects[it2];
+    }
+	const std::vector<MyObject>& objects;
+};
+
+
+TEST_CASE("[priority_queue] Indexed")
+{
+	std::vector<MyObject> example_registry;
+
+	PriorityQueue<int, MyObjectComp> q(example_registry);
+
+	example_registry.push_back({2, "2"}); q.push(example_registry.size() - 1);
+	example_registry.push_back({5, "5"}); q.push(example_registry.size() - 1);
+	example_registry.push_back({8, "8"}); q.push(example_registry.size() - 1);
+	example_registry.push_back({2, "2"}); q.push(example_registry.size() - 1);
+	example_registry.push_back({8, "8"}); q.push(example_registry.size() - 1);
+	example_registry.push_back({5, "5"}); q.push(example_registry.size() - 1);
+	example_registry.push_back({-5, "-5"}); q.push(example_registry.size() - 1);
+	example_registry.push_back({4, "4"}); q.push(example_registry.size() - 1);
+	example_registry.push_back({10, "10"}); q.push(example_registry.size() - 1);
+
+	int v[] = {-5, 2, 2, 4, 5, 5, 8, 8, 10};
+	int i = 0;
+
+	while(q.size() > 0)
+	{
+		int id = q.pop();
+		auto obj = example_registry[id];
+
+		spdlog::info("{}", obj.name);
+		CHECK_EQ(obj.val, v[i++]);
+	}
+}
+
