@@ -41,4 +41,6 @@ namespace Render
 	private:
 		DebugDevice  m_device;
 	};
+
+	bool CheckExtension(const char* extension);
 }

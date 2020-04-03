@@ -116,26 +116,35 @@ void DebugDevice::unlock()
 }
 
 
-//std::set<std::string> InitExtensionList()
-//{
-//	std::set<std::string> extensions;
-//	GLint n = 0;
-//	glGetIntegerv(GL_NUM_EXTENSIONS, &n);
-//
-//	LOGI("Available OpenGL extensions:");
-//
-//	for (GLint i = 0; i < n; i++)
-//	{
-//		const char* extension = (const char*) glGetStringi(GL_EXTENSIONS, i);
-//		extensions.insert(extension);
-//		LOGI("\t- %s", extension);
-//	}
-//	return extensions;
-//}
+static std::set<std::string> InitExtensionList()
+{
+	std::set<std::string> extensions;
+	GLint n = 0;
+	glGetIntegerv(GL_NUM_EXTENSIONS, &n);
 
-//
-//bool CheckExtension(const char* extension)
-//{
-//	static std::set<std::string> extensions = InitExtensionList();
-//	return extensions.find(extension) != extensions.end();
-//}
+	spdlog::info("Available OpenGL extensions:");
+
+	for (GLint i = 0; i < n; i++)
+	{
+		const char* extension = (const char*) glGetStringi(GL_EXTENSIONS, i);
+		extensions.insert(extension);
+		spdlog::info("\t- {}", extension);
+	}
+	return extensions;
+}
+
+bool Render::CheckExtension(const char* extension)
+{
+	static std::set<std::string> extensions = InitExtensionList();
+	return extensions.find(extension) != extensions.end();
+}
+
+#include <doctest.h>
+
+TEST_CASE("[Render] Extensions")
+{
+	SUBCASE("Basic")
+	{
+		CHECK_EQ(CheckExtension("Does not exists"), false);
+	}
+}
