@@ -1,4 +1,5 @@
 #pragma once
+#include "TextureFormat.h"
 #include "Render/Image/Image.h"
 #include <glm/glm.hpp>
 #include <memory>
@@ -20,18 +21,18 @@ namespace Render
 
 		virtual Blob Read(int mipmap, int face) = 0;
 
-		virtual Image ReadImage(int mipmap, int face) = 0;
-
 		virtual glm::ivec2 GetSize(int mipmap) const = 0;
 
 		virtual int GetFaceCount() const = 0;
 
-		virtual Image::DataType GetDataType() const = 0;
+		virtual TextureFormat GetFormat() const = 0;
 
-		virtual size_t GetBPP() const
+		virtual size_t GetBitsPerPixel() const
 		{
-			return Image::GetBPP(GetDataType());
+			return TextureFormat::GetBitsPerPixel(GetFormat().pixel_format);
 		}
+
+		virtual glm::ivec2 GetBlockSize() const = 0;
 
 		virtual ~IReader() = default;
 	};
@@ -42,15 +43,15 @@ namespace Render
 	public:
 		IReader::Blob Read(int mipmap, int face) final { return m_reader->Read(mipmap, face); }
 
-		Image ReadImage(int mipmap, int face) final  { return m_reader->ReadImage(mipmap, face); }
-
 		glm::ivec2 GetSize(int mipmap) const final  { return m_reader->GetSize(mipmap); }
 
 		int GetFaceCount() const final   { return m_reader->GetFaceCount(); }
 
-		Image::DataType GetDataType() const final { return m_reader->GetDataType(); }
+		TextureFormat GetFormat() const final { return m_reader->GetFormat(); }
 
-		size_t GetBPP() const final  { return m_reader->GetBPP(); }
+		size_t GetBitsPerPixel() const final  { return m_reader->GetBitsPerPixel(); }
+
+		virtual glm::ivec2 GetBlockSize() const = 0;
 
 	private:
 		IReaderPtr m_reader;
