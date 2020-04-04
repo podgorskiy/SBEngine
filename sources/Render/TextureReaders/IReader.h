@@ -25,6 +25,8 @@ namespace Render
 
 		virtual int GetFaceCount() const = 0;
 
+		virtual int GetMipmapCount() const = 0;
+
 		virtual TextureFormat GetFormat() const = 0;
 
 		virtual size_t GetBitsPerPixel() const
@@ -32,7 +34,10 @@ namespace Render
 			return TextureFormat::GetBitsPerPixel(GetFormat().pixel_format);
 		}
 
-		virtual glm::ivec2 GetBlockSize() const = 0;
+		virtual glm::ivec2 GetBlockSize()
+		{
+			return TextureFormat::GetMinBlockSize(GetFormat().pixel_format);
+		}
 
 		virtual ~IReader() = default;
 	};
@@ -47,11 +52,13 @@ namespace Render
 
 		int GetFaceCount() const final   { return m_reader->GetFaceCount(); }
 
+		int GetMipmapCount() const final { return m_reader->GetMipmapCount(); }
+
 		TextureFormat GetFormat() const final { return m_reader->GetFormat(); }
 
 		size_t GetBitsPerPixel() const final  { return m_reader->GetBitsPerPixel(); }
 
-		virtual glm::ivec2 GetBlockSize() const = 0;
+		glm::ivec2 GetBlockSize() final  { return m_reader->GetBlockSize(); }
 
 	private:
 		IReaderPtr m_reader;
