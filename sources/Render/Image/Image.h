@@ -8,7 +8,7 @@
 class Image
 {
 public:
-	enum DataType
+	enum DataType: uint8_t
 	{
 		R8 = 0,
 		R16,
@@ -17,11 +17,13 @@ public:
 		RGB8,
 		RGBA8,
 
-		FLOAT_POINT = 0x100,
+		FLOAT_POINT = 0x10,
 		RF = FLOAT_POINT,
 		RGF,
 		RGBF,
 		RGBAF,
+
+		COMPRESSED = 0x20
 	};
 
 	enum DFType
@@ -88,6 +90,8 @@ public:
 	size_t GetBPP() const;
 
 	glm::ivec2 GetSize() const;
+
+	int GetChannelCount() const;
 
 	int rows() const;
 
@@ -202,6 +206,8 @@ public:
 	template<typename T1, typename T2>
 	Image _Cast(Image& out) const;
 
+	void SaveToTGA(const char* filename);
+
 private:
 	std::shared_ptr<byte> _ptr;
 	glm::ivec2 size = glm::ivec2(0);
@@ -212,7 +218,7 @@ private:
 	DataType dataType = R8;
 };
 
-inline Image operator - (Image a)
+inline Image operator - (const Image& a)
 {
 	if (a.GetType() & Image::FLOAT_POINT)
 	{
@@ -886,6 +892,30 @@ inline Image Image::_Div(Image x) const
 		}
 	}
 	return out;
+}
+
+
+inline int Image::GetChannelCount() const
+{
+	switch (dataType)
+	{
+		case R8:
+		case R16:
+		case R32:
+		case RF:
+			return 1;
+		case RG16:
+		case RGF:
+			return 2;
+		case RGB8:
+		case RGBF:
+			return 3;
+		case RGBA8:
+		case RGBAF:
+			return 4;
+		default:
+			return 0;
+	}
 }
 
 

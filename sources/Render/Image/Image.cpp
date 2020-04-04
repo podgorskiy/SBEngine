@@ -1825,3 +1825,50 @@ template Image Image::ResizeCollisionFix<Image::pixelR16>(Image, Image, glm::ive
 template Image Image::ResizeCollisionFix<Image::pixelRF>(Image, Image, glm::ivec2) const;
 template Image Image::ResizeCollisionFix<Image::pixelRGB8>(Image, Image, glm::ivec2) const;
 template Image Image::ResizeCollisionFix<Image::pixelRGBF>(Image, Image, glm::ivec2) const;
+
+
+void Image::SaveToTGA(const char * filename)
+{
+	unsigned char* p = GetRow<uint8_t>(0);
+
+	FILE* file = fopen(filename, "wb");
+	char buff[18];
+	int headerSize = sizeof(buff);
+	memset(buff, 0, headerSize);
+	buff[2] = 2;
+	int height = GetSize().y;
+	int width = GetSize().x;
+
+	buff[0xc] = width % 256;
+	buff[0xd] = width / 256;
+	buff[0xe] = height % 256;
+	buff[0xf] = height / 256;
+	buff[0x10] = 24;
+	fwrite(buff, headerSize, 1, file);
+
+	int channelCount = GetChannelCount();
+
+	uint8_t* row = new uint8_t[GetSize().x * 3];
+
+	for (int j = size.y - 1; j >= 0; --j)
+	{
+		uint8_t* p = GetRow<uint8_t>(j);
+		for (int j = 0; j < GetSize().x; ++j)
+		{
+			uint8_t rgb[3] = { 0, 0, 0 };
+
+			for (int k = 0; k < channelCount; ++k)
+			{
+				rgb[k] = *(p + j * channelCount + k);
+			}
+
+			row[j * 3 + 0] = rgb[2];
+			row[j * 3 + 1] = rgb[1];
+			row[j * 3 + 2] = rgb[0];
+		}
+		fwrite(row, GetSize().x * 3, 1, file);
+	}
+
+	delete[] row;
+	fclose(file);
+}
