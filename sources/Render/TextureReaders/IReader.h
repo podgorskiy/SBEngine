@@ -34,7 +34,7 @@ namespace Render
 			return TextureFormat::GetBitsPerPixel(GetFormat().pixel_format);
 		}
 
-		virtual glm::ivec2 GetBlockSize()
+		virtual glm::ivec2 GetBlockSize() const
 		{
 			return TextureFormat::GetMinBlockSize(GetFormat().pixel_format);
 		}
@@ -58,7 +58,7 @@ namespace Render
 
 		size_t GetBitsPerPixel() const final  { return m_reader->GetBitsPerPixel(); }
 
-		glm::ivec2 GetBlockSize() final  { return m_reader->GetBlockSize(); }
+		glm::ivec2 GetBlockSize() const final  { return m_reader->GetBlockSize(); }
 
 	private:
 		IReaderPtr m_reader;

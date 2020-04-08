@@ -1,7 +1,12 @@
 #pragma once
+#include "Render/runtime_error.h"
 #include <glm/glm.hpp>
 #include <inttypes.h>
 #include <stdlib.h>
+#include <string>
+#include <vector>
+#include <string.h>
+#include <ctype.h>
 
 
 namespace Render
@@ -18,6 +23,28 @@ namespace Render
 			      (static_cast<uint64_t>(C3Bits) << 48u) + (static_cast<uint64_t>(C4Bits) << 56u))
 		};
 	};
+
+	inline uint64_t
+	getPixelType(char C1Name, uint8_t C1Bits, char C2Name = 0, uint8_t C2Bits = 0, char C3Name = 0, uint8_t C3Bits = 0,
+	             char C4Name = 0, uint8_t C4Bits = 0)
+	{
+		return (static_cast<uint64_t>(C1Name) + (static_cast<uint64_t>(C2Name) << 8u) +
+		        (static_cast<uint64_t>(C3Name) << 16u) + (static_cast<uint64_t>(C4Name) << 24u) +
+		        (static_cast<uint64_t>(C1Bits) << 32u) + (static_cast<uint64_t>(C2Bits) << 40u) +
+		        (static_cast<uint64_t>(C3Bits) << 48u) + (static_cast<uint64_t>(C4Bits) << 56u));
+	}
+
+	uint64_t ParsePixelType(const char* s);
+
+	struct DecodedType
+	{
+		bool compressed;
+		std::vector<char> channel_names;
+		std::vector<uint8_t> channel_sizes;
+	};
+
+	DecodedType DecodePixelType(uint64_t pixel_format);
+
 
 	struct TextureFormat
 	{
@@ -99,25 +126,38 @@ namespace Render
 			R32 = PixelType<'r', 32>::ID,
 		};
 
-		enum DataType
+		enum DataType: uint32_t
 		{
 			Signed   = 0b00001,
 			Norm     = 0b00010,
 
 			WidthMask= 0b11100,
 
-			Byte     = 0b00100,
-			Short    = 0b01000,
-			Integer  = 0b01100,
-			Float    = 0b10000,
+			Byte     = 0b00000,
+			Short    = 0b00100,
+			Integer  = 0b01000,
+			Float    = 0b01100,
+
+			UnsignedByteNormalized = Byte,
+			SignedByteNormalized = Byte | Signed,
+			UnsignedByte = Byte | Norm,
+			SignedByte = Byte | Norm | Signed,
+			UnsignedShortNormalized = Short,
+			SignedShortNormalized = Short | Signed,
+			UnsignedShort = Short | Norm,
+			SignedShort = Short | Norm | Signed,
+			UnsignedIntegerNormalized = Integer,
+			SignedIntegerNormalized = Integer | Signed,
+			UnsignedInteger = Integer | Norm,
+			SignedInteger = Integer | Norm | Signed,
 		};
 
-		bool IsNormed(DataType t) { return t & Norm; }
-		bool IsSigned(DataType t) { return t & Signed; }
-		bool IsByte(DataType t)   { return (t & WidthMask) == Byte; }
-		bool IsShort(DataType t)  { return (t & WidthMask) == Short; }
-		bool IsInteger(DataType t){ return (t & WidthMask) == Integer; }
-		bool IsFloat(DataType t)  { return (t & WidthMask) == Float; }
+		bool IsNormalized(DataType t) { return !(t & Norm); }
+		bool IsSigned(DataType t)     { return t & Signed; }
+		bool IsByte(DataType t)       { return (t & WidthMask) == Byte; }
+		bool IsShort(DataType t)      { return (t & WidthMask) == Short; }
+		bool IsInteger(DataType t)    { return (t & WidthMask) == Integer; }
+		bool IsFloat(DataType t)      { return (t & WidthMask) == Float; }
 
 		ColourSpace colorspace;
 		Format pixel_format;
@@ -125,5 +165,10 @@ namespace Render
 
 		static size_t GetBitsPerPixel(Format f);
 		static glm::ivec2 GetMinBlockSize(Format f);
+		static size_t GetChannelCount(Format f)
+		{
+			auto decoded = DecodePixelType(f);
+			return decoded.channel_names.size();
+		}
 	};
 }
