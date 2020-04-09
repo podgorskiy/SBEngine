@@ -69,7 +69,7 @@ void Object::Load(std::string path)
 		}
 	}
 
-	for (int f = 0; f < indices.size() / 3; ++f)
+	for (size_t f = 0; f < indices.size() / 3; ++f)
 	{
 		int i = indices[3 * f + 0];
 		int j = indices[3 * f + 1];
@@ -86,7 +86,7 @@ void Object::Load(std::string path)
 	}
 
 
-	for (long f = 0; f < indices.size() / 3; f++)
+	for (size_t f = 0; f < indices.size() / 3; f++)
 	{
 		int i = indices[3 * f + 0];
 		int j = indices[3 * f + 1];
@@ -123,7 +123,7 @@ void Object::Load(std::string path)
 		vertices[k].tangent += sdir;
 	}
 
-	for (int i = 0; i < vertices.size(); ++i)
+	for (size_t i = 0; i < vertices.size(); ++i)
 	{
 		vertices[i].normal = glm::normalize(vertices[i].normal);
 		vertices[i].tangent = glm::normalize(vertices[i].tangent - vertices[i].normal * glm::dot(vertices[i].normal, vertices[i].tangent));

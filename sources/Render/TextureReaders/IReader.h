@@ -56,6 +56,10 @@ namespace Render
 	class TextureReader: private IReader
 	{
 	public:
+		TextureReader(IReaderPtr reader): m_reader(reader) {}
+		TextureReader() = default;
+		TextureReader(const TextureReader& other) = default;
+
 		IReader::Blob Read(int mipmap, int face) final { return m_reader->Read(mipmap, face); }
 
 		glm::ivec3 GetSize(int mipmap) const final  { return m_reader->GetSize(mipmap); }

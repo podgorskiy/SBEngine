@@ -152,12 +152,12 @@ namespace Render
 			SignedInteger = Integer | Norm | Signed,
 		};
 
-		bool IsNormalized(DataType t) { return !(t & Norm); }
-		bool IsSigned(DataType t)     { return t & Signed; }
-		bool IsByte(DataType t)       { return (t & WidthMask) == Byte; }
-		bool IsShort(DataType t)      { return (t & WidthMask) == Short; }
-		bool IsInteger(DataType t)    { return (t & WidthMask) == Integer; }
-		bool IsFloat(DataType t)      { return (t & WidthMask) == Float; }
+		static bool IsNormalized(DataType t) { return !(t & Norm); }
+		static bool IsSigned(DataType t)     { return t & Signed; }
+		static bool IsByte(DataType t)       { return (t & WidthMask) == Byte; }
+		static bool IsShort(DataType t)      { return (t & WidthMask) == Short; }
+		static bool IsInteger(DataType t)    { return (t & WidthMask) == Integer; }
+		static bool IsFloat(DataType t)      { return (t & WidthMask) == Float; }
 
 		ColourSpace colorspace;
 		Format pixel_format;
@@ -171,4 +171,6 @@ namespace Render
 			return decoded.channel_names.size();
 		}
 	};
+
+	std::vector<uint32_t> GetGLMappedTypes(TextureFormat format);
 }

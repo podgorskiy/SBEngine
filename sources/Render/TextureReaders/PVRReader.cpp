@@ -70,7 +70,6 @@ PVRReader::PVRReader(fsal::File file): file(file), version(-1), flags(0), channe
 	}
 
 	assert(flags == 0 || flags == 2);
-	assert(depth == 1);
 	assert(colourSpace == TextureFormat::lRGB || colourSpace == TextureFormat::sRGB);
 	assert(numSurfaces == 1);
 	assert(numFaces == 1 || numFaces == 6);

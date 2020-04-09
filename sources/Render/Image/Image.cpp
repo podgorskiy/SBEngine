@@ -9,8 +9,9 @@
 #include <algorithm>
 #include <string.h>
 
-
-#pragma warning( disable : 4244 )  
+#ifdef _MSC_VER
+#pragma warning( disable : 4244 )
+#endif
 
 template<typename Ty>
 Ty sqr(Ty a)
@@ -46,7 +47,7 @@ Image Image::Empty(const Image& sameAs)
 Image Image::FromRawData(const void* data, DataType d, glm::ivec2 size)
 {
 	Image im = Empty(size, d);
-	size_t bpp = im.GetBPP();
+	//size_t bpp = im.GetBPP();
 
 	for (int j = 0; j < im.size.y; ++j)
 	{
@@ -601,7 +602,7 @@ void Image::CarveVerticalInplace(const std::vector<short>& seam)
 Image Image::Copy() const
 {
 	Image im = Empty(size, dataType);
-	size_t bpp = GetBPP();
+	// size_t bpp = GetBPP();
 
 	for (int j = 0; j < im.size.y; ++j)
 	{
@@ -1126,7 +1127,7 @@ Image Image::ComputeDF(DFType type) const
 			float* d_ptr = d.GetRow<float>(j);
 			float* d_ptr_ym = d.GetRow<float>(j - 1);
 			pixelRG16* p_ptr = p.GetRow<pixelRG16>(j);
-			pixelRG16* p_ptr_yp = p.GetRow<pixelRG16>(j + 1);
+			// pixelRG16* p_ptr_yp = p.GetRow<pixelRG16>(j + 1);
 			pixelRG16* p_ptr_ym = p.GetRow<pixelRG16>(j - 1);
 			for (int i = 1; i < width - 1; ++i)
 			{
@@ -1162,7 +1163,7 @@ Image Image::ComputeDF(DFType type) const
 			float* d_ptr_yp = d.GetRow<float>(j + 1);
 			pixelRG16* p_ptr = p.GetRow<pixelRG16>(j);
 			pixelRG16* p_ptr_yp = p.GetRow<pixelRG16>(j + 1);
-			pixelRG16* p_ptr_ym = p.GetRow<pixelRG16>(j - 1);
+			// pixelRG16* p_ptr_ym = p.GetRow<pixelRG16>(j - 1);
 			for (int i = width - 2; i > 0; --i)
 			{
 				float& d_xy = d_ptr[i];
@@ -1199,7 +1200,7 @@ Image Image::ComputeDF(DFType type) const
 			float* d_ptr_ym = d.GetRow<float>(j - 1);
 			float* d_ptr_ym_ym = d.GetRow<float>(j - 2);
 			pixelRG16* p_ptr = p.GetRow<pixelRG16>(j);
-			pixelRG16* p_ptr_yp = p.GetRow<pixelRG16>(j + 1);
+			// pixelRG16* p_ptr_yp = p.GetRow<pixelRG16>(j + 1);
 			pixelRG16* p_ptr_ym = p.GetRow<pixelRG16>(j - 1);
 			pixelRG16* p_ptr_ym_ym = p.GetRow<pixelRG16>(j - 2);
 			for (int i = 2; i < width - 2; ++i)
@@ -1258,7 +1259,7 @@ Image Image::ComputeDF(DFType type) const
 			pixelRG16* p_ptr = p.GetRow<pixelRG16>(j);
 			pixelRG16* p_ptr_yp = p.GetRow<pixelRG16>(j + 1);
 			pixelRG16* p_ptr_yp_yp = p.GetRow<pixelRG16>(j + 2);
-			pixelRG16* p_ptr_ym = p.GetRow<pixelRG16>(j - 1);
+			// pixelRG16* p_ptr_ym = p.GetRow<pixelRG16>(j - 1);
 			for (int i = width - 3; i > 1; --i)
 			{
 				float& d_xy = d_ptr[i];
@@ -1335,7 +1336,7 @@ Image Image::_GaussBlurX(float r) const
 	int half = int(r);
 	std::vector<float> kv = misc::GaussKernel(r / 3.0f, half * 2 + 1);
 	const float* __restrict kernel = &kv[0];
-	const int s = (int)kv.size();
+	// const int s = (int)kv.size();
 	Image out = Image::Empty(*this);
 
 	int width = GetSize().x;
@@ -1829,8 +1830,6 @@ template Image Image::ResizeCollisionFix<Image::pixelRGBF>(Image, Image, glm::iv
 
 void Image::SaveToTGA(const char * filename)
 {
-	unsigned char* p = GetRow<uint8_t>(0);
-
 	FILE* file = fopen(filename, "wb");
 	char buff[18];
 	int headerSize = sizeof(buff);

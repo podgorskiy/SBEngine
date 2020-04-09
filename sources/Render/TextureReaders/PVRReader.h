@@ -48,4 +48,10 @@ namespace Render
 		bool x_axis_flipped;
 		bool y_axis_flipped;
 	};
+
+	inline TextureReader MakePVRReader(fsal::File file)
+	{
+		Render::IReaderPtr reader = std::make_shared<PVRReader>(file);
+		return Render::TextureReader(reader);
+	}
 }

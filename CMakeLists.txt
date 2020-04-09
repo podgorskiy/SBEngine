@@ -4,7 +4,6 @@ cmake_policy(SET CMP0072 NEW)
 cmake_policy(SET CMP0048 NEW)
 cmake_policy(SET CMP0079 NEW)
 
-configure_file(albido.pvr albido.pvr COPYONLY)
 configure_file(LeePerrySmith.obj LeePerrySmith.obj COPYONLY)
 
 project(Oquonie)
@@ -165,6 +164,14 @@ endif()
 add_executable(Oquonie ${SOURCES} ${TESTS})
 target_link_libraries(Oquonie gl3w glfw imgui pugixml fsal lz4 zlib_static vorbis ogg ${OPENGL_LIBRARIES} ${OPENAL_LIBRARY})
 
+configure_file(test_rgba8888.dds test_rgba8888.dds COPYONLY)
+configure_file(test_rgba8888.pvr test_rgba8888.pvr COPYONLY)
+configure_file(test_rgb888.pvr test_rgb888.pvr COPYONLY)
+configure_file(test_rgb565.pvr test_rgb565.pvr COPYONLY)
+configure_file(test_etc1.pvr test_etc1.pvr COPYONLY)
+configure_file(test_etc2.pvr test_etc2.pvr COPYONLY)
+configure_file(test_pvrtc_2bpp.pvr test_pvrtc_2bpp.pvr COPYONLY)
+configure_file(test_pvrtc_4bpp.pvr test_pvrtc_4bpp.pvr COPYONLY)
 
 if(MSVC)
 else()

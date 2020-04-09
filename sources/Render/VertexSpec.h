@@ -52,7 +52,7 @@ namespace Render
 			for (int i = 0; m_attributes[i].components != 0; ++i)
 			{
 				Attribute& attr = m_attributes[i];
-				if (attr.handle == -1)
+				if (attr.handle == uint32_t(-1))
 					continue;
 				glEnableVertexAttribArray(attr.handle);
 				auto offset_ = static_cast<size_t>(attr.offset);
@@ -66,7 +66,7 @@ namespace Render
 			for (int i = 0; m_attributes[i].components != 0; ++i)
 			{
 				Attribute& attr = m_attributes[i];
-				if (attr.handle == -1)
+				if (attr.handle == uint32_t(-1))
 					continue;
 				glDisableVertexAttribArray(attr.handle);
 			}

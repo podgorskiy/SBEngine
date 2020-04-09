@@ -596,73 +596,73 @@ inline float CastPixel(Image::pixelRGBAF x)
 template<>
 inline Image::pixelRGBF CastPixel(Image::pixelR32 x)
 {
-	return static_cast<Image::pixelRGBF>((float)x);
+	return Image::pixelRGBF((float)x);
 }
 
 template<>
 inline Image::pixelRGBF CastPixel(Image::pixelRG16 x)
 {
-	return static_cast<Image::pixelRGBF>(x.x, x.y, 0.0f);
+	return Image::pixelRGBF(x.x, x.y, 0.0f);
 }
 
 template<>
 inline Image::pixelRGBF CastPixel(Image::pixelRGF x)
 {
-	return static_cast<Image::pixelRGBF>(x.x, x.y, 0.0f);
+	return Image::pixelRGBF(x.x, x.y, 0.0f);
 }
 
 template<>
 inline Image::pixelRGB8 CastPixel(Image::pixelR16 x)
 {
-	return static_cast<Image::pixelRGB8>((Image::byte)x);
+	return Image::pixelRGB8((Image::byte)x);
 }
 
 template<>
 inline Image::pixelRGB8 CastPixel(Image::pixelRGF x)
 {
-	return static_cast<Image::pixelRGB8>((Image::byte)x.x, (Image::byte)x.y, 0);
+	return Image::pixelRGB8((Image::byte)x.x, (Image::byte)x.y, 0);
 }
 
 template<>
 inline Image::pixelRGB8 CastPixel(Image::pixelRF x)
 {
-	return static_cast<Image::pixelRGB8>((Image::byte)x);
+	return Image::pixelRGB8((Image::byte)x);
 }
 
 template<>
 inline Image::pixelRGB8 CastPixel(Image::pixelRG16 x)
 {
-	return static_cast<Image::pixelRGB8>((Image::byte)x.x, (Image::byte)x.y, 0);
+	return Image::pixelRGB8((Image::byte)x.x, (Image::byte)x.y, 0);
 }
 
 template<>
 inline Image::byte CastPixel<Image::pixelRG16, Image::byte>(Image::pixelRG16 x)
 {
-	return static_cast<Image::byte>(x.x);
+	return Image::byte(x.x);
 }
 
 template<>
 inline Image::byte CastPixel<Image::pixelRGB8, Image::byte>(Image::pixelRGB8 x)
 {
-	return static_cast<Image::byte>(x.x);
+	return Image::byte(x.x);
 }
 
 template<>
 inline Image::byte CastPixel<Image::pixelRGBA8, Image::byte>(Image::pixelRGBA8 x)
 {
-	return static_cast<Image::byte>(x.x);
+	return Image::byte(x.x);
 }
 
 template<>
 inline Image::byte CastPixel<Image::pixelRGF, Image::byte>(Image::pixelRGF x)
 {
-	return static_cast<Image::byte>(x.x);
+	return Image::byte(x.x);
 }
 
 template<>
 inline Image::byte CastPixel<Image::pixelRGBF, Image::byte>(Image::pixelRGBF x)
 {
-	return static_cast<Image::byte>(x.x);
+	return Image::byte(x.x);
 }
 
 template<>

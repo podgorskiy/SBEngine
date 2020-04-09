@@ -139,6 +139,27 @@ bool Render::CheckExtension(const char* extension)
 	return extensions.find(extension) != extensions.end();
 }
 
+static std::set<std::string> GetSupportedTextureCompressionFormats()
+{
+	std::set<std::string> extensions;
+	GLint n = 0;
+	glGetIntegerv(GL_NUM_COMPRESSED_TEXTURE_FORMATS, &n);
+
+	spdlog::info("Available {} Texture compression formats:", n);
+	glGetIntegerv(GL_NUM_COMPRESSED_TEXTURE_FORMATS, &n);
+	GLint* fs = new GLint[n];
+	glGetIntegerv(GL_COMPRESSED_TEXTURE_FORMATS, fs);
+	for (int i = 0; i < n; i++)
+	{
+		// _compressed_texure_formats.push_back(*(fs + i));
+		spdlog::info("{:x}", *(fs + i));
+	}
+
+//	const char* extension = (const char*) glGetIntegerv(GL_COMPRESSED_TEXTURE_FORMATS, i);
+//	spdlog::info("\t- {}", extension);
+	return extensions;
+}
+
 #include <doctest.h>
 
 TEST_CASE("[Render] Extensions")
@@ -146,6 +167,7 @@ TEST_CASE("[Render] Extensions")
 	SUBCASE("Basic")
 	{
 		CHECK_EQ(CheckExtension("Does not exists"), false);
+		GetSupportedTextureCompressionFormats();
 	}
 
 	SUBCASE("Check compression formats")

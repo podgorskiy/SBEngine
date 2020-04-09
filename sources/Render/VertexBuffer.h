@@ -52,9 +52,9 @@ namespace Render
 		int GetIndexSize() const;
 
 	private:
+		int m_stride;
 		int m_numOfVertices;
 		int	m_numOfIndices;
-		int m_stride;
 		uint32_t m_indexType;
 		uint32_t m_vertexBufferHandle;
 		uint32_t m_indexBufferHandle;
