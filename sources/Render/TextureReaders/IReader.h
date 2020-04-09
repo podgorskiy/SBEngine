@@ -21,7 +21,12 @@ namespace Render
 
 		virtual Blob Read(int mipmap, int face) = 0;
 
-		virtual glm::ivec2 GetSize(int mipmap) const = 0;
+		virtual glm::ivec3 GetSize(int mipmap) const = 0;
+
+		virtual glm::ivec2 GetSize2D(int mipmap) const
+		{
+			return glm::ivec2(GetSize(mipmap));
+		}
 
 		virtual int GetFaceCount() const = 0;
 
@@ -34,7 +39,12 @@ namespace Render
 			return TextureFormat::GetBitsPerPixel(GetFormat().pixel_format);
 		}
 
-		virtual glm::ivec2 GetBlockSize() const
+		virtual glm::ivec3 GetBlockSize() const
+		{
+			return glm::ivec3(TextureFormat::GetMinBlockSize(GetFormat().pixel_format), 1);
+		}
+
+		virtual glm::ivec2 GetBlockSize2D() const
 		{
 			return TextureFormat::GetMinBlockSize(GetFormat().pixel_format);
 		}
@@ -48,7 +58,7 @@ namespace Render
 	public:
 		IReader::Blob Read(int mipmap, int face) final { return m_reader->Read(mipmap, face); }
 
-		glm::ivec2 GetSize(int mipmap) const final  { return m_reader->GetSize(mipmap); }
+		glm::ivec3 GetSize(int mipmap) const final  { return m_reader->GetSize(mipmap); }
 
 		int GetFaceCount() const final   { return m_reader->GetFaceCount(); }
 
@@ -58,7 +68,7 @@ namespace Render
 
 		size_t GetBitsPerPixel() const final  { return m_reader->GetBitsPerPixel(); }
 
-		glm::ivec2 GetBlockSize() const final  { return m_reader->GetBlockSize(); }
+		glm::ivec3 GetBlockSize() const final  { return m_reader->GetBlockSize(); }
 
 	private:
 		IReaderPtr m_reader;

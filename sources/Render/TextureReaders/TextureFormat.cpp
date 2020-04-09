@@ -33,7 +33,7 @@ uint64_t Render::ParsePixelType(const char* s)
 	}
 	if (i == 0)
 	{
-		throw runtime_error("Format should start from channel names, such as: r, g, b, a, l, d. Got %s", buff[0]);
+		throw runtime_error("Format should start from channel names, such as: r, g, b, a, l, d. Got %c", buff[0]);
 	}
 	for (int _i = i; _i < 4; _i++)
 	{
