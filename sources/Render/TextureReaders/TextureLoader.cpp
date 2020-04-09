@@ -1,5 +1,6 @@
 #include "TextureLoader.h"
 #include "PVRReader.h"
+#include "CommonImageFormatReader.h"
 #include <spdlog/spdlog.h>
 
 
@@ -22,6 +23,10 @@ Render::TexturePtr Render::LoadTexture(fsal::Location path, fsal::FileSystem* fs
 	if (Render::PVRReader::CheckIfPVR(w))
 	{
 		reader = MakePVRReader(file);
+	}
+	else if (Render::CommonImageFormatReader::CheckIfCommonImage(file))
+	{
+		reader = MakeCommonImageFormatReader(file);
 	}
 	else
 	{

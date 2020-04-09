@@ -31,3 +31,6 @@
 [submodule "libs/doctest"]
 	path = libs/doctest
 	url = https://github.com/onqtam/doctest.git
+[submodule "libs/scriberlib"]
+	path = libs/scriberlib
+	url = https://github.com/podgorskiy/scriberlib.git

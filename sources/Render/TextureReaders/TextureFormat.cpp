@@ -272,9 +272,15 @@ glm::ivec2 TextureFormat::GetMinBlockSize(Format f)
 std::string GetStringRepresentation(TextureFormat format)
 {
 	auto d = DecodePixelType(format.pixel_format);
+	char buff [64];
+	if (d.compressed)
+	{
+		sprintf(buff, "Compressed 0x%x", (int)format.pixel_format);
+		return buff;
+	}
+
 	std::string str(d.channel_names.begin(), d.channel_names.end());
 
-	char buff [32];
 	for (auto s: d.channel_sizes)
 	{
 		sprintf(buff, "%d", s);

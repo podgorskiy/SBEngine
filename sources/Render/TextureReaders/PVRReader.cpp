@@ -115,13 +115,13 @@ PVRReader::PVRReader(fsal::File file): file(file), version(-1), flags(0), channe
 	}
 }
 
-int sizeof_4_ary_tree(int h)
+static int sizeof_4_ary_tree(int h)
 {
 	return ((1u << uint32_t(2 * (h + 1))) - 1) / (4 - 1);
 }
 
 template<typename T, int D>
-T prod(const glm::vec<D, T>& x)
+inline T prod(const glm::vec<D, T>& x)
 {
 	T v = 1;
 	for (int i = 0; i < D; ++i)
