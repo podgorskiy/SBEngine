@@ -9,6 +9,13 @@
 #include <map>
 #include <glm/gtc/matrix_transform.hpp>
 #include "Render/DebugRenderer.h"
+#include "Render/TextureReaders/TextureLoader.h"
+#include "Render/GLDebugMessage.h"
+#include "UI/Block.h"
+#include "Vector/nanovg.h"
+#include "Vector/nanovg_backend.h"
+#include "Vector/demo.h"
+
 
 #define DOCTEST_CONFIG_IMPLEMENT
 #include <doctest.h>
@@ -22,10 +29,11 @@
 #include <Keyboard.h>
 #include <Music.h>
 #include "Audio.h"
+#include "aabb.h"
 
 
 Keyboard keyboard;
-Render::DebugRenderer dr;
+NVGcontext* vg = nullptr;
 
 
 Application::Application(int argc, const char* const* argv)
@@ -63,7 +71,7 @@ Application::Application(int argc, const char* const* argv)
 	spdlog::info("OpenGL {} GLSL: {}", OpenGLversion, GLSLversion);
 
 
-	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+	glClearColor(0.7f, 0.7f, 0.7f, 1.0f);
 
 
 	const char* vertex_shader_src = R"(
@@ -72,7 +80,6 @@ Application::Application(int argc, const char* const* argv)
 
 		uniform mat4 u_modelView;
 		uniform mat4 u_model;
-		uniform vec3 u_camera_pos;
 		uniform mat4 u_projection;
 
 		varying vec2 v_uv;
@@ -108,12 +115,21 @@ Application::Application(int argc, const char* const* argv)
 
 	m_obj.Load("LeePerrySmith.obj");
 	m_obj.Collect(m_program);
-	dr.Init();
+	m_dr.Init();
 
-	m_texture = Texture::LoadTexture("albido.pvr");
+	{
+		Render::debug_guard<> debug_lock;
+		m_texture = Render::LoadTexture("test.png");
+	}
 
 	Oquonie::GetInstance()->Install();
 	Oquonie::GetInstance()->Start();
+
+	vg = nvgCreateContext(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
+	if (vg == nullptr)
+	{
+		spdlog::error("Error, Could not init nanovg.");
+	}
 }
 
 
@@ -121,14 +137,11 @@ Application::~Application()
 {
 }
 
-inline void* ToVoidPointer(int offset)
-{
-	size_t offset_ = static_cast<size_t>(offset);
-	return reinterpret_cast<void*>(offset_);
-}
 
 void Application::Draw(float time)
 {
+	Render::debug_guard<> debug_lock;
+
 	Oquonie::GetInstance()->m_music->m_audio.Update();
 
 	ImGui::Begin("IntroductionToComputerGraphics");
@@ -184,7 +197,6 @@ void Application::Draw(float time)
 	glUniformMatrix4fv(u_projection, 1, GL_FALSE, &projection[0][0]);
 	glUniformMatrix4fv(u_modelView, 1, GL_FALSE, &view[0][0]);
 	glUniformMatrix4fv(u_model, 1, GL_FALSE, &model[0][0]);
-	glUniform3fv(u_camera_pos, 1, &camera_pos[0]);
 
 	glUniform1i(m_uniform_texture, 0);
 
@@ -201,14 +213,14 @@ void Application::Draw(float time)
 
 	auto viewProjection = projection * view;
 
-	Render::DrawCoordinateSystemOrigin(dr, viewProjection);
+	Render::DrawCoordinateSystemOrigin(m_dr, viewProjection);
 
 	for (int j = 0; j < 10; ++j)
 	{
 		glm::mat4 teapot_coordinate_system = glm::rotate(glm::mat4(1.0f), j / 10.0f * 2.0f * 3.14f, glm::vec3(0.0, 1.0, 0.0)) *
 		                                     glm::translate(glm::mat4(1.0), glm::vec3(0, 0, 30.0));
 
-		Render::DrawCoordinateSystemOrigin(dr, viewProjection * teapot_coordinate_system);
+		Render::DrawCoordinateSystemOrigin(m_dr, viewProjection * teapot_coordinate_system);
 
 
 		for (int i = 0; i < 10; ++i)
@@ -219,11 +231,59 @@ void Application::Draw(float time)
 
 			glm::mat4 box_coordinate_system = rotate * translate;
 
-			Render::DrawCoordinateSystemOrigin(dr, viewProjection * teapot_coordinate_system * box_coordinate_system,
+			Render::DrawCoordinateSystemOrigin(m_dr, viewProjection * teapot_coordinate_system * box_coordinate_system,
 			                           2.0f);
 		}
 	}
+	{
+		glm::aabb2 view_box(glm::vec2(0.0), glm::vec2(m_width, m_height));
+
+		UI::View view;
+		view.size_in_dots = view_box.size();
+		view.dpi = 72;
+
+		UI::BlockPtr root_block(new UI::Block);
+
+		root_block->PushConstraint({ UI::Constraint::Left, UI::Constraint::Percentage, 30.0});
+		root_block->PushConstraint({ UI::Constraint::Width, UI::Constraint::Point, 200});
+		root_block->PushConstraint({ UI::Constraint::Top, UI::Constraint::Point, 50});
+		root_block->PushConstraint({ UI::Constraint::Bottom, UI::Constraint::Percentage, 50.0});
+
+		UI::DoLayout(root_block, view);
+		glm::mat4 prj =glm::ortho(view_box.minp.x, view_box.maxp.x, view_box.maxp.y, view_box.minp.y);
+
+		UI::Traverse(root_block, nullptr, [prj, this](UI::Block* block, UI::Block* parent)
+		{
+			//Render::DrawRect(m_dr, box.minp, box.maxp, prj);
+
+			float cornerRadius = 3.0f;
+
+			auto box = block->GetBox();
+
+			nvgBeginPath(vg);
+			nvgRoundedRect(vg, box, cornerRadius);
+			nvgFillColor(vg, nvgRGBA(28,30,34,192));
+			// nvgFillColor(vg, nvgRGBA(255,192,0,255));
+			nvgFill(vg);
+
+			// Drop shadow
+			auto shadowPaint = nvgBoxGradient(vg, glm::aabb2(box.minp + glm::vec2(0.0f, 2.0f), box.maxp + glm::vec2(0.0f, 2.0f)), cornerRadius*2, 10, nvgRGBA(0,0,0,128), nvgRGBA(0,0,0,0));
+			nvgBeginPath(vg);
+			nvgRect(vg, glm::aabb2(box.minp - glm::vec2(10.0f), box.maxp + glm::vec2(10.0f, 20.0f)));
+			nvgRoundedRect(vg, box, cornerRadius);
+			nvgPathWinding(vg, NVG_HOLE);
+			nvgFillPaint(vg, shadowPaint);
+			nvgFill(vg);
+		});
+	}
+
+	nvgBeginFrame(vg, m_width, m_height, 1.0f);
+
+	renderDemo(vg, 0, 0, m_width, m_height, time, false, nullptr);
+
+	nvgEndFrame(vg);
 }
+
 
 void Application::OnKeyAction(int key, char asci, int action, int mods)
 {

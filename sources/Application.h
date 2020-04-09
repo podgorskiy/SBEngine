@@ -1,7 +1,8 @@
 #pragma once
 #include "Object.h"
-#include "Texture.h"
+#include "Render/Texture.h"
 #include "Render/Shader.h"
+#include "Render/DebugRenderer.h"
 #include <glm/glm.hpp>
 
 class Application
@@ -17,16 +18,16 @@ public:
 
 private:
 	Render::ProgramPtr m_program;
+	Render::DebugRenderer m_dr;
 
-	unsigned int u_modelView;
-	unsigned int u_model;
+	unsigned int u_modelView = -1;
+	unsigned int u_model = -1;
 
-	unsigned int u_projection;
-	unsigned int m_uniform_texture;
-	unsigned int u_camera_pos;
+	unsigned int u_projection = -1;
+	unsigned int m_uniform_texture = -1;
 
 	int m_width;
 	int m_height;
 	Object m_obj;
-	TexturePtr m_texture;
+	Render::TexturePtr m_texture;
 };
