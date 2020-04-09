@@ -12,27 +12,20 @@
 
 using namespace Render;
 
-Texture::Texture(): header({{0, 0, 0}, 0, false, false, Invalid}), m_textureHandle(uint32_t(-1))
+Texture::Texture(): header({{0, 0, 0}, 0, 0, Invalid, false, false }), m_textureHandle(uint32_t(-1))
 {
 	glGenTextures(1, &m_textureHandle);
 }
 
-
 void Texture::Bind(int slot)
 {
 	glActiveTexture(GL_TEXTURE0 + slot);
-	glBindTexture(GL_TEXTURE_2D, m_textureHandle);
-}
-
-void Texture::BindCube(int slot)
-{
-	glActiveTexture(GL_TEXTURE0 + slot);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, m_textureHandle);
+	glBindTexture(header.gltextype, m_textureHandle);
 }
 
 void Texture::UnBind()
 {
-	glBindTexture(GL_TEXTURE_2D, 0);
+	glBindTexture(header.gltextype, 0);
 }
 
 Texture::~Texture()
@@ -77,31 +70,24 @@ TexturePtr Texture::LoadTexture(TextureReader reader)
 	texture->header.cubemap = reader.GetFaceCount() == 6;
 	texture->header.compressed = decoded.compressed;
 
-	if (texture->header.cubemap)
-	{
-		texture->BindCube(0);
-	}
-	else
-	{
-		texture->Bind(0);
-	}
-
-	uint32_t gltextype = 0;
+	texture->header.gltextype = 0;
 	switch(texture->header.type)
 	{
 		case Texture::Texture_1D:
-			gltextype = GL_TEXTURE_1D;
+			texture->header.gltextype = GL_TEXTURE_1D;
 			break;
 		case Texture::Texture_2D:
-			gltextype = GL_TEXTURE_2D;
+			texture->header.gltextype = GL_TEXTURE_2D;
 			break;
 		case Texture::Texture_3D:
-			gltextype = GL_TEXTURE_3D;
+			texture->header.gltextype = GL_TEXTURE_3D;
 			break;
 		case Texture::Texture_Cube:
-			gltextype = GL_TEXTURE_CUBE_MAP;
+			texture->header.gltextype = GL_TEXTURE_CUBE_MAP;
 			break;
 	}
+
+	texture->Bind(0);
 
 	auto glformat = Render::GetGLMappedTypes(reader.GetFormat());
 	uint32_t internal_format = glformat[0];
@@ -117,24 +103,24 @@ TexturePtr Texture::LoadTexture(TextureReader reader)
 
 			if (texture->header.compressed)
 			{
-				glCompressedTexImage2D(gltextype + face, mipmap, internal_format, block_size.x, block_size.y, 0, blob.size, blob.data.get());
+				glCompressedTexImage2D(texture->header.gltextype + face, mipmap, internal_format, block_size.x, block_size.y, 0, blob.size, blob.data.get());
 			}
 			else
 			{
-				glTexImage2D(gltextype + face, mipmap, internal_format, block_size.x, block_size.y, 0, import_format, channel_type, blob.data.get());
+				glTexImage2D(texture->header.gltextype + face, mipmap, internal_format, block_size.x, block_size.y, 0, import_format, channel_type, blob.data.get());
 			}
 		}
 	}
 
 	if (texture->header.MIPMapCount > 1)
 	{
-		glTexParameteri(gltextype, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTexParameteri(texture->header.gltextype, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	}
 	else
 	{
-		glTexParameteri(gltextype, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(texture->header.gltextype, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	}
-	glTexParameteri(gltextype, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(texture->header.gltextype, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	texture->UnBind();
 

@@ -30,17 +30,16 @@ namespace Render
 
 		void Bind(int slot);
 
-		void BindCube(int slot);
-
 		void UnBind();
 
 		struct TextureHeader
 		{
 			glm::ivec3 size;
 			int MIPMapCount;
+			uint32_t gltextype;
+			TextureType type;
 			bool cubemap;
 			bool compressed;
-			TextureType type;
 		};
 
 		~Texture();
