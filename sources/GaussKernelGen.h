@@ -38,7 +38,7 @@ namespace misc
 		{
 			auto result = samples[0].second + samples[samples.size() - 1].second;
 
-			for (int s = 1; s < samples.size() - 1; ++s)
+			for (size_t s = 1; s < samples.size() - 1; ++s)
 			{
 				float sampleWeight = (s % 2 == 0) ? 2.0f : 4.0f;
 				result += sampleWeight * samples[s].second;
@@ -93,7 +93,7 @@ namespace misc
 		allSamples.emplace_back(outsideSamplesRight, 0.0f);
 
 		std::vector<float> weights;
-		for (int i = 1; i < allSamples.size() - 1; ++i)
+		for (size_t i = 1; i < allSamples.size() - 1; ++i)
 		{
 			weights.push_back(allSamples[i].second / weightSum);
 		}
