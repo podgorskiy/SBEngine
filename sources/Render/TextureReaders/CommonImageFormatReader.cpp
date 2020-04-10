@@ -89,6 +89,8 @@ CommonImageFormatReader::Blob CommonImageFormatReader::Read(int mipmap, int face
 	size_t data_size = 0;
 
 	stbi_set_flip_vertically_on_load(true);
+	stbi_set_unpremultiply_on_load(true);
+	stbi_convert_iphone_png_to_rgb(true);
 
 	if (hdr)
 	{
