@@ -8,6 +8,7 @@
 #include <functional>
 #include <memory>
 #include <aabb.h>
+#include <initializer_list>
 
 
 namespace UI
@@ -61,6 +62,27 @@ namespace UI
 		float value;
 	};
 
+	namespace lit
+	{
+#define _LITERAL(Type, T, Unit, U) \
+    Constraint operator "" _##T##U(long double x) { return Constraint(Constraint::Type, Constraint::Unit, (float)x); }\
+    Constraint operator "" _##T##U(unsigned long long int x) { return Constraint(Constraint::Type, Constraint::Unit, (float)x); }
+
+#define LITERAL(Type, T)\
+    _LITERAL(Type, T, Percentage, pe) _LITERAL(Type, T, Pixel, pi) _LITERAL(Type, T, Point, ) _LITERAL(Type, T, Point, po)
+
+		LITERAL(Left, l)
+		LITERAL(Right, r)
+		LITERAL(Width, w)
+		LITERAL(CenterLeft, cl)
+		LITERAL(CenterRight, cr)
+		LITERAL(Top, t)
+		LITERAL(Bottom, b)
+		LITERAL(Height, h)
+		LITERAL(CenterTop, ct)
+		LITERAL(CenterBottom, cb)
+	}
+
 	class Block;
 	typedef std::shared_ptr<Block> BlockPtr;
 
@@ -68,6 +90,10 @@ namespace UI
 	{
 		friend void Traverse(const BlockPtr& block, const BlockPtr& parent, const std::function<void(Block* block, Block* parent)>& lambda);
 	public:
+		Block() = default;
+
+		explicit Block(std::initializer_list<Constraint> cnst): m_constraints(cnst) {}
+
 		void AddChild(const BlockPtr& child) { m_childs.push_back(child); }
 		glm::vec2 GetPositionUL() const { return m_box.minp; }
 		glm::vec2 GetPositionC() const { return m_box.center(); }
@@ -105,6 +131,12 @@ namespace UI
 		glm::vec2 m_rotation = glm::vec2(1.0f, 0.0f);
 		char m_name[64] = {0};
 	};
+
+	template<class ...Ts>
+    BlockPtr make_block(Ts... inputs)
+    {
+    	return std::make_shared<Block>(std::initializer_list<Constraint>({inputs...}));
+    }
 
 	void Traverse(const BlockPtr& block, const BlockPtr& parent, const std::function<void(Block* block, Block* parent)>& lambda)
 	{
@@ -199,3 +231,181 @@ namespace UI
 		});
 	}
 }
+
+#if 0
+namespace SB
+{
+	class EventManager;
+
+	namespace GUI
+	{
+		struct Rule
+		{
+			enum Anchor
+			{
+				None,
+				Left = 1,
+				Right = 2,
+				Width = 3,
+				Top = 4,
+				Bottom = 5,
+				Height = 6,
+				WidthAspect = 7,
+				CLeft = 8,
+				CRight = 9,
+				CBottom = 10,
+				CTop = 11,
+			};
+
+			enum Unit
+			{
+				Percentage,
+				Px,
+				Em,
+				Pt
+			};
+
+			Anchor anchor;
+			AnchorType type;
+			float val;
+			Rule(GUI::Anchor anchor, GUI::AnchorType type, float val) :anchor(anchor), type(type), val(val) {};
+			Rule(const char* name, float value);
+		};
+
+
+		enum
+		{
+			MaxInputCount = 2
+		};
+
+		class IElementActor;
+
+		class Block
+		{
+		public:
+			typedef std::vector<Rule> TVectorRules;
+			typedef std::vector<Block*> TVectorElements;
+
+			Block();
+			virtual ~Block();
+
+			void SetHideAllButOneChild(const std::string& childName, bool hide, const glm::vec4& parentColor);
+
+			Block* CopyDeep() const;
+
+			void Init(const std::string& name, IElementActor* actor = nullptr);
+			void SetName(const std::string& name);
+			void SetDrawable(const RenderProxy& drawable);
+			RenderProxy& GetDrawable();
+			const RenderProxy& GetDrawable() const;
+
+			virtual void Draw(const glm::mat4& viewProjection, bool drawChilds = true);
+			virtual void RegisterForEvents(EventManager* emng, unsigned char mask = 0x1);
+			virtual void UnregisterForEvents();
+
+			virtual void Resize(const Surface& surface, float delta, bool childs = true);
+
+			void SetAnchor(GUI::Anchor anchor, GUI::AnchorType type, float val);
+			void OverwriteAnchor(GUI::Anchor anchor, GUI::AnchorType newType, float newVal);
+			void ClearAnchors();
+
+			void AddChild(Block* element);
+			Block* GetElement(const std::string& name);
+			const Block* GetElement(const std::string& name) const;
+			Block* RemoveElement(const std::string& name);
+			Block* RemoveElement(Block* element);
+
+			void DeleteAllChilds();
+
+			TVectorRules& GetRules();
+
+			void SetLimits(const glm::vec2 a, const glm::vec2 b);
+
+			virtual void SetEnabled(bool enabled);
+
+			void SetVisible(bool visible)
+			{
+				m_visible = visible;
+			}
+
+			bool GetVisible() const
+			{
+				return m_visible;
+			}
+
+			glm::vec2 GetPosition()
+			{
+				return m_position;
+			};
+
+			glm::vec2 GetSize()
+			{
+				return m_dimensions;
+			};
+
+			std::string GetName()
+			{
+				return m_name;
+			}
+
+			void ForEachChild(const std::function<void(Block* child)>& lambda);
+
+			void ForOneChild(int childIndex, const std::function<void(Block* child)>& lambda);
+
+		protected:
+			virtual Block* CopyShell() const;
+
+			friend class Slider;
+			friend class DoubleSlider;
+			friend class ScrollWindow;
+			friend class RadioButton;
+
+			void UpdateMatrices();
+
+			RenderProxy m_drawable;
+
+			glm::vec2 m_pixel;
+			glm::vec2 m_pixelToDot;
+
+			std::string m_name;
+			bool m_inFocus[MaxInputCount];
+			bool m_activated;
+			float m_time;
+
+			glm::vec2 m_p_a;
+			glm::vec2 m_p_b;
+			glm::vec2 m_dimensions;
+			glm::vec2 m_position;
+			glm::vec2 m_leftBottom;
+			TVectorRules m_rules;
+			TVectorElements m_childs;
+
+			glm::mat3 m_local2dTransform;
+			glm::vec2 m_rotation;
+
+			IElementActor* m_actor;
+
+			int m_local2dTransformID;
+			int m_focusID;
+			int m_textureID;
+			int m_texture2ID;
+
+			glm::vec2 m_limitA;
+			glm::vec2 m_limitB;
+
+			bool m_root;
+
+			bool m_visible;
+		};
+
+		inline void ClearBoolArray(bool* x)
+		{
+			for (int i = 0; i < MaxInputCount; ++i) x[i] = false;
+		}
+		inline void ClearFloatArray(float* x)
+		{
+			for (int i = 0; i < MaxInputCount; ++i) x[i] = 0.0f;
+		}
+	}
+}
+#endif

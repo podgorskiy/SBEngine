@@ -242,12 +242,11 @@ void Application::Draw(float time)
 		view.size_in_dots = view_box.size();
 		view.dpi = 72;
 
-		UI::BlockPtr root_block(new UI::Block);
+		using namespace UI::lit;
 
-		root_block->PushConstraint({ UI::Constraint::Left, UI::Constraint::Percentage, 30.0});
-		root_block->PushConstraint({ UI::Constraint::Width, UI::Constraint::Point, 200});
-		root_block->PushConstraint({ UI::Constraint::Top, UI::Constraint::Point, 50});
-		root_block->PushConstraint({ UI::Constraint::Bottom, UI::Constraint::Percentage, 50.0});
+		auto root_block = UI::make_block(30_lpe, 200_w, 50_t, 50_bpe);
+		auto block2 = UI::make_block(30_lpe, 200_w, 50_t, 50_bpe);
+		root_block->AddChild(block2);
 
 		UI::DoLayout(root_block, view);
 		glm::mat4 prj =glm::ortho(view_box.minp.x, view_box.maxp.x, view_box.maxp.y, view_box.minp.y);

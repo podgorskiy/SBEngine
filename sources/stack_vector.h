@@ -3,6 +3,7 @@
 #include <vector>
 #include <assert.h>
 #include <spdlog/spdlog.h>
+#include <initializer_list>
 
 
 namespace stack
@@ -90,6 +91,9 @@ namespace stack
 		{
 			_vector.reserve(Size);
 			memset(m_data, 0, sizeof(T) * Size);
+		}
+		vector(std::initializer_list<T> list):  m_size(0), _vector(list, FixedAllocator<T, Size>(m_data, &m_size))
+		{
 		}
 
 		iterator begin() { return _vector.begin(); }
