@@ -116,6 +116,7 @@ Application::Application(int argc, const char* const* argv)
 	m_obj.Load("LeePerrySmith.obj");
 	m_obj.Collect(m_program);
 	m_dr.Init();
+	m_uir.Init();
 
 	{
 		Render::debug_guard<> debug_lock;
@@ -246,34 +247,40 @@ void Application::Draw(float time)
 
 		auto root_block = UI::make_block(30_lpe, 200_w, 50_t, 50_bpe);
 		auto block2 = UI::make_block(30_lpe, 200_w, 50_t, 50_bpe);
-		root_block->AddChild(block2);
+		 root_block->AddChild(block2);
 
 		UI::DoLayout(root_block, view);
-		glm::mat4 prj =glm::ortho(view_box.minp.x, view_box.maxp.x, view_box.maxp.y, view_box.minp.y);
+		m_uir.SetProjection(view_box);
+
+		auto prj =glm::ortho(view_box.minp.x, view_box.maxp.x, view_box.maxp.y, view_box.minp.y);
 
 		UI::Traverse(root_block, nullptr, [prj, this](UI::Block* block, UI::Block* parent)
 		{
 			//Render::DrawRect(m_dr, box.minp, box.maxp, prj);
-
-			float cornerRadius = 3.0f;
-
 			auto box = block->GetBox();
-
-			nvgBeginPath(vg);
-			nvgRoundedRect(vg, box, cornerRadius);
-			nvgFillColor(vg, nvgRGBA(28,30,34,192));
-			// nvgFillColor(vg, nvgRGBA(255,192,0,255));
-			nvgFill(vg);
-
-			// Drop shadow
-			auto shadowPaint = nvgBoxGradient(vg, glm::aabb2(box.minp + glm::vec2(0.0f, 2.0f), box.maxp + glm::vec2(0.0f, 2.0f)), cornerRadius*2, 10, nvgRGBA(0,0,0,128), nvgRGBA(0,0,0,0));
-			nvgBeginPath(vg);
-			nvgRect(vg, glm::aabb2(box.minp - glm::vec2(10.0f), box.maxp + glm::vec2(10.0f, 20.0f)));
-			nvgRoundedRect(vg, box, cornerRadius);
-			nvgPathWinding(vg, NVG_HOLE);
-			nvgFillPaint(vg, shadowPaint);
-			nvgFill(vg);
+			m_uir.Rect(box);
+			m_uir.Text(box, "Hello!!!\n\nauto shadowPaint = nvgBoxGradient(vg, glm::aabb2(box.minp + glm::vec2(0.0f, 2.0f), box.maxp + glm::vec2(0.0f, 2.0f)), cornerRadius*2, 10, nvgRGBA(0,0,0,128), nvgRGBA(0,0,0,0));");
+//			float cornerRadius = 3.0f;
+//
+//			auto box = block->GetBox();
+//
+//			nvgBeginPath(vg);
+//			nvgRoundedRect(vg, box, cornerRadius);
+//			nvgFillColor(vg, nvgRGBA(28,30,34,192));
+//			// nvgFillColor(vg, nvgRGBA(255,192,0,255));
+//			nvgFill(vg);
+//
+//			// Drop shadow
+//			auto shadowPaint = nvgBoxGradient(vg, glm::aabb2(box.minp + glm::vec2(0.0f, 2.0f), box.maxp + glm::vec2(0.0f, 2.0f)), cornerRadius*2, 10, nvgRGBA(0,0,0,128), nvgRGBA(0,0,0,0));
+//			nvgBeginPath(vg);
+//			nvgRect(vg, glm::aabb2(box.minp - glm::vec2(10.0f), box.maxp + glm::vec2(10.0f, 20.0f)));
+//			nvgRoundedRect(vg, box, cornerRadius);
+//			nvgPathWinding(vg, NVG_HOLE);
+//			nvgFillPaint(vg, shadowPaint);
+//			nvgFill(vg);
 		});
+
+		m_uir.Draw();
 	}
 
 	nvgBeginFrame(vg, m_width, m_height, 1.0f);

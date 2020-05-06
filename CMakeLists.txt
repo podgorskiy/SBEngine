@@ -93,6 +93,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/libvorbis/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/sources/Game)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/sources)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/doctest/doctest)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/scriberlib/include)
 
 
 ##############################################################
@@ -101,6 +102,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/doctest/doctest)
 add_subdirectory (libs/glfw)
 add_subdirectory (libs/gl3w)
 add_subdirectory (libs/fsal)
+add_subdirectory (libs/scriberlib)
 
 
 #####################################################################
@@ -162,7 +164,7 @@ if (TESTS)
 endif()
 
 add_executable(Oquonie ${SOURCES} ${TESTS})
-target_link_libraries(Oquonie gl3w glfw imgui pugixml fsal lz4 zlib_static vorbis ogg ${OPENGL_LIBRARIES} ${OPENAL_LIBRARY})
+target_link_libraries(Oquonie gl3w glfw imgui pugixml fsal lz4 zlib_static vorbis ogg scribe ${OPENGL_LIBRARIES} ${OPENAL_LIBRARY})
 
 configure_file(test_rgba8888.dds test_rgba8888.dds COPYONLY)
 configure_file(test_rgba8888.pvr test_rgba8888.pvr COPYONLY)
