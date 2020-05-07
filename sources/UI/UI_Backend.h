@@ -81,6 +81,8 @@ namespace UI
 
 		void PushVertex(glm::vec2 p, glm::vec2 uv, color color);
 
+		int GetGlyphTexture() const;
+
 		Scriber::Driver m_text_driver;
 		fsal::FileSystem m_fs;
 

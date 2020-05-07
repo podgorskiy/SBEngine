@@ -52,9 +52,8 @@ public:
 			void main()
 			{
 				vec2 color = texelFetch(u_texture, ivec2(v_uv), 0).rg;
-				// gl_FragColor = vec4(v_color.rgb, color.r * v_color.a);
 
-				vec4 color_strock = vec4(vec3(1.0, 1.0, 0.0), color.g);
+				vec4 color_strock = vec4(vec3(0.0, 0.0, 0.0), color.g * v_color.a);
 				vec4 color_fill = vec4(v_color.rgb, color.r * v_color.a);
 
 				// backward blending order
@@ -285,6 +284,12 @@ void Renderer::PushVertex(glm::vec2 p, glm::vec2 uv, color color)
 	m_vertexArray.emplace_back(p, uv, color);
 }
 
+int Renderer::GetGlyphTexture() const
+{
+	auto r = std::static_pointer_cast<TextBackend>(m_text_backend);
+	return r->m_textureHandle;
+}
+
 void Renderer::Draw()
 {
 	m_command_queue.Write(C_End);
@@ -303,10 +308,10 @@ void Renderer::Draw()
 				m_command_queue.Read(rect);
 				m_command_queue.Read(uv);
 				int vertexIt = m_vertexArray.size();
-				m_vertexArray.emplace_back(rect.minp, uv.minp, color(0, 255, 100, 130));
-				m_vertexArray.emplace_back(glm::vec2({rect.maxp.x, rect.minp.y}), glm::vec2({uv.maxp.x, uv.minp.y}), color(0, 255, 100, 130));
-				m_vertexArray.emplace_back(rect.maxp, uv.maxp, color(0, 255, 100, 130));
-				m_vertexArray.emplace_back(glm::vec2({rect.minp.x, rect.maxp.y}), glm::vec2({uv.minp.x, uv.maxp.y}), color(0, 255, 100, 130));
+				m_vertexArray.emplace_back(rect.minp, uv.minp, color(0, 0, 0, 230));
+				m_vertexArray.emplace_back(glm::vec2({rect.maxp.x, rect.minp.y}), glm::vec2({uv.maxp.x, uv.minp.y}), color(0, 0, 0, 230));
+				m_vertexArray.emplace_back(rect.maxp, uv.maxp, color(0, 0, 0, 230));
+				m_vertexArray.emplace_back(glm::vec2({rect.minp.x, rect.maxp.y}), glm::vec2({uv.minp.x, uv.maxp.y}), color(0, 0, 0, 230));
 				int indices[] = { vertexIt, vertexIt + 2, vertexIt + 1, vertexIt, vertexIt + 3, vertexIt + 2};
 				m_indexArray.resize(m_indexArray.size() + 6);
 				int* ptr = &*(m_indexArray.end() - 6);
@@ -322,7 +327,7 @@ void Renderer::Draw()
 				m_command_queue.Read(len);
 				auto ptr = (const char*)m_command_queue.GetDataPointer() + m_command_queue.Tell();
 				m_command_queue.Seek(len, fsal::File::CurrentPosition);
-				m_text_driver.DrawLabel(ptr, rect.minp.x, rect.minp.y, Scriber::Font(0, 132, Scriber::FontStyle::Regular, 0xFFFFFFFF, 6));
+				m_text_driver.DrawLabel(ptr, rect.minp.x, rect.minp.y, Scriber::Font(0, 16, Scriber::FontStyle::Regular, 0x8FFFFFFF));
 			}
 			break;
 		}

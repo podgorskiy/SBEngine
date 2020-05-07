@@ -15,6 +15,8 @@
 #include "Vector/nanovg.h"
 #include "Vector/nanovg_backend.h"
 #include "Vector/demo.h"
+#include "align.h"
+#include <stb_image_write.h>
 
 
 #define DOCTEST_CONFIG_IMPLEMENT
@@ -281,6 +283,27 @@ void Application::Draw(float time)
 		});
 
 		m_uir.Draw();
+
+
+		ImGui::Begin("Glyph cache");
+		ImGui::Image((ImTextureID)m_uir.GetGlyphTexture(), ImVec2(1024, 1024));
+		if (ImGui::Button("Save to file"))
+		{
+			GLint current_texture;
+			glGetIntegerv(GL_TEXTURE_BINDING_2D, &current_texture);
+			glBindTexture(GL_TEXTURE_2D, m_uir.GetGlyphTexture());
+			int texDims[2];
+			glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &texDims[0]);
+			glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &texDims[1]);
+
+			static std::vector<uint8_t> data;
+			data.resize(misc::align(texDims[0] * 3, 4) * texDims[1]);
+			glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_UNSIGNED_BYTE, &data[0]);
+
+			stbi_write_png("glyph_cache.png", texDims[0], texDims[1], 3, data.data(), misc::align(texDims[0] * 3, 4));
+		}
+
+		ImGui::End();
 	}
 
 	nvgBeginFrame(vg, m_width, m_height, 1.0f);
