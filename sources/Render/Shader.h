@@ -20,6 +20,9 @@ namespace Render
 		};
 	};
 
+	void ShaderCstr(GLHandle& handle,  SHADER_TYPE::Type T);
+	void ShaderDstr(GLHandle handle);
+
 	template<SHADER_TYPE::Type T>
 	class Shader
 	{
@@ -27,14 +30,29 @@ namespace Render
 		Shader& operator=(const Shader&) = delete;
 		friend class Program;
 	public:
-		Shader();
-		~Shader();
+		Shader()
+		{
+			ShaderCstr(m_shader, T);
+		}
+
+		~Shader()
+		{
+			ShaderDstr(m_shader);
+		}
 
 		bool CompileShader(const char* src);
 
 	private:
 		GLHandle m_shader;
 	};
+
+	bool CompileShader(GLHandle& handle, const char* src, SHADER_TYPE::Type T);
+
+	template<SHADER_TYPE::Type T>
+	inline bool Shader<T>::CompileShader(const char* src)
+	{
+		return Render::CompileShader(m_shader, src, T);
+	}
 
 
 	class Uniform

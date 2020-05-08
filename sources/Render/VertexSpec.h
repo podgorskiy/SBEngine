@@ -1,7 +1,7 @@
 #pragma once
 #include "Shader.h"
 #include "Types.h"
-#include <GL/gl3w.h>
+#include "Render/gl_headers.h"
 #include <glm/glm.hpp>
 #include <vector>
 #include <string>

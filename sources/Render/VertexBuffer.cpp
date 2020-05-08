@@ -1,6 +1,6 @@
 #include "VertexBuffer.h"
+#include "Render/gl_headers.h"
 #include <assert.h>
-#include <GL/gl3w.h>
 
 using namespace Render;
 

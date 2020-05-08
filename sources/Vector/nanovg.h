@@ -26,32 +26,14 @@
 
 typedef struct NVGcontext NVGcontext;
 
-struct NVGcolor {
-	union {
-		float rgba[4];
-		struct {
-			float r,g,b,a;
-		};
-	};
-};
-
-typedef struct NVGcolor NVGcolor;
 
 struct NVGpaint {
-	union
-	{
-		float xform[6];
-		glm::mat3x2 xform_;
-	};
-	union
-	{
-		float extent[2];
-		glm::vec2 extent_;
-	};
+	glm::mat3x2 xform;
+	glm::vec2 extent;
 	float radius;
 	float feather;
-	NVGcolor innerColor;
-	NVGcolor outerColor;
+	glm::vec4 innerColor;
+	glm::vec4 outerColor;
 	int image;
 };
 typedef struct NVGpaint NVGpaint;
@@ -185,35 +167,35 @@ void nvgGlobalCompositeBlendFuncSeparate(NVGcontext* ctx, int srcRGB, int dstRGB
 // Colors in NanoVG are stored as unsigned ints in ABGR format.
 
 // Returns a color value from red, green, blue values. Alpha will be set to 255 (1.0f).
-NVGcolor nvgRGB(unsigned char r, unsigned char g, unsigned char b);
+glm::vec4 nvgRGB(unsigned char r, unsigned char g, unsigned char b);
 
 // Returns a color value from red, green, blue values. Alpha will be set to 1.0f.
-NVGcolor nvgRGBf(float r, float g, float b);
+glm::vec4 nvgRGBf(float r, float g, float b);
 
 
 // Returns a color value from red, green, blue and alpha values.
-NVGcolor nvgRGBA(unsigned char r, unsigned char g, unsigned char b, unsigned char a);
+glm::vec4 nvgRGBA(unsigned char r, unsigned char g, unsigned char b, unsigned char a);
 
 // Returns a color value from red, green, blue and alpha values.
-NVGcolor nvgRGBAf(float r, float g, float b, float a);
+glm::vec4 nvgRGBAf(float r, float g, float b, float a);
 
 
 // Linearly interpolates from color c0 to c1, and returns resulting color value.
-NVGcolor nvgLerpRGBA(NVGcolor c0, NVGcolor c1, float u);
+glm::vec4 nvgLerpRGBA(glm::vec4 c0, glm::vec4 c1, float u);
 
 // Sets transparency of a color value.
-NVGcolor nvgTransRGBA(NVGcolor c0, unsigned char a);
+glm::vec4 nvgTransRGBA(glm::vec4 c0, unsigned char a);
 
 // Sets transparency of a color value.
-NVGcolor nvgTransRGBAf(NVGcolor c0, float a);
+glm::vec4 nvgTransRGBAf(glm::vec4 c0, float a);
 
 // Returns color value specified by hue, saturation and lightness.
 // HSL values are all in range [0..1], alpha will be set to 255.
-NVGcolor nvgHSL(float h, float s, float l);
+glm::vec4 nvgHSL(float h, float s, float l);
 
 // Returns color value specified by hue, saturation and lightness and alpha.
 // HSL values are all in range [0..1], alpha in range [0..255]
-NVGcolor nvgHSLA(float h, float s, float l, unsigned char a);
+glm::vec4 nvgHSLA(float h, float s, float l, unsigned char a);
 
 //
 // State Handling
@@ -245,13 +227,13 @@ void nvgReset(NVGcontext* ctx);
 void nvgShapeAntiAlias(NVGcontext* ctx, int enabled);
 
 // Sets current stroke style to a solid color.
-void nvgStrokeColor(NVGcontext* ctx, NVGcolor color);
+void nvgStrokeColor(NVGcontext* ctx, glm::vec4 color);
 
 // Sets current stroke style to a paint, which can be a one of the gradients or a pattern.
 void nvgStrokePaint(NVGcontext* ctx, NVGpaint paint);
 
 // Sets current fill style to a solid color.
-void nvgFillColor(NVGcontext* ctx, NVGcolor color);
+void nvgFillColor(NVGcontext* ctx, glm::vec4 color);
 
 // Sets current fill style to a paint, which can be a one of the gradients or a pattern.
 void nvgFillPaint(NVGcontext* ctx, NVGpaint paint);
@@ -347,7 +329,7 @@ void nvgTransformSkewX(float* dst, float a);
 void nvgTransformSkewY(float* dst, float a);
 
 // Sets the transform to the result of multiplication of two transforms, of A = A*B.
-void nvgTransformMultiply(float* dst, const float* src);
+void nvgTransformMultiply(float* t, const float* s);
 
 // Sets the transform to the result of multiplication of two transforms, of A = B*A.
 void nvgTransformPremultiply(float* dst, const float* src);
@@ -401,7 +383,7 @@ void nvgDeleteImage(NVGcontext* ctx, int image);
 // of the linear gradient, icol specifies the start color and ocol the end color.
 // The gradient is transformed by the current transform when it is passed to nvgFillPaint() or nvgStrokePaint().
 NVGpaint nvgLinearGradient(NVGcontext* ctx, float sx, float sy, float ex, float ey,
-						   NVGcolor icol, NVGcolor ocol);
+						   glm::vec4 icol, glm::vec4 ocol);
 
 // Creates and returns a box gradient. Box gradient is a feathered rounded rectangle, it is useful for rendering
 // drop shadows or highlights for boxes. Parameters (x,y) define the top-left corner of the rectangle,
@@ -409,7 +391,7 @@ NVGpaint nvgLinearGradient(NVGcontext* ctx, float sx, float sy, float ex, float 
 // the border of the rectangle is. Parameter icol specifies the inner color and ocol the outer color of the gradient.
 // The gradient is transformed by the current transform when it is passed to nvgFillPaint() or nvgStrokePaint().
 NVGpaint nvgBoxGradient(NVGcontext* ctx, float x, float y, float w, float h,
-						float r, float f, NVGcolor icol, NVGcolor ocol);
+						float r, float f, glm::vec4 icol, glm::vec4 ocol);
 
 // Creates and returns a box gradient. Box gradient is a feathered rounded rectangle, it is useful for rendering
 // drop shadows or highlights for boxes. Parameters (x,y) define the top-left corner of the rectangle,
@@ -417,13 +399,13 @@ NVGpaint nvgBoxGradient(NVGcontext* ctx, float x, float y, float w, float h,
 // the border of the rectangle is. Parameter icol specifies the inner color and ocol the outer color of the gradient.
 // The gradient is transformed by the current transform when it is passed to nvgFillPaint() or nvgStrokePaint().
 NVGpaint nvgBoxGradient(NVGcontext* ctx, glm::aabb2 box,
-						float r, float f, NVGcolor icol, NVGcolor ocol);
+						float r, float f, glm::vec4 icol, glm::vec4 ocol);
 
 // Creates and returns a radial gradient. Parameters (cx,cy) specify the center, inr and outr specify
 // the inner and outer radius of the gradient, icol specifies the start color and ocol the end color.
 // The gradient is transformed by the current transform when it is passed to nvgFillPaint() or nvgStrokePaint().
 NVGpaint nvgRadialGradient(NVGcontext* ctx, float cx, float cy, float inr, float outr,
-						   NVGcolor icol, NVGcolor ocol);
+						   glm::vec4 icol, glm::vec4 ocol);
 
 // Creates and returns an image patter. Parameters (ox,oy) specify the left-top location of the image pattern,
 // (ex,ey) the size of one image, angle rotation around the top-left corner, image is handle to the image to render.
@@ -566,10 +548,7 @@ struct NVGparams {
 	void* userPtr;
 	int edgeAntiAlias;
 	int (*renderCreate)(void* uptr);
-	int (*renderCreateTexture)(void* uptr, int type, int w, int h, int imageFlags, const unsigned char* data);
-	int (*renderDeleteTexture)(void* uptr, int image);
-	int (*renderUpdateTexture)(void* uptr, int image, int x, int y, int w, int h, const unsigned char* data);
-	int (*renderGetTextureSize)(void* uptr, int image, int* w, int* h);
+
 	void (*renderViewport)(void* uptr, float width, float height, float devicePixelRatio);
 	void (*renderCancel)(void* uptr);
 	void (*renderFlush)(void* uptr);

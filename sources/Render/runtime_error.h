@@ -33,10 +33,16 @@ inline std::string string_format(const std::string fmt_str, ...)
 	return result;
 }
 
-class runtime_error: public std::runtime_error
+struct vaholder
+{
+protected:
+	va_list ap;
+};
+
+class runtime_error: public vaholder, public std::runtime_error
 {
 public:
-	runtime_error(const std::string fmt_str, ...):
+	explicit runtime_error(std::string fmt_str, ...): vaholder(),
 			std::runtime_error(string_format(fmt_str, (va_start(ap, fmt_str), ap)))
 	{
 		va_end(ap);
@@ -44,9 +50,6 @@ public:
 
 	runtime_error(const runtime_error &) = default;
 	runtime_error(runtime_error &&) = default;
-	~runtime_error() = default;
-
-private:
-	va_list ap;
+	~runtime_error() override = default;
 };
 

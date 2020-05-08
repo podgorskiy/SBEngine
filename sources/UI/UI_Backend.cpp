@@ -1,8 +1,8 @@
 #include "UI_Backend.h"
 #include "Render/Shader.h"
+#include "Render/gl_headers.h"
 #include <tuple>
 #include <MemRefFile.h>
-#include <GL/gl3w.h>
 #include <spdlog/spdlog.h>
 
 
@@ -26,15 +26,15 @@ public:
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 		glBindTexture(GL_TEXTURE_2D, 0);
 
-		const char* text_vertex_shader_src = R"(
-			attribute vec2 a_position;
-			attribute vec2 a_uv;
-			attribute vec4 a_color;
-
+		const char* text_vertex_shader_src = R"(#version 300 es
 			uniform mat4 u_transform;
 
-			varying vec4 v_color;
-			varying vec2 v_uv;
+			in vec2 a_position;
+			in vec2 a_uv;
+			in vec4 a_color;
+
+			out vec4 v_color;
+			out vec2 v_uv;
 
 			void main()
 			{
@@ -44,10 +44,15 @@ public:
 			}
 		)";
 
-		const char* text_fragment_shader_src = R"(
-			varying vec4 v_color;
-			varying vec2 v_uv;
+		const char* text_fragment_shader_src = R"(#version 300 es
+			precision mediump float;
+
 			uniform sampler2D u_texture;
+
+			in vec4 v_color;
+			in vec2 v_uv;
+
+			out vec4 result_color;
 
 			void main()
 			{
@@ -59,9 +64,7 @@ public:
 				// backward blending order
 				float alpha = color_strock.a - color_strock.a * color_fill.a + color_fill.a;
 
-				vec4 final = vec4((color_strock.rgb * color_strock.a * (1.0 - color_fill.a) + color_fill.rgb * color_fill.a) / alpha, alpha);
-
-				gl_FragColor = final;
+				result_color = vec4((color_strock.rgb * color_strock.a * (1.0 - color_fill.a) + color_fill.rgb * color_fill.a) / alpha, alpha);
 			}
 		)";
 
@@ -105,8 +108,10 @@ public:
 
 	void ClearTexture() override
 	{
+#ifndef __EMSCRIPTEN__
 		char data[2] = { 0 };
 		glClearTexImage(GL_TEXTURE_2D, 0, GL_RG8, GL_UNSIGNED_BYTE, &data);
+#endif
 	}
 
 	void Render(Scriber::Vertex* vertexBuffer, uint16_t* indexBuffer, uint16_t vertex_count, uint16_t primitiveCount) override
@@ -159,14 +164,14 @@ Renderer::~Renderer()
 
 void Renderer::Init()
 {
-	const char* vertex_shader_src = R"(
-		attribute vec2 a_position;
-		attribute vec2 a_uv;
-		attribute vec4 a_color;
+	const char* vertex_shader_src = R"(#version 300 es
+		in vec2 a_position;
+		in vec2 a_uv;
+		in vec4 a_color;
 
 		uniform mat4 u_transform;
 
-		varying vec4 v_color;
+		out vec4 v_color;
 
 		void main()
 		{
@@ -175,12 +180,14 @@ void Renderer::Init()
 		}
 	)";
 
-	const char* fragment_shader_src = R"(
-		varying vec4 v_color;
+	const char* fragment_shader_src = R"(#version 300 es
+		precision mediump float;
+		in vec4 v_color;
+		out vec4 color;
 
 		void main()
 		{
-			gl_FragColor = v_color;
+			color = v_color;
 		}
 	)";
 

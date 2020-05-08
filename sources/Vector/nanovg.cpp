@@ -362,67 +362,40 @@ void nvgEndFrame(NVGcontext* ctx)
 	ctx->params.renderFlush(ctx->params.userPtr);
 }
 
-NVGcolor nvgRGB(unsigned char r, unsigned char g, unsigned char b)
+glm::vec4 nvgRGB(unsigned char r, unsigned char g, unsigned char b)
 {
 	return nvgRGBA(r,g,b,255);
 }
 
-NVGcolor nvgRGBf(float r, float g, float b)
+glm::vec4 nvgRGBf(float r, float g, float b)
 {
-	return nvgRGBAf(r,g,b,1.0f);
+	return glm::vec4(r,g,b,1.0f);
 }
 
-NVGcolor nvgRGBA(unsigned char r, unsigned char g, unsigned char b, unsigned char a)
+glm::vec4 nvgRGBA(unsigned char r, unsigned char g, unsigned char b, unsigned char a)
 {
-	NVGcolor color;
-	// Use longer initialization to suppress warning.
-	color.r = r / 255.0f;
-	color.g = g / 255.0f;
-	color.b = b / 255.0f;
-	color.a = a / 255.0f;
-	return color;
+	glm::vec4 color(r, g, b, a);
+	return color / 255.0f;
 }
 
-NVGcolor nvgRGBAf(float r, float g, float b, float a)
-{
-	NVGcolor color;
-	// Use longer initialization to suppress warning.
-	color.r = r;
-	color.g = g;
-	color.b = b;
-	color.a = a;
-	return color;
-}
-
-NVGcolor nvgTransRGBA(NVGcolor c, unsigned char a)
+glm::vec4 nvgTransRGBA(glm::vec4 c, unsigned char a)
 {
 	c.a = a / 255.0f;
 	return c;
 }
 
-NVGcolor nvgTransRGBAf(NVGcolor c, float a)
+glm::vec4 nvgTransRGBAf(glm::vec4 c, float a)
 {
 	c.a = a;
 	return c;
 }
 
-NVGcolor nvgLerpRGBA(NVGcolor c0, NVGcolor c1, float u)
+glm::vec4 nvgLerpRGBA(glm::vec4 c0, glm::vec4 c1, float u)
 {
-	int i;
-	float oneminu;
-	NVGcolor cint = {{{0}}};
-
-	u = nvg__clampf(u, 0.0f, 1.0f);
-	oneminu = 1.0f - u;
-	for( i = 0; i <4; i++ )
-	{
-		cint.rgba[i] = c0.rgba[i] * oneminu + c1.rgba[i] * u;
-	}
-
-	return cint;
+	return glm::mix(c0, c1, glm::clamp(u, 0.0f, 1.0f));
 }
 
-NVGcolor nvgHSL(float h, float s, float l)
+glm::vec4 nvgHSL(float h, float s, float l)
 {
 	return nvgHSLA(h,s,l,255);
 }
@@ -440,10 +413,10 @@ static float nvg__hue(float h, float m1, float m2)
 	return m1;
 }
 
-NVGcolor nvgHSLA(float h, float s, float l, unsigned char a)
+glm::vec4 nvgHSLA(float h, float s, float l, unsigned char a)
 {
 	float m1, m2;
-	NVGcolor col;
+	glm::vec4 col;
 	h = nvg__modf(h, 1.0f);
 	if (h < 0.0f) h += 1.0f;
 	s = nvg__clampf(s, 0.0f, 1.0f);
@@ -554,10 +527,10 @@ float nvgRadToDeg(float rad)
 	return rad / NVG_PI * 180.0f;
 }
 
-static void nvg__setPaintColor(NVGpaint* p, NVGcolor color)
+static void nvg__setPaintColor(NVGpaint* p, glm::vec4 color)
 {
 	memset(p, 0, sizeof(*p));
-	nvgTransformIdentity(p->xform);
+	p->xform = glm::mat3x2(1.0);
 	p->radius = 0.0f;
 	p->feather = 1.0f;
 	p->innerColor = color;
@@ -706,7 +679,7 @@ void nvgCurrentTransform(NVGcontext* ctx, float* xform)
 	memcpy(xform, state->xform, sizeof(float)*6);
 }
 
-void nvgStrokeColor(NVGcontext* ctx, NVGcolor color)
+void nvgStrokeColor(NVGcontext* ctx, glm::vec4 color)
 {
 	NVGstate* state = nvg__getState(ctx);
 	nvg__setPaintColor(&state->stroke, color);
@@ -716,10 +689,10 @@ void nvgStrokePaint(NVGcontext* ctx, NVGpaint paint)
 {
 	NVGstate* state = nvg__getState(ctx);
 	state->stroke = paint;
-	nvgTransformMultiply(state->stroke.xform, state->xform);
+	nvgTransformMultiply((float*)&state->stroke.xform, state->xform);
 }
 
-void nvgFillColor(NVGcontext* ctx, NVGcolor color)
+void nvgFillColor(NVGcontext* ctx, glm::vec4 color)
 {
 	NVGstate* state = nvg__getState(ctx);
 	nvg__setPaintColor(&state->fill, color);
@@ -729,66 +702,12 @@ void nvgFillPaint(NVGcontext* ctx, NVGpaint paint)
 {
 	NVGstate* state = nvg__getState(ctx);
 	state->fill = paint;
-	nvgTransformMultiply(state->fill.xform, state->xform);
-}
-
-int nvgCreateImage(NVGcontext* ctx, const char* filename, int imageFlags)
-{
-	int w, h, n, image;
-	unsigned char* img;
-	// TODO
-//
-//	stbi_set_unpremultiply_on_load(1);
-//	stbi_convert_iphone_png_to_rgb(1);
-//	img = stbi_load(filename, &w, &h, &n, 4);
-//	if (img == nullptr) {
-////		printf("Failed to load %s - %s\n", filename, stbi_failure_reason());
-//		return 0;
-//	}
-//	image = nvgCreateImageRGBA(ctx, w, h, imageFlags, img);
-//	stbi_image_free(img);
-	return image;
-}
-
-int nvgCreateImageMem(NVGcontext* ctx, int imageFlags, unsigned char* data, int ndata)
-{
-	int w, h, n, image;
-	// TODO
-//	unsigned char* img = stbi_load_from_memory(data, ndata, &w, &h, &n, 4);
-//	if (img == nullptr) {
-////		printf("Failed to load %s - %s\n", filename, stbi_failure_reason());
-//		return 0;
-//	}
-//	image = nvgCreateImageRGBA(ctx, w, h, imageFlags, img);
-//	stbi_image_free(img);
-	return image;
-}
-
-int nvgCreateImageRGBA(NVGcontext* ctx, int w, int h, int imageFlags, const unsigned char* data)
-{
-	return ctx->params.renderCreateTexture(ctx->params.userPtr, NVG_TEXTURE_RGBA, w, h, imageFlags, data);
-}
-
-void nvgUpdateImage(NVGcontext* ctx, int image, const unsigned char* data)
-{
-	int w, h;
-	ctx->params.renderGetTextureSize(ctx->params.userPtr, image, &w, &h);
-	ctx->params.renderUpdateTexture(ctx->params.userPtr, image, 0,0, w,h, data);
-}
-
-void nvgImageSize(NVGcontext* ctx, int image, int* w, int* h)
-{
-	ctx->params.renderGetTextureSize(ctx->params.userPtr, image, w, h);
-}
-
-void nvgDeleteImage(NVGcontext* ctx, int image)
-{
-	ctx->params.renderDeleteTexture(ctx->params.userPtr, image);
+	nvgTransformMultiply((float*)&state->fill.xform, state->xform);
 }
 
 NVGpaint nvgLinearGradient(NVGcontext* ctx,
 								  float sx, float sy, float ex, float ey,
-								  NVGcolor icol, NVGcolor ocol)
+								  glm::vec4 icol, glm::vec4 ocol)
 {
 	NVGpaint p;
 	float dx, dy, d;
@@ -808,9 +727,7 @@ NVGpaint nvgLinearGradient(NVGcontext* ctx,
 		dy = 1;
 	}
 
-	p.xform[0] = dy; p.xform[1] = -dx;
-	p.xform[2] = dx; p.xform[3] = dy;
-	p.xform[4] = sx - dx*large; p.xform[5] = sy - dy*large;
+	p.xform = glm::mat3x2(dy, -dx, dx, dy, sx - dx*large, sy - dy*large);
 
 	p.extent[0] = large;
 	p.extent[1] = large + d*0.5f;
@@ -827,7 +744,7 @@ NVGpaint nvgLinearGradient(NVGcontext* ctx,
 
 NVGpaint nvgRadialGradient(NVGcontext* ctx,
 								  float cx, float cy, float inr, float outr,
-								  NVGcolor icol, NVGcolor ocol)
+								  glm::vec4 icol, glm::vec4 ocol)
 {
 	NVGpaint p;
 	float r = (inr+outr)*0.5f;
@@ -835,9 +752,7 @@ NVGpaint nvgRadialGradient(NVGcontext* ctx,
 	NVG_NOTUSED(ctx);
 	memset(&p, 0, sizeof(p));
 
-	nvgTransformIdentity(p.xform);
-	p.xform[4] = cx;
-	p.xform[5] = cy;
+	p.xform[2] = glm::vec2(cx, cy);
 
 	p.extent[0] = r;
 	p.extent[1] = r;
@@ -854,15 +769,14 @@ NVGpaint nvgRadialGradient(NVGcontext* ctx,
 
 NVGpaint nvgBoxGradient(NVGcontext* ctx,
 							   float x, float y, float w, float h, float r, float f,
-							   NVGcolor icol, NVGcolor ocol)
+							   glm::vec4 icol, glm::vec4 ocol)
 {
 	NVGpaint p;
 	NVG_NOTUSED(ctx);
 	memset(&p, 0, sizeof(p));
 
-	nvgTransformIdentity(p.xform);
-	p.xform[4] = x+w*0.5f;
-	p.xform[5] = y+h*0.5f;
+	p.xform = glm::mat3x2(1.0f);
+	p.xform[2] = glm::vec2(x+w*0.5f, y+h*0.5f);
 
 	p.extent[0] = w*0.5f;
 	p.extent[1] = h*0.5f;
@@ -877,14 +791,14 @@ NVGpaint nvgBoxGradient(NVGcontext* ctx,
 	return p;
 }
 
-NVGpaint nvgBoxGradient(NVGcontext* ctx, glm::aabb2 box, float r, float f, NVGcolor icol, NVGcolor ocol)
+NVGpaint nvgBoxGradient(NVGcontext* ctx, glm::aabb2 box, float r, float f, glm::vec4 icol, glm::vec4 ocol)
 {
 	NVGpaint p;
 	NVG_NOTUSED(ctx);
 	memset(&p, 0, sizeof(p));
-	nvgTransformIdentity(p.xform);
-	p.xform_[2] = box.center();
-	p.extent_ = box.size() * 0.5f;
+	p.xform = glm::mat3x2(1.0f);
+	p.xform[2] = box.center();
+	p.extent = box.size() * 0.5f;
 	p.radius = r;
 	p.feather = nvg__maxf(1.0f, f);
 	p.innerColor = icol;
@@ -902,16 +816,15 @@ NVGpaint nvgImagePattern(NVGcontext* ctx,
 	NVG_NOTUSED(ctx);
 	memset(&p, 0, sizeof(p));
 
-	nvgTransformRotate(p.xform, angle);
-	p.xform[4] = cx;
-	p.xform[5] = cy;
+	nvgTransformRotate(&p.xform[0][0], angle);
+	p.xform[2] = glm::vec2(cx, cy);
 
 	p.extent[0] = w;
 	p.extent[1] = h;
 
 	p.image = image;
 
-	p.innerColor = p.outerColor = nvgRGBAf(1,1,1,alpha);
+	p.innerColor = p.outerColor = glm::vec4(1,1,1,alpha);
 
 	return p;
 }

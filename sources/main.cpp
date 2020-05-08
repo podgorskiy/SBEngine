@@ -7,6 +7,74 @@
 #include "examples/imgui_impl_glfw.h"
 #include "examples/imgui_impl_opengl3.h"
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#include <emscripten/html5.h>
+#endif
+
+auto start = std::chrono::steady_clock::now();
+
+
+#ifdef __EMSCRIPTEN__
+std::shared_ptr<Application> g_app;
+
+EM_BOOL mouseCb(int eventType, const EmscriptenMouseEvent* event, void* userData)
+{
+	ImGuiIO& io = ImGui::GetIO();
+	if (event == NULL)
+	{
+		return false;
+	}
+
+	switch (eventType)
+	{
+	case EMSCRIPTEN_EVENT_MOUSEMOVE:
+	{
+		io.MousePos.x = event->canvasX;
+		io.MousePos.y = event->canvasY;
+		return true;
+	}
+	case EMSCRIPTEN_EVENT_MOUSEDOWN:
+		io.MouseDown[0] = true;
+		return true;
+	case EMSCRIPTEN_EVENT_MOUSEUP:
+		io.MouseDown[0] = false;
+		return true;
+	}
+	return false;
+}
+#endif
+
+
+void Update(void* window)
+{
+	auto app = static_cast<Application*>(glfwGetWindowUserPointer((GLFWwindow*)window));
+
+	auto current_timestamp = std::chrono::steady_clock::now();
+
+	std::chrono::duration<float> elapsed_time = (current_timestamp - start);
+
+	ImGui_ImplOpenGL3_NewFrame();
+	ImGui_ImplGlfw_NewFrame();
+	ImGui::NewFrame();
+
+	app->Draw(elapsed_time.count());
+
+	ImGui::Render();
+	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+#ifndef __EMSCRIPTEN__
+	glfwSwapInterval(1);
+#endif
+
+	/* Swap front and back buffers */
+	glfwSwapBuffers((GLFWwindow*)window);
+
+	/* Poll for and process events */
+	glfwPollEvents();
+}
+
+
 int main(int argc, const char* const* argv)
 {
 	GLFWwindow* window;
@@ -18,11 +86,13 @@ int main(int argc, const char* const* argv)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 
 	/* Create a windowed mode window and its OpenGL context */
-	window = glfwCreateWindow(640, 640, "Hello World", nullptr, nullptr);
+	window = glfwCreateWindow(1200, 900, "Hello World", nullptr, nullptr);
 
 	/* Make the window's context current */
+#ifndef __EMSCRIPTEN__
 	glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
+#endif
 
     ImGui::CreateContext();
 
@@ -33,7 +103,7 @@ int main(int argc, const char* const* argv)
 	{
 		std::shared_ptr<Application> app = std::make_shared<Application>(argc, argv);
 
-	    const char* glsl_version = "#version 130";
+	    const char* glsl_version = "#version 300 es";
 	    ImGui_ImplOpenGL3_Init(glsl_version);
 
 		app->Resize(640, 640);
@@ -124,33 +194,26 @@ int main(int argc, const char* const* argv)
 
 		auto start = std::chrono::steady_clock::now();
 
-		/* Loop until the user closes the window */
+#ifndef __EMSCRIPTEN__
 		while (!glfwWindowShouldClose(window))
 		{
-			auto current_timestamp = std::chrono::steady_clock::now();
-
-			std::chrono::duration<float> elapsed_time = (current_timestamp - start);
-
-	        ImGui_ImplOpenGL3_NewFrame();
-	        ImGui_ImplGlfw_NewFrame();
-	        ImGui::NewFrame();
-
-			app->Draw(elapsed_time.count());
-
-			ImGui::Render();
-            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-			/* Swap front and back buffers */
-			glfwSwapBuffers(window);
-
-			/* Poll for and process events */
-			glfwPollEvents();
+			Update(window);
 		}
+#else
+		g_app = app;
+		emscripten_set_mousedown_callback("#canvas", (void*)window, true, mouseCb);
+		emscripten_set_mouseup_callback("#canvas", (void*)window, true, mouseCb);
+		emscripten_set_mousemove_callback("#canvas", (void*)window, true, mouseCb);
 
+		emscripten_set_main_loop_arg(Update, (void*)window, 0, 0);
+#endif
+
+#ifndef __EMSCRIPTEN__
 		glfwSetWindowSizeCallback(window, nullptr);
 		ImGui_ImplGlfw_Shutdown();
+		glfwTerminate();
+#endif
 	}
 
-	glfwTerminate();
 	return 0;
 }

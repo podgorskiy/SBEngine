@@ -1,7 +1,7 @@
 #include "Texture.h"
 #include "Render/TextureReaders/PVRReader.h"
 #include "Render/GLCompressionTypes.h"
-#include <GL/gl3w.h>
+#include "Render/gl_headers.h"
 #include <fsal.h>
 #include <stdio.h>
 #include <spdlog/spdlog.h>
@@ -85,6 +85,8 @@ TexturePtr Texture::LoadTexture(TextureReader reader)
 		case Texture::Texture_Cube:
 			texture->header.gltextype = GL_TEXTURE_CUBE_MAP;
 			break;
+		default:
+			throw runtime_error("Unkown type %d", texture->header.type);
 	}
 
 	texture->Bind(0);
@@ -126,3 +128,12 @@ TexturePtr Texture::LoadTexture(TextureReader reader)
 
 	return texture;
 }
+
+#ifndef __EMSCRIPTEN__
+#include <doctest.h>
+
+TEST_CASE("[Render] PVRReader")
+{
+	spdlog::info("TexturePtr size: {}", sizeof(TexturePtr));
+}
+#endif

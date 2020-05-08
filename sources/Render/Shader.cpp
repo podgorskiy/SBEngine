@@ -1,25 +1,12 @@
 #include "Shader.h"
+#include "Render/gl_headers.h"
 #include <spdlog/spdlog.h>
 #include <stdio.h>
-#include <GL/gl3w.h>
 
 
 namespace Render
 {
-	template
-	class Shader<SHADER_TYPE::COMPUTE_SHADER>;
-
-	template
-	class Shader<SHADER_TYPE::GEOMETRY_SHADER>;
-
-	template
-	class Shader<SHADER_TYPE::VERTEX_SHADER>;
-
-	template
-	class Shader<SHADER_TYPE::FRAGMENT_SHADER>;
-
-	template<SHADER_TYPE::Type T>
-	Shader<T>::Shader()
+	void ShaderCstr(GLHandle& handle, SHADER_TYPE::Type T)
 	{
 		GLuint type;
 		switch (T)
@@ -37,11 +24,10 @@ namespace Render
 				type = GL_FRAGMENT_SHADER;
 				break;
 		}
-		m_shader = glCreateShader(type);
+		handle = glCreateShader(type);
 	}
 
-	template<SHADER_TYPE::Type T>
-	std::string GetShaderTypeName()
+	std::string GetShaderTypeName(SHADER_TYPE::Type T)
 	{
 		switch (T)
 		{
@@ -57,10 +43,9 @@ namespace Render
 		return "INVALID_SHADER";
 	}
 
-	template<SHADER_TYPE::Type T>
-	Shader<T>::~Shader()
+	void ShaderDstr(GLHandle handle)
 	{
-		glDeleteShader(m_shader);
+		glDeleteShader(handle);
 	}
 
 	static void PrintSource(const char* source, int startLine)
@@ -84,26 +69,25 @@ namespace Render
 		}
 	}
 
-	template<SHADER_TYPE::Type T>
-	bool Shader<T>::CompileShader(const char* src)
+	bool CompileShader(GLHandle& handle, const char* src, SHADER_TYPE::Type T)
 	{
-		glShaderSource(m_shader, 1, &src, NULL);
+		glShaderSource(handle, 1, &src, NULL);
 
-		glCompileShader(m_shader);
+		glCompileShader(handle);
 		GLint compiled = 0;
-		glGetShaderiv(m_shader, GL_COMPILE_STATUS, &compiled);
+		glGetShaderiv(handle, GL_COMPILE_STATUS, &compiled);
 		GLint infoLen = 0;
-		glGetShaderiv(m_shader, GL_INFO_LOG_LENGTH, &infoLen);
+		glGetShaderiv(handle, GL_INFO_LOG_LENGTH, &infoLen);
 
 		if (infoLen > 1)
 		{
 			spdlog::warn("{} during {} shader compilation.", compiled == GL_TRUE ? "Warning" : "Error",
-			             GetShaderTypeName<T>());
+			             GetShaderTypeName(T));
 
 			PrintSource(src, 1);
 
 			char* buf = new char[infoLen];
-			glGetShaderInfoLog(m_shader, infoLen, NULL, buf);
+			glGetShaderInfoLog(handle, infoLen, NULL, buf);
 			spdlog::warn("Compilation log: {}", buf);
 			delete[] buf;
 		}

@@ -1,6 +1,6 @@
 #include "GLDebugMessage.h"
+#include "Render/gl_headers.h"
 #include <assert.h>
-#include <GL/gl3w.h>
 #include <spdlog/spdlog.h>
 
 #include <set>
@@ -103,16 +103,20 @@ bool Render::ProcessGLErrorEvents(bool reportErrors)
 
 void DebugDevice::lock()
 {
+#ifndef __EMSCRIPTEN__
 	glDebugMessageCallback(&DebugMessageCallback, this);
 	glEnable(GL_DEBUG_OUTPUT);
 	ProcessGLErrorEvents();
+#endif
 }
 
 void DebugDevice::unlock()
 {
+#ifndef __EMSCRIPTEN__
 	glDisable(GL_DEBUG_OUTPUT);
 	bool errors = ProcessGLErrorEvents(true);
 	glDebugMessageCallback(nullptr, nullptr);
+#endif
 }
 
 
@@ -124,12 +128,17 @@ static std::set<std::string> InitExtensionList()
 
 	spdlog::info("Available OpenGL extensions:");
 
+#ifndef __EMSCRIPTEN__
 	for (GLint i = 0; i < n; i++)
 	{
 		const char* extension = (const char*) glGetStringi(GL_EXTENSIONS, i);
 		extensions.insert(extension);
 		spdlog::info("\t- {}", extension);
 	}
+#else
+	const char* _extensions = (const char*) glGetString(GL_EXTENSIONS);
+	spdlog::info("{}", _extensions);
+#endif
 	return extensions;
 }
 

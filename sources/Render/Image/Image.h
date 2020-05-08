@@ -1,5 +1,6 @@
 #pragma once
 #include "align.h"
+#include "Render/runtime_error.h"
 #include <glm/glm.hpp>
 
 #include <memory>
@@ -702,6 +703,9 @@ inline Image Image::Cast() const
 	case RGF: return _Cast<pixelRGF, T>(out);
 	case RGBF: return _Cast<pixelRGBF, T>(out);
 	case RGBAF: return _Cast<pixelRGBAF, T>(out);
+	case COMPRESSED:
+	default:
+		throw runtime_error("Can not hanfle comressed types");
 	}
 	return out;
 }

@@ -19,7 +19,7 @@
 #include "nanovg.h"
 #include "nanovg_backend.h"
 #include "Render/Shader.h"
-#include <GL/gl3w.h>
+#include "Render/gl_headers.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -95,44 +95,31 @@ struct GLNVGpath {
 };
 typedef struct GLNVGpath GLNVGpath;
 
-struct GLNVGfragUniforms {
-	#if NANOVG_GL_USE_UNIFORMBUFFER
-		float scissorMat[12]; // matrices are actually 3 vec4s
-		float paintMat[12];
-		struct NVGcolor innerCol;
-		struct NVGcolor outerCol;
-		float scissorExt[2];
-		float scissorScale[2];
-		float extent[2];
-		float radius;
-		float feather;
-		float strokeMult;
-		float strokeThr;
-		int texType;
-		int type;
-	#else
-		// note: after modifying layout or size of uniform array,
-		// don't forget to also update the fragment shader source!
-		#define NANOVG_GL_UNIFORMARRAY_SIZE 11
-		union {
-			struct {
-				float scissorMat[12]; // matrices are actually 3 vec4s
-				float paintMat[12];
-				struct NVGcolor innerCol;
-				struct NVGcolor outerCol;
-				float scissorExt[2];
-				float scissorScale[2];
-				float extent[2];
-				float radius;
-				float feather;
-				float strokeMult;
-				float strokeThr;
-				float texType;
-				float type;
-			};
-			float uniformArray[NANOVG_GL_UNIFORMARRAY_SIZE][4];
+struct GLNVGfragUniforms
+{
+	// note: after modifying layout or size of uniform array,
+	// don't forget to also update the fragment shader source!
+#define NANOVG_GL_UNIFORMARRAY_SIZE 11
+	union
+	{
+		struct
+		{
+			float scissorMat[12]; // matrices are actually 3 vec4s
+			float paintMat[12];
+			float innerCol[4];
+			float outerCol[4];
+			float scissorExt[2];
+			float scissorScale[2];
+			float extent[2];
+			float radius;
+			float feather;
+			float strokeMult;
+			float strokeThr;
+			float texType;
+			float type;
 		};
-	#endif
+		float uniformArray[NANOVG_GL_UNIFORMARRAY_SIZE][4];
+	};
 };
 typedef struct GLNVGfragUniforms GLNVGfragUniforms;
 
@@ -681,7 +668,7 @@ static void glnvg__xformToMat3x4(float* m3, float* t)
 	m3[11] = 0.0f;
 }
 
-static NVGcolor glnvg__premulColor(NVGcolor c)
+static glm::vec4 glnvg__premulColor(glm::vec4 c)
 {
 	c.r *= c.a;
 	c.g *= c.a;
@@ -697,8 +684,8 @@ static int glnvg__convertPaint(GLNVGcontext* gl, GLNVGfragUniforms* frag, NVGpai
 
 	memset(frag, 0, sizeof(*frag));
 
-	frag->innerCol = glnvg__premulColor(paint->innerColor);
-	frag->outerCol = glnvg__premulColor(paint->outerColor);
+	(glm::vec4&)frag->innerCol = glnvg__premulColor(paint->innerColor);
+	(glm::vec4&)frag->outerCol = glnvg__premulColor(paint->outerColor);
 
 	if (scissor->extent[0] < -0.5f || scissor->extent[1] < -0.5f) {
 		memset(frag->scissorMat, 0, sizeof(frag->scissorMat));
@@ -715,7 +702,7 @@ static int glnvg__convertPaint(GLNVGcontext* gl, GLNVGfragUniforms* frag, NVGpai
 		frag->scissorScale[1] = sqrtf(scissor->xform[1]*scissor->xform[1] + scissor->xform[3]*scissor->xform[3]) / fringe;
 	}
 
-	memcpy(frag->extent, paint->extent, sizeof(frag->extent));
+	memcpy(frag->extent, &paint->extent[0], sizeof(frag->extent));
 	frag->strokeMult = (width*0.5f + fringe*0.5f) / fringe;
 	frag->strokeThr = strokeThr;
 
@@ -725,14 +712,14 @@ static int glnvg__convertPaint(GLNVGcontext* gl, GLNVGfragUniforms* frag, NVGpai
 		if ((tex->flags & NVG_IMAGE_FLIPY) != 0) {
 			float m1[6], m2[6];
 			nvgTransformTranslate(m1, 0.0f, frag->extent[1] * 0.5f);
-			nvgTransformMultiply(m1, paint->xform);
+			nvgTransformMultiply(m1, &(float&)paint->xform);
 			nvgTransformScale(m2, 1.0f, -1.0f);
 			nvgTransformMultiply(m2, m1);
 			nvgTransformTranslate(m1, 0.0f, -frag->extent[1] * 0.5f);
 			nvgTransformMultiply(m1, m2);
 			nvgTransformInverse(invxform, m1);
 		} else {
-			nvgTransformInverse(invxform, paint->xform);
+			nvgTransformInverse((float*)&invxform, (float*)&paint->xform);
 		}
 		frag->type = NSVG_SHADER_FILLIMG;
 
@@ -752,7 +739,7 @@ static int glnvg__convertPaint(GLNVGcontext* gl, GLNVGfragUniforms* frag, NVGpai
 		frag->type = NSVG_SHADER_FILLGRAD;
 		frag->radius = paint->radius;
 		frag->feather = paint->feather;
-		nvgTransformInverse(invxform, paint->xform);
+		nvgTransformInverse(invxform,  (float*)&paint->xform);
 	}
 
 	glnvg__xformToMat3x4(frag->paintMat, invxform);
@@ -1326,10 +1313,6 @@ NVGcontext* nvgCreateContext(int flags)
 
 	memset(&params, 0, sizeof(params));
 	params.renderCreate = glnvg__renderCreate;
-	params.renderCreateTexture = glnvg__renderCreateTexture;
-	params.renderDeleteTexture = glnvg__renderDeleteTexture;
-	params.renderUpdateTexture = glnvg__renderUpdateTexture;
-	params.renderGetTextureSize = glnvg__renderGetTextureSize;
 	params.renderViewport = glnvg__renderViewport;
 	params.renderCancel = glnvg__renderCancel;
 	params.renderFlush = glnvg__renderFlush;

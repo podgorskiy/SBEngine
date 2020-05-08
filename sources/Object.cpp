@@ -1,6 +1,6 @@
 #include "Object.h"
+#include "Render/gl_headers.h"
 #include <glm/glm.hpp>
-#include <GL/gl3w.h>
 #include <fstream>
 #include <sstream>
 #include <vector>

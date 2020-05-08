@@ -1,7 +1,7 @@
 #include "Shader.h"
+#include "Render/gl_headers.h"
 #include <stdio.h>
 #include <spdlog/spdlog.h>
-#include <GL/gl3w.h>
 #include <glm/glm.hpp>
 #include <glm/gtx/quaternion.hpp>
 #include <type_traits>
@@ -248,6 +248,7 @@ namespace Render
 	ADD_SPEC_A(4, i, int, glm::ivec4)
 }
 
+#ifndef __EMSCRIPTEN__
 #include <doctest.h>
 
 TEST_CASE("[Render] Shaders")
@@ -305,3 +306,4 @@ TEST_CASE("[Render] Shaders")
 
 	}
 }
+#endif

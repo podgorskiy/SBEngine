@@ -1,6 +1,6 @@
 #include "TextureFormat.h"
+#include "Render/gl_headers.h"
 #include <spdlog/spdlog.h>
-#include <GL/gl3w.h>
 
 using namespace Render;
 
@@ -417,6 +417,7 @@ std::vector<uint32_t> Render::GetGLMappedTypes(TextureFormat format)
 	return {internal_format, import_format, channel_type};
 }
 
+#ifndef __EMSCRIPTEN__
 #include <doctest.h>
 
 TEST_CASE("[Render] PVRReader")
@@ -439,4 +440,4 @@ TEST_CASE("[Render] PVRReader")
 	CHECK_EQ(Render::TextureFormat::GetChannelCount(Render::TextureFormat::RG88), 2);
 	CHECK_EQ(Render::TextureFormat::GetChannelCount(Render::TextureFormat::R8), 1);
 }
-
+#endif

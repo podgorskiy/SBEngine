@@ -6,6 +6,7 @@
 #include "nanovg.h"
 //#define STB_IMAGE_WRITE_IMPLEMENTATION
 // #include "stb_image_write.h"
+#include <stdlib.h>
 
 
 #ifdef _MSC_VER
@@ -27,34 +28,9 @@
 static float clampf(float a, float mn, float mx) { return a < mn ? mn : (a > mx ? mx : a); }
 
 // Returns 1 if col.rgba is 0.0f,0.0f,0.0f,0.0f, 0 otherwise
-int isBlack(NVGcolor col)
+int isBlack(glm::vec4 col)
 {
-	if( col.r == 0.0f && col.g == 0.0f && col.b == 0.0f && col.a == 0.0f )
-	{
-		return 1;
-	}
-	return 0;
-}
-
-static char* cpToUTF8(int cp, char* str)
-{
-	int n = 0;
-	if (cp < 0x80) n = 1;
-	else if (cp < 0x800) n = 2;
-	else if (cp < 0x10000) n = 3;
-	else if (cp < 0x200000) n = 4;
-	else if (cp < 0x4000000) n = 5;
-	else if (cp <= 0x7fffffff) n = 6;
-	str[n] = '\0';
-	switch (n) {
-	case 6: str[5] = 0x80 | (cp & 0x3f); cp = cp >> 6; cp |= 0x4000000;
-	case 5: str[4] = 0x80 | (cp & 0x3f); cp = cp >> 6; cp |= 0x200000;
-	case 4: str[3] = 0x80 | (cp & 0x3f); cp = cp >> 6; cp |= 0x10000;
-	case 3: str[2] = 0x80 | (cp & 0x3f); cp = cp >> 6; cp |= 0x800;
-	case 2: str[1] = 0x80 | (cp & 0x3f); cp = cp >> 6; cp |= 0xc0;
-	case 1: str[0] = cp;
-	}
-	return str;
+	return glm::all(glm::equal(col, glm::vec4(0.0f)));
 }
 
 
@@ -177,7 +153,7 @@ void drawCheckBox(NVGcontext* vg, const char* text, float x, float y, float w, f
 
 }
 
-void drawButton(NVGcontext* vg, int preicon, const char* text, float x, float y, float w, float h, NVGcolor col)
+void drawButton(NVGcontext* vg, int preicon, const char* text, float x, float y, float w, float h, glm::vec4 col)
 {
 	NVGpaint bg;
 	char icon[8];
@@ -412,7 +388,7 @@ void drawThumbnails(NVGcontext* vg, float x, float y, float w, float h, const in
 	float ix,iy,iw,ih;
 	float thumb = 60.0f;
 	float arry = 30.5f;
-	int imgw, imgh;
+	int imgw, imgh = 128;
 	float stackh = (nimages/2) * (thumb+10) + 10;
 	int i;
 	float u = (1+cosf(t*0.5f))*0.5f;
@@ -452,7 +428,7 @@ void drawThumbnails(NVGcontext* vg, float x, float y, float w, float h, const in
 		ty = y+10;
 		tx += (i%2) * (thumb+10);
 		ty += (i/2) * (thumb+10);
-		nvgImageSize(vg, images[i], &imgw, &imgh);
+//		nvgImageSize(vg, images[i], &imgw, &imgh);
 		if (imgw < imgh) {
 			iw = thumb;
 			ih = iw * (float)imgh/(float)imgw;
@@ -471,7 +447,7 @@ void drawThumbnails(NVGcontext* vg, float x, float y, float w, float h, const in
 		if (a < 1.0f)
 			drawSpinner(vg, tx+thumb/2,ty+thumb/2, thumb*0.25f, t);
 
-		imgPaint = nvgImagePattern(vg, tx+ix, ty+iy, iw,ih, 0.0f/180.0f*NVG_PI, images[i], a);
+		//imgPaint = nvgImagePattern(vg, tx+ix, ty+iy, iw,ih, 0.0f/180.0f*NVG_PI, images[i], a);
 		nvgBeginPath(vg);
 		nvgRoundedRect(vg, tx,ty, thumb,thumb, 5);
 		nvgFillPaint(vg, imgPaint);
@@ -684,23 +660,23 @@ void drawLines(NVGcontext* vg, float x, float y, float w, float h, float t)
 	nvgRestore(vg);
 }
 
-//int loadDemoData(NVGcontext* vg, DemoData* data)
-//{
-//	int i;
-//
-//	if (vg == NULL)
-//		return -1;
-//
-//	for (i = 0; i < 12; i++) {
-//		char file[128];
-//		snprintf(file, 128, "../example/images/image%d.jpg", i+1);
+int loadDemoData(NVGcontext* vg, DemoData* data)
+{
+	int i;
+
+	if (vg == NULL)
+		return -1;
+
+	for (i = 0; i < 12; i++) {
+		char file[128];
+		snprintf(file, 128, "../example/images/image%d.jpg", i+1);
 //		data->images[i] = nvgCreateImage(vg, file, 0);
-//		if (data->images[i] == 0) {
-//			printf("Could not load %s.\n", file);
-//			return -1;
-//		}
-//	}
-//
+		if (data->images[i] == 0) {
+			printf("Could not load %s.\n", file);
+			return -1;
+		}
+	}
+
 //	data->fontIcons = nvgCreateFont(vg, "icons", "../example/entypo.ttf");
 //	if (data->fontIcons == -1) {
 //		printf("Could not add font icons.\n");
@@ -723,20 +699,20 @@ void drawLines(NVGcontext* vg, float x, float y, float w, float h, float t)
 //	}
 //	nvgAddFallbackFontId(vg, data->fontNormal, data->fontEmoji);
 //	nvgAddFallbackFontId(vg, data->fontBold, data->fontEmoji);
-//
-//	return 0;
-//}
+
+	return 0;
+}
 
 
 void freeDemoData(NVGcontext* vg, DemoData* data)
 {
-	int i;
-
-	if (vg == NULL)
-		return;
-
-	for (i = 0; i < 12; i++)
-		nvgDeleteImage(vg, data->images[i]);
+//	int i;
+//
+//	if (vg == NULL)
+//		return;
+//
+//	for (i = 0; i < 12; i++)
+//		nvgDeleteImage(vg, data->images[i]);
 }
 
 void drawWidths(NVGcontext* vg, float x, float y, float width)
@@ -882,7 +858,7 @@ void renderDemo(NVGcontext* vg, float mx, float my, float width, float height,
 	drawButton(vg, 0, "Cancel", x+170, y, 110, 28, nvgRGBA(0,0,0,0));
 
 	// Thumbnails box
-	// drawThumbnails(vg, 365, popy-30, 160, 300, data->images, 12, t);
+	drawThumbnails(vg, 365, popy-30, 160, 300, data->images, 12, t);
 
 	nvgRestore(vg);
 }

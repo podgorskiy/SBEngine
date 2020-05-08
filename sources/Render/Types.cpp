@@ -1,6 +1,6 @@
 #include "Types.h"
 #include <inttypes.h>
-#include <GL/gl3w.h>
+#include "Render/gl_headers.h"
 #include <glm/glm.hpp>
 
 
@@ -120,6 +120,7 @@ bool VarType::IsSampler(Render::VarType::Type t)
 
 
 
+#ifndef __EMSCRIPTEN__
 #include <doctest.h>
 #include <spdlog/spdlog.h>
 
@@ -140,3 +141,4 @@ TEST_CASE("GL_TYPES")
 	CHECK(Render::VarType::IsInteger(Render::VarType::UNSIGNED_INT));
 	CHECK(!Render::VarType::IsInteger(Render::VarType::FLOAT));
 }
+#endif
