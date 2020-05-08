@@ -5,26 +5,62 @@
 #include <MemRefFile.h>
 #include <spdlog/spdlog.h>
 
+#include <bgfx/bgfx.h>
+
 
 using namespace Render;
 using namespace UI;
 
+
+struct TextVertex
+{
+	glm::vec<2, int16_t> m_pos;
+	glm::vec<2, int16_t> m_uv;
+	glm::vec<4, uint8_t> m_color;
+
+	static void init()
+	{
+		m_layout
+			.begin()
+			.add(bgfx::Attrib::Position,  2, bgfx::AttribType::Int16)
+			.add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Int16)
+			.add(bgfx::Attrib::Color0,    4, bgfx::AttribType::Uint8, true)
+			.end();
+	}
+
+	static bgfx::VertexLayout m_layout;
+};
+
+bgfx::VertexLayout TextVertex::m_layout;
+
+
+
 class TextBackend: public Scriber::IRenderAPI
 {
 public:
-	TextBackend(): m_textureHandle(0)
+	TextBackend()
 	{
 		int size = 1024;
-		glGenTextures(1, &m_textureHandle);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, m_textureHandle);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RG8, size, size, 0, GL_RG, GL_UNSIGNED_BYTE, nullptr);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-		glBindTexture(GL_TEXTURE_2D, 0);
+//		glGenTextures(1, &m_textureHandle);
+//		glActiveTexture(GL_TEXTURE0);
+//		glBindTexture(GL_TEXTURE_2D, m_textureHandle);
+//		glTexImage2D(GL_TEXTURE_2D, 0, GL_RG8, size, size, 0, GL_RG, GL_UNSIGNED_BYTE, nullptr);
+//		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+//		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+//		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+//		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+//		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+//		glBindTexture(GL_TEXTURE_2D, 0);
+
+		m_textureHandle = bgfx::createTexture2D(
+			(uint16_t)size
+			, (uint16_t)size
+			, false
+			, 1
+			, bgfx::TextureFormat::RG8
+			, BGFX_SAMPLER_POINT
+			, nullptr
+		);
 
 		const char* text_vertex_shader_src = R"(#version 300 es
 			uniform mat4 u_transform;
@@ -90,7 +126,7 @@ public:
 	{
 		Scriber::ivec2 p(pos);
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, m_textureHandle);
+		//glBindTexture(GL_TEXTURE_2D, m_textureHandle);
 
 		GLint oldUnpackAlignment;
 		glGetIntegerv(GL_UNPACK_ALIGNMENT, &oldUnpackAlignment);
@@ -122,7 +158,7 @@ public:
 		u_texture.ApplyValue(0);
 
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, m_textureHandle);
+		// glBindTexture(GL_TEXTURE_2D, m_textureHandle);
 		glBindBuffer(GL_ARRAY_BUFFER, m_vertexBufferHandle);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_indexBufferHandle);
 
@@ -142,7 +178,7 @@ public:
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	}
 
-	unsigned int m_textureHandle;
+	bgfx::TextureHandle m_textureHandle;
 	Render::ProgramPtr m_program;
 	Render::VertexSpec m_vertexSpec;
 	glm::mat4 m_transform;
@@ -294,7 +330,7 @@ void Renderer::PushVertex(glm::vec2 p, glm::vec2 uv, color color)
 int Renderer::GetGlyphTexture() const
 {
 	auto r = std::static_pointer_cast<TextBackend>(m_text_backend);
-	return r->m_textureHandle;
+	return 0;// r->m_textureHandle;
 }
 
 void Renderer::Draw()

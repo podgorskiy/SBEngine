@@ -4,8 +4,25 @@
 #include <memory>
 #include <chrono>
 #include "imgui.h"
-#include "examples/imgui_impl_glfw.h"
-#include "examples/imgui_impl_opengl3.h"
+//#include "examples/imgui_impl_glfw.h"
+//#include "examples/imgui_impl_opengl3.h"
+
+
+#define NOMINMAX
+#ifdef _WIN32
+#define GLFW_EXPOSE_NATIVE_WIN32
+#elif __APPLE__
+#define GLFW_EXPOSE_NATIVE_COCOA
+#elif __unix__
+#define GLFW_EXPOSE_NATIVE_GLX
+#define GLFW_EXPOSE_NATIVE_X11
+#endif
+
+#include <GLFW/glfw3.h>
+#include <GLFW/glfw3native.h>
+#include <bgfx/bgfx.h>
+#include <bx/bx.h>
+#include <bgfx/platform.h>
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
@@ -45,6 +62,15 @@ EM_BOOL mouseCb(int eventType, const EmscriptenMouseEvent* event, void* userData
 }
 #endif
 
+// static CustomPrinters cp;
+
+static uint32_t reset_flags = BGFX_RESET_NONE
+	//| BGFX_RESET_MSAA_X16
+	| BGFX_RESET_FLUSH_AFTER_RENDER
+	| BGFX_RESET_VSYNC
+	| BGFX_RESET_FLIP_AFTER_RENDER
+;
+
 
 void Update(void* window)
 {
@@ -54,14 +80,14 @@ void Update(void* window)
 
 	std::chrono::duration<float> elapsed_time = (current_timestamp - start);
 
-	ImGui_ImplOpenGL3_NewFrame();
-	ImGui_ImplGlfw_NewFrame();
-	ImGui::NewFrame();
+	// ImGui_ImplOpenGL3_NewFrame();
+	// ImGui_ImplGlfw_NewFrame();
+	// ImGui::NewFrame();
 
 	app->Draw(elapsed_time.count());
 
-	ImGui::Render();
-	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+	// ImGui::Render();
+	// ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
 #ifndef __EMSCRIPTEN__
 	glfwSwapInterval(1);
@@ -78,15 +104,39 @@ void Update(void* window)
 int main(int argc, const char* const* argv)
 {
 	GLFWwindow* window;
+	GLFWmonitor* monitor;
+	glm::ivec2 m_windowBufferSize;
+	int m_scale;
+	glm::vec2 m_dpi;
 
 	/* Initialize the library */
 	glfwInit();
 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+	glfwWindowHint(GLFW_SRGB_CAPABLE, GL_TRUE);
+	glfwWindowHint(GLFW_DOUBLEBUFFER, GL_TRUE);
+	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+
+	m_windowBufferSize.x = 1200;
+	m_windowBufferSize.y = 800;
+
+	monitor = glfwGetPrimaryMonitor();
+	const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+	glm::ivec2 monitorSizeInmm;
+	glfwGetMonitorPhysicalSize(monitor, &monitorSizeInmm.x, &monitorSizeInmm.y);
+	glm::ivec2 monitorSizeInpixels(mode->width, mode->height);
+
+	constexpr float mmPerInch = 25.4f;
+	m_dpi = glm::round(glm::vec2(monitorSizeInpixels) / glm::vec2(monitorSizeInmm) * mmPerInch);
+
+	constexpr float standardDPI = 96.0f;
+	m_scale = (int)glm::round(m_dpi / standardDPI).x;
+	m_scale = m_scale == 0 ? 1 : m_scale;
+	//m_scale = 1.0;
+	m_windowBufferSize = glm::vec2(m_windowBufferSize) * (float)m_scale;
+
 
 	/* Create a windowed mode window and its OpenGL context */
-	window = glfwCreateWindow(1200, 900, "Hello World", nullptr, nullptr);
+	window = glfwCreateWindow(m_windowBufferSize.x, m_windowBufferSize.y, "Hello World", nullptr, nullptr);
 
 	/* Make the window's context current */
 #ifndef __EMSCRIPTEN__
@@ -94,17 +144,45 @@ int main(int argc, const char* const* argv)
     glfwSwapInterval(1);
 #endif
 
-    ImGui::CreateContext();
+	bgfx::PlatformData pd;
+	bx::memSet(&pd, 0, sizeof(pd));
+#ifdef _WIN32
+//	HWND w = glfwGetWin32Window(window);
+//	pd.nwh = w;
+#elif __linux__
+	auto w = glfwGetX11Window(window);
+	pd.nwh = (void*)w;
+	pd.ndt = glfwGetX11Display();
+#endif
 
-	ImGui::StyleColorsDark();
+	bgfx::setPlatformData(pd);
+	bgfx::renderFrame();
 
-	ImGui_ImplGlfw_InitForOpenGL(window, false);
+	bgfx::Init init;
+	init.type     = bgfx::RendererType::OpenGLES;
+	init.vendorId = 0;
+	init.resolution.width  = 1200;
+	init.resolution.height = 900;
+	init.resolution.reset  = BGFX_RESET_VSYNC;
+	bgfx::init(init);
+
+	bgfx::setDebug(BGFX_DEBUG_NONE
+		//	| BGFX_DEBUG_TEXT
+		//	| BGFX_DEBUG_STATS
+	);
+
+//
+//    ImGui::CreateContext();
+//
+//	ImGui::StyleColorsDark();
+//
+//	ImGui_ImplGlfw_InitForOpenGL(window, false);
 
 	{
 		std::shared_ptr<Application> app = std::make_shared<Application>(argc, argv);
 
 	    const char* glsl_version = "#version 300 es";
-	    ImGui_ImplOpenGL3_Init(glsl_version);
+	    // ImGui_ImplOpenGL3_Init(glsl_version);
 
 		app->Resize(640, 640);
 		
@@ -210,7 +288,7 @@ int main(int argc, const char* const* argv)
 
 #ifndef __EMSCRIPTEN__
 		glfwSetWindowSizeCallback(window, nullptr);
-		ImGui_ImplGlfw_Shutdown();
+		// ImGui_ImplGlfw_Shutdown();
 		glfwTerminate();
 #endif
 	}

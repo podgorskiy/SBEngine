@@ -108,11 +108,149 @@ add_subdirectory (libs/yaml-cpp)
 
 
 #####################################################################
+# bx
+#####################################################################
+set(BX_DIR libs/bx)
+set(BX_3DPARTY ${BX_DIR}/3rdparty)
+set(BX_INCLUDE ${BX_DIR}/include)
+include_directories(${BX_INCLUDE})
+include_directories(${BX_3DPARTY})
+
+if(MSVC)
+include_directories(${BX_INCLUDE}/compat/msvc)
+endif()
+file(GLOB BX_SOURCES ${BX_DIR}/src/*.cpp ${BX_INCLUDE}/*.h)
+list(REMOVE_ITEM BX_SOURCES BX_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/${BX_DIR}/src/amalgamated.cpp)
+add_library(bx ${BX_SOURCES})
+#####################################################################
+
+#####################################################################
+# bimg
+#####################################################################
+set(BIMG_DIR libs/bimg)
+set(BIMG_INCLUDE ${BIMG_DIR}/include)
+include_directories(${BGFX_DIR}/3rdparty)
+include_directories(${BIMG_INCLUDE})
+include_directories(${BIMG_DIR}/3rdparty)
+include_directories(${BIMG_DIR}/3rdparty/iqa/include)
+include_directories(${BIMG_DIR}/3rdparty/nvtt)
+include_directories(${BIMG_DIR}/3rdparty/astc)
+include_directories(${BIMG_DIR}/3rdparty/astc-codec)
+include_directories(${BIMG_DIR}/3rdparty/astc-codec/include)
+file(GLOB BIMG_SOURCES ${BIMG_DIR}/src/image.* ${BIMG_DIR}/src/image_gnf.cpp ${BIMG_DIR}/src/decoder/astc_file.* ${BIMG_INCLUDE}/*.h)
+
+set(ASTC_CODEC_DIR ${BIMG_DIR}/3rdparty/astc-codec/src/decoder)
+file(GLOB ASTC_3RDPARTY_SOURCES
+		${ASTC_CODEC_DIR}/astc_file.*
+		${ASTC_CODEC_DIR}/codec.*
+		${ASTC_CODEC_DIR}/endpoint_codec.*
+		${ASTC_CODEC_DIR}/footprint.*
+		${ASTC_CODEC_DIR}/integer_sequence_codec.*
+		${ASTC_CODEC_DIR}/intermediate_astc_block.*
+		${ASTC_CODEC_DIR}/logical_astc_block.*
+		${ASTC_CODEC_DIR}/partition.*
+		${ASTC_CODEC_DIR}/physical_astc_block.*
+		${ASTC_CODEC_DIR}/quantization.*
+		${ASTC_CODEC_DIR}/weight_infill.*
+		)
+
+add_library(bimg ${BIMG_SOURCES} ${ASTC_3RDPARTY_SOURCES})
+target_link_libraries(bimg bx)
+#####################################################################
+
+#####################################################################
+# bgfx
+#####################################################################
+set(BGFX_DIR libs/bgfx)
+set(BGFX_INCLUDE ${BGFX_DIR}/include)
+include_directories(${BGFX_DIR}/tools/shaderc)
+include_directories(${BGFX_DIR}/3rdparty)
+include_directories(${BGFX_DIR}/3rdparty/khronos)
+include_directories(${BGFX_DIR}/3rdparty/spirv-cross)
+include_directories(${BGFX_DIR}/3rdparty/dxsdk/include)
+include_directories(libs/imgui)
+include_directories(${BGFX_INCLUDE})
+if(MSVC)
+include_directories(${BGFX_INCLUDE}/compat/msvc)
+endif()
+file(GLOB BGFX_SOURCES
+	${BGFX_DIR}/src/*.cpp
+	${BGFX_DIR}/src/*.h
+	${BGFX_INCLUDE}/*.h
+	${BGFX_DIR}/src/*.inl
+	)
+list(REMOVE_ITEM BGFX_SOURCES BX_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/${BGFX_DIR}/src/amalgamated.cpp)
+add_library(bgfx ${BGFX_SOURCES})
+target_link_libraries(bgfx bx bimg X11)
+#####################################################################
+
+
+#####################################################################
+# shaderc
+#####################################################################
+set(SHADERC_DIR ${BGFX_DIR}/tools/shaderc)
+add_definitions(-DENABLE_HLSL)
+include_directories(${BGFX_DIR}/3rdparty/fcpp)
+include_directories(${BGFX_DIR}/3rdparty/glsl-optimizer/src/glsl)
+include_directories(${BGFX_DIR}/3rdparty/glsl-optimizer/src/mesa)
+include_directories(${BGFX_DIR}/3rdparty/glsl-optimizer/src/util)
+include_directories(${BGFX_DIR}/3rdparty/glsl-optimizer/src)
+include_directories(${BGFX_DIR}/3rdparty/glsl-optimizer/include)
+include_directories(${BGFX_DIR}/3rdparty/glslang/glslang/Public)
+include_directories(${BGFX_DIR}/3rdparty/glslang/glslang/Include)
+include_directories(${BGFX_DIR}/3rdparty/spirv-tools)
+include_directories(${BGFX_DIR}/3rdparty/spirv-tools/include)
+include_directories(${BGFX_DIR}/3rdparty/spirv-headers/include)
+include_directories(${BGFX_DIR}/3rdparty/spirv-tools/include/generated)
+include_directories(${BGFX_DIR}/3rdparty/spirv-tools/include/spirv-tools)
+
+set(GLSLANG ${CMAKE_CURRENT_SOURCE_DIR}/${BGFX_DIR}/3rdparty/glslang)
+include_directories(${BGFX_DIR}/3rdparty/glslang)
+file(GLOB_RECURSE BGFX_3RDPARTY_SOURCES
+	${GLSLANG}/glslang/*.cpp
+	${GLSLANG}/hlsl/*.cpp
+	${GLSLANG}/SPIRV/*.cpp
+	${GLSLANG}/OGLCompilersDLL/*.cpp
+	${BGFX_DIR}/3rdparty/spirv-cross/*.cpp
+	${BGFX_DIR}/3rdparty/spirv-tools/*.cpp
+	${BGFX_DIR}/3rdparty/glsl-optimizer/src/*.cpp
+	${BGFX_DIR}/3rdparty/glsl-optimizer/src/glsl/*.c
+	${BGFX_DIR}/3rdparty/glsl-optimizer/src/mesa/*.c
+	${BGFX_DIR}/3rdparty/glsl-optimizer/src/util/*.c
+	${BGFX_DIR}/3rdparty/fcpp/cpp*.c)
+set(NODE ${CMAKE_CURRENT_SOURCE_DIR}/${BGFX_DIR}/3rdparty/glsl-optimizer/src/node)
+list(REMOVE_ITEM BGFX_3RDPARTY_SOURCES
+	${NODE}/compiler.cpp
+	${NODE}/shader.cpp
+	${NODE}/binding.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/${BGFX_DIR}/3rdparty/glsl-optimizer/src/glsl/main.cpp
+	# ${GLSLANG}/glslang/OSDependent/Unix/ossource.cpp
+	${GLSLANG}/glslang/OSDependent/Windows/main.cpp
+	${GLSLANG}/glslang/OSDependent/Windows/ossource.cpp
+	)
+file(GLOB SHADERC_SOURCES ${SHADERC_DIR}/*.cpp ${SHADERC_DIR}/*.h )
+add_executable(shaderc ${SHADERC_SOURCES} ${BGFX_3RDPARTY_SOURCES})
+target_link_libraries(shaderc bx bgfx pthread dl ${OPENGL_LIBRARIES})
+target_compile_definitions(shaderc PUBLIC -DENABLE_OPT)
+#####################################################################
+
+
+#####################################################################
 # imgui
 #####################################################################
 set(IMGUI_DIR libs/imgui)
 file(GLOB IMGUI_SOURCES ${IMGUI_DIR}/*.cpp ${IMGUI_DIR}/*.h )
 add_library(imgui ${IMGUI_SOURCES} ${IMGUI_DIR}/examples/imgui_impl_opengl3.cpp ${IMGUI_DIR}/examples/imgui_impl_glfw.cpp)
+#####################################################################
+
+#####################################################################
+# nanovg
+#####################################################################
+set(NANOVG_DIR ${BGFX_DIR}/examples/common/nanovg)
+include_directories(${NANOVG_DIR})
+file(GLOB NANOVG_SOURCES ${NANOVG_DIR}/*.cpp ${NANOVG_DIR}/*.h )
+add_library(nanovg ${NANOVG_SOURCES})
+#####################################################################
 
 
 #####################################################################
@@ -166,7 +304,7 @@ if (TESTS)
 endif()
 
 add_executable(Oquonie ${SOURCES} ${TESTS})
-target_link_libraries(Oquonie gl3w glfw imgui pugixml fsal lz4 zlib_static vorbis ogg scribe yaml-cpp ${OPENGL_LIBRARIES} ${OPENAL_LIBRARY})
+target_link_libraries(Oquonie gl3w glfw bx bgfx pthread dl  imgui pugixml fsal lz4 zlib_static vorbis ogg scribe yaml-cpp ${OPENGL_LIBRARIES} ${OPENAL_LIBRARY})
 
 configure_file(test_rgba8888.dds test_rgba8888.dds COPYONLY)
 configure_file(test_rgba8888.pvr test_rgba8888.pvr COPYONLY)
@@ -188,3 +326,39 @@ else()
 	target_link_options(Oquonie PRIVATE -static-libstdc++)
 endif()
 
+
+file(GLOB files_vs "${CMAKE_CURRENT_SOURCE_DIR}/shaders/vs_*.sc")
+file(GLOB files_fs "${CMAKE_CURRENT_SOURCE_DIR}/shaders/fs_*.sc")
+
+add_custom_target(
+    generate-shaders
+    DEPENDS ${files_fs}
+    DEPENDS ${files_vs})
+
+
+set(dst_dir ${CMAKE_CURRENT_SOURCE_DIR}/resources/shaders)
+set(exec ${CMAKE_BINARY_DIR}/shaderc -i ${CMAKE_CURRENT_SOURCE_DIR}/${BGFX_DIR}/src)
+file(MAKE_DIRECTORY ${dst_dir}/glsl)
+file(MAKE_DIRECTORY ${dst_dir}/spv)
+file(MAKE_DIRECTORY ${dst_dir}/mtl)
+
+foreach(filename_fs ${files_fs})
+
+get_filename_component(file ${filename_fs} NAME_WE)
+add_custom_command(TARGET generate-shaders PRE_BUILD COMMAND ${exec}  -f  ${filename_fs} --platform  asm.js  -p 150 -o ${dst_dir}/glsl/${file}.bin --type fragment)
+add_custom_command(TARGET generate-shaders PRE_BUILD COMMAND ${exec}  -f  ${filename_fs} --platform  linux  -p spirv -o ${dst_dir}/spv/${file}.bin --type fragment)
+#add_custom_command(TARGET generate-shaders PRE_BUILD COMMAND ${exec} -i ${BGFX_DIR}/src -f  ${filename_fs} --platform  windows --bin2c -p ps_3_0 -O 3 -o ${filename_fs}_dx9.h --type fragment)
+#add_custom_command(TARGET generate-shaders PRE_BUILD COMMAND ${exec} -i ${BGFX_DIR}/src -f  ${filename_fs} --platform  windows --bin2c -p ps_4_0 -O 3 -o ${filename_fs}_dx11.h --type fragment)
+add_custom_command(TARGET generate-shaders PRE_BUILD COMMAND ${exec}  -f  ${filename_fs} --platform  ios  -p metal  -O 3 -o ${dst_dir}/mtl/${file}.bin --type fragment)
+endforeach()
+foreach(filename_vs ${files_vs})
+get_filename_component(file  ${filename_vs} NAME_WE)
+add_custom_command(TARGET generate-shaders PRE_BUILD COMMAND ${exec} -f  ${filename_vs} --platform  asm.js -p 150 -o ${dst_dir}/glsl/${file}.bin --type vertex)
+add_custom_command(TARGET generate-shaders PRE_BUILD COMMAND ${exec} -f  ${filename_vs} --platform  linux -p spirv -o ${dst_dir}/spv/${file}.bin --type vertex)
+#add_custom_command(TARGET generate-shaders PRE_BUILD COMMAND ${exec} -i ${CMAKE_CURRENT_SOURCE_DIR}/${BGFX_DIR}/src -f  ${filename_vs} --platform  windows --bin2c -p vs_3_0 -O 3 -o ${filename_vs}_dx9.h --type vertex)
+#add_custom_command(TARGET generate-shaders PRE_BUILD COMMAND ${exec} -i ${CMAKE_CURRENT_SOURCE_DIR}/${BGFX_DIR}/src -f  ${filename_vs} --platform  windows --bin2c -p vs_4_0 -O 3 -o ${filename_vs}_dx11.h --type vertex)
+add_custom_command(TARGET generate-shaders PRE_BUILD COMMAND ${exec} -f  ${filename_vs} --platform  ios  -p metal  -O 3 -o ${dst_dir}/mtl/${file}.bin --type vertex)
+endforeach()
+
+#add_dependencies(FastPaint generate-shaders)
+add_dependencies(generate-shaders shaderc)

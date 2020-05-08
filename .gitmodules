@@ -37,3 +37,12 @@
 [submodule "libs/yaml-cpp"]
 	path = libs/yaml-cpp
 	url = https://github.com/jbeder/yaml-cpp.git
+[submodule "libs/bgfx"]
+	path = libs/bgfx
+	url = https://github.com/bkaradzic/bgfx.git
+[submodule "libs/bx"]
+	path = libs/bx
+	url = https://github.com/bkaradzic/bx.git
+[submodule "libs/bimg"]
+	path = libs/bimg
+	url = https://github.com/bkaradzic/bimg.git
