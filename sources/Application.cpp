@@ -14,18 +14,13 @@
 #include "Render/TextureReaders/TextureLoader.h"
 #include "Render/GLDebugMessage.h"
 #include "UI/Block.h"
-//#include "Vector/nanovg.h"
-//#include "Vector/nanovg_backend.h"
-//#include "Vector/demo.h"
 #include "utils/assertion.h"
 #include "utils/align.h"
 #include "utils/system_info.h"
 #include "utils/aabb.h"
+#include "doc_test_runner.h"
 #include <stb_image_write.h>
 
-
-#define DOCTEST_CONFIG_IMPLEMENT
-#include <doctest.h>
 
 #include "imgui.h"
 #include "examples/imgui_impl_opengl3.h"
@@ -44,11 +39,39 @@
 Application::Application(int argc, const char* const* argv)
 {
     spdlog::info("{}", utils::GetMemoryUsage());
+    using fs = fsal::FileSystem;
+	using loc = fsal::Location;
+	spdlog::info("RoamingAppData: {}", fs::GetSystemPath(loc::kStorageSynced).string());
+	spdlog::info("LocalAppData: {}", fs::GetSystemPath(loc::kStorageLocal).string());
+	spdlog::info("UserPictures: {}", fs::GetSystemPath(loc::kPictures).string());
+	spdlog::info("UserMusic: {}", fs::GetSystemPath(loc::kMusic).string());
+	spdlog::info("ProgramData: {}", fs::GetSystemPath(loc::kWin_ProgramData).string());
+	spdlog::info("ProgramFiles: {}", fs::GetSystemPath(loc::kWin_ProgramFiles).string());
+	spdlog::info("Temp: {}", fs::GetSystemPath(loc::kTemp).string());
 
-	exit(0);
+	YAML::Node config = YAML::Load(std::string(fs().Open("app_config.yaml")));
+
+	bgfx::RendererType::Enum backend = bgfx::RendererType::Noop;
+	auto backend_str = config["backend"].as<std::string>();
+	if (backend_str == "OpenGLES")
+		backend = bgfx::RendererType::OpenGLES;
+	else if (backend_str == "Direct3D9")
+		backend = bgfx::RendererType::Direct3D9;
+	else if (backend_str == "Direct3D11")
+		backend = bgfx::RendererType::Direct3D11;
+	else if (backend_str == "Direct3D12")
+		backend = bgfx::RendererType::Direct3D12;
+	else if (backend_str == "Metal")
+		backend = bgfx::RendererType::Metal;
+	else if (backend_str == "OpenGL")
+		backend = bgfx::RendererType::OpenGL;
+	else if (backend_str == "Vulkan")
+		backend = bgfx::RendererType::Vulkan;
+	else
+		ASSERT(false, "Unknown backend: %s", backend_str.c_str())
 
 	bgfx::Init init;
-	init.type     = bgfx::RendererType::OpenGLES;
+	init.type     = backend;
 	init.vendorId = 0;
 	init.resolution.width  = 1200;
 	init.resolution.height = 900;
@@ -67,29 +90,12 @@ Application::Application(int argc, const char* const* argv)
 //	| BGFX_RESET_FLIP_AFTER_RENDER
 //;
 
-
-#ifndef __EMSCRIPTEN__
+	if (config["run_tests"].as<bool>())
 	{
-		doctest::Context context;
-		// defaults
-		context.setOption("rand-seed", 1);
-		context.setOption("order-by", "file");
-
-		context.applyCommandLine(argc, argv);
-
-		// overrides
-		context.setOption("no-breaks", true); // don't break in the debugger when assertions fail
-
-		int res = context.run(); // run queries, or run tests unless --no-run is specified
-
-		if (context.shouldExit()) // important - query flags (and --exit) rely on the user doing this
-		{
-			exit(res);
-		}
-
-		context.clearFilters(); // removes all filters added up to this point
+		run_doc_tests(argc, argv);
 	}
-#endif
+	exit(0);
+
 //
 //	const char* OpenGLversion = (const char*)glGetString(GL_VERSION);
 //	const char* GLSLversion = (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION);

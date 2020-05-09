@@ -169,29 +169,29 @@ static std::set<std::string> GetSupportedTextureCompressionFormats()
 	return extensions;
 }
 
-#include <doctest.h>
-
-TEST_CASE("[Render] Extensions")
-{
-	SUBCASE("Basic")
-	{
-		CHECK_EQ(CheckExtension("Does not exists"), false);
-		GetSupportedTextureCompressionFormats();
-	}
-
-	SUBCASE("Check compression formats")
-	{
-		spdlog::info("has_s3tc: {}", has_s3tc());
-		spdlog::info("has_s3tc_srgb: {}", has_s3tc_srgb());
-		spdlog::info("has_pvrtc: {}", has_pvrtc());
-		spdlog::info("has_pvrtc2: {}", has_pvrtc2());
-		spdlog::info("has_astc: {}", has_astc());
-		spdlog::info("has_latc: {}", has_latc());
-		spdlog::info("has_bptc: {}", has_bptc());
-		spdlog::info("has_rgtc: {}", has_rgtc());
-
-		CHECK(has_s3tc());
-
-		CHECK(CheckExtension("GL_EXT_texture_sRGB"));
-	}
-}
+//#include <doctest.h>
+//
+//TEST_CASE("[Render] Extensions")
+//{
+//	SUBCASE("Basic")
+//	{
+//		CHECK_EQ(CheckExtension("Does not exists"), false);
+//		GetSupportedTextureCompressionFormats();
+//	}
+//
+//	SUBCASE("Check compression formats")
+//	{
+//		spdlog::info("has_s3tc: {}", has_s3tc());
+//		spdlog::info("has_s3tc_srgb: {}", has_s3tc_srgb());
+//		spdlog::info("has_pvrtc: {}", has_pvrtc());
+//		spdlog::info("has_pvrtc2: {}", has_pvrtc2());
+//		spdlog::info("has_astc: {}", has_astc());
+//		spdlog::info("has_latc: {}", has_latc());
+//		spdlog::info("has_bptc: {}", has_bptc());
+//		spdlog::info("has_rgtc: {}", has_rgtc());
+//
+//		CHECK(has_s3tc());
+//
+//		CHECK(CheckExtension("GL_EXT_texture_sRGB"));
+//	}
+//}

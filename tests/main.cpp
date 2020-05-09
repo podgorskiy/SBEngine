@@ -1,12 +1,116 @@
 // Tests
 #include "utils/stack_vector.h"
 #include "utils/priority_queue.h"
+#include "utils/math.h"
+#include "utils/glm_printers.h"
+#include "utils/vector2d_func.h"
+#include "Serialization/Property.h"
 #include <fsal.h>
 #include <spdlog/spdlog.h>
 #include <glm/glm.hpp>
 #include "doctest.h"
 #include <map>
 
+
+template<int Dim, typename T>
+static void CheckProperty(const char* str)
+{
+	glm::vec<Dim, T> a(T(0));
+	glm::vec<Dim, T> out(T(0));
+	serialization::ReadProperty(str, a);
+	spdlog::info("{}", a);
+	serialization::ReadProperty(serialization::WriteProperty(a), out);
+	serialization::ReadProperty(serialization::WriteProperty(out), a);
+	spdlog::info("{}", a);
+	spdlog::info("{}", out);
+
+	CHECK(glm::all(glm::equal(a, out)));
+}
+
+template<typename T>
+static void CheckProperty(const char* str)
+{
+	T a;
+	T out;
+	serialization::ReadProperty(str, a);
+	spdlog::info("{}", a);
+	serialization::ReadProperty(serialization::WriteProperty(a), out);
+	serialization::ReadProperty(serialization::WriteProperty(out), a);
+	spdlog::info("{}", a);
+	spdlog::info("{}", out);
+
+	CHECK(a == out);
+}
+
+static void CheckPropertyFloat(const char* str)
+{
+	float a;
+	float out;
+	serialization::ReadProperty(str, a);
+	spdlog::info("{}", a);
+
+	std::string sout = serialization::WriteProperty(a);
+	spdlog::info("{}", sout);
+
+	float ref = atof(sout.c_str());
+	spdlog::info("{}", ref);
+
+	serialization::ReadProperty(sout, out);
+
+	CHECK(ref == out);
+}
+
+static void CheckPropertyInt(const char* str)
+{
+	int a;
+	int out;
+	serialization::ReadProperty(str, a);
+	spdlog::info("{}", a);
+
+	std::string sout = serialization::WriteProperty(a);
+	spdlog::info("{}", sout);
+
+	int ref = atoi(sout.c_str());
+	spdlog::info("{}", ref);
+
+	serialization::ReadProperty(sout, out);
+
+	CHECK(ref == out);
+}
+
+TEST_CASE("[serialization] property")
+{
+	CheckPropertyFloat("0.23076923076923078");
+	CheckProperty<bool>(" True");
+	CheckProperty<bool>(" False ");
+	CheckPropertyInt(" -1312433412 ");
+
+	CheckProperty<4, float>("234. .0 23 2");
+	CheckProperty<4, float>("1e3 1e4 0.0001 -1e-4");
+	CheckProperty<4, float>(" .1e3 -.01e-1 -.01e-1 -.01e-1 ");
+	CheckProperty<4, float>(" +.1e3 +.01e-1 -.01e-1 -.01e-1 ");
+	CheckProperty<4, float>(" 1.23456789123456789e3 0.23076923076923078 -.01e-1 -.01e-1 ");
+	CheckProperty<4, int>(" 234 234 45 5");
+	CheckProperty<4, bool>(" true false false true");
+
+	CHECK(serialization::GetComponentCount(" 1 ") == 1);
+	CHECK(serialization::GetComponentCount(" 1 222 33 4 -555.0 ") == 5);
+	CHECK(serialization::GetComponentCount("  ") == 0);
+}
+
+
+TEST_CASE("[utils] max, printers, vector")
+{
+	spdlog::info("max: {}", math::max(-3, -5, -8));
+
+	auto a = glm::vec2(0.0, 1.0);
+	auto b = glm::vec2(1.0, 0.0);
+	auto c = glm::vec2(1.0, 1.0);
+
+	spdlog::info("{} {} {} {}", a, b, c, vec2d::GetClosestPoint(a, b, c));
+
+	CHECK(vec2d::GetClosestPoint(a, b, c) == glm::vec2(0.5));
+}
 
 TEST_CASE("[fsal] Filepaths")
 {

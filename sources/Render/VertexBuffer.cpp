@@ -169,31 +169,31 @@ int VertexBuffer::GetIndexSize() const
 		default: return 0;
 	}
 }
-
-#include <doctest.h>
-
-TEST_CASE("[Render] VertexBuffer")
-{
-	SUBCASE("Basic1")
-	{
-		VertexBuffer vb;
-		char buff[256];
-		vb.FillBuffers(buff, 8, 8, buff, 64, 4, false);
-		vb.Bind();
-		vb.DrawElements();
-		vb.UnBind();
-		CHECK_EQ(vb.GetIndexSize(), 4);
-		CHECK_EQ(vb.GetVertexSize(), 8);
-	}
-	SUBCASE("Basic2")
-	{
-		VertexBuffer vb;
-		char buff[256];
-		vb.FillBuffers(buff, 8, 8, buff, 128, 2, false);
-		vb.Bind();
-		vb.DrawElements();
-		vb.UnBind();
-		CHECK_EQ(vb.GetIndexSize(), 2);
-		CHECK_EQ(vb.GetVertexSize(), 8);
-	}
-}
+//
+//#include <doctest.h>
+//
+//TEST_CASE("[Render] VertexBuffer")
+//{
+//	SUBCASE("Basic1")
+//	{
+//		VertexBuffer vb;
+//		char buff[256];
+//		vb.FillBuffers(buff, 8, 8, buff, 64, 4, false);
+//		vb.Bind();
+//		vb.DrawElements();
+//		vb.UnBind();
+//		CHECK_EQ(vb.GetIndexSize(), 4);
+//		CHECK_EQ(vb.GetVertexSize(), 8);
+//	}
+//	SUBCASE("Basic2")
+//	{
+//		VertexBuffer vb;
+//		char buff[256];
+//		vb.FillBuffers(buff, 8, 8, buff, 128, 2, false);
+//		vb.Bind();
+//		vb.DrawElements();
+//		vb.UnBind();
+//		CHECK_EQ(vb.GetIndexSize(), 2);
+//		CHECK_EQ(vb.GetVertexSize(), 8);
+//	}
+//}

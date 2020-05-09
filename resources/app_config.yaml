@@ -1,0 +1,2 @@
+backend: "OpenGLES"
+run_tests: False

@@ -195,14 +195,14 @@ namespace serialization
 					exponent += d;
 				}
 				exponent = expPositive ? exponent : -exponent;
-				float x = mantissa * misc::pow10(exponent - exponent_of_mantissa);
+				float x = mantissa * math::pow10(exponent - exponent_of_mantissa);
 				value = positive ? x : -x;
 				return true;
 			}
 		}
 		else
 		{
-			float x = mantissa * misc::pow10(-exponent_of_mantissa);
+			float x = mantissa * math::pow10(-exponent_of_mantissa);
 			value = positive ? x : -x;
 			return true;
 		}
