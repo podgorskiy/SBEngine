@@ -12,27 +12,6 @@ using namespace Render;
 using namespace UI;
 
 
-struct TextVertex
-{
-	glm::vec<2, int16_t> m_pos;
-	glm::vec<2, int16_t> m_uv;
-	glm::vec<4, uint8_t> m_color;
-
-	static void init()
-	{
-		m_layout
-			.begin()
-			.add(bgfx::Attrib::Position,  2, bgfx::AttribType::Int16)
-			.add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Int16)
-			.add(bgfx::Attrib::Color0,    4, bgfx::AttribType::Uint8, true)
-			.end();
-	}
-
-	static bgfx::VertexLayout m_layout;
-};
-
-bgfx::VertexLayout TextVertex::m_layout;
-
 
 
 class TextBackend: public Scriber::IRenderAPI
@@ -106,12 +85,12 @@ public:
 
 		m_program = Render::MakeProgram(text_vertex_shader_src, text_fragment_shader_src);
 
-		m_vertexSpec = Render::VertexSpecMaker()
-				.PushType<glm::vec<2, int16_t> >("a_position")
-				.PushType<glm::vec<2, uint16_t> >("a_uv")
-				.PushType<glm::vec<4, uint8_t> >("a_color", true);
-
-		m_vertexSpec.CollectHandles(m_program);
+		m_vertexSpec
+			.begin()
+			.add(bgfx::Attrib::Position,  2, bgfx::AttribType::Int16)
+			.add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Int16)
+			.add(bgfx::Attrib::Color0,    4, bgfx::AttribType::Uint8, true)
+			.end();
 
 		glGenBuffers(1, &m_indexBufferHandle);
 		glGenBuffers(1, &m_vertexBufferHandle);
@@ -144,43 +123,43 @@ public:
 
 	void ClearTexture() override
 	{
-#ifndef __EMSCRIPTEN__
-		char data[2] = { 0 };
-		glClearTexImage(GL_TEXTURE_2D, 0, GL_RG8, GL_UNSIGNED_BYTE, &data);
-#endif
+//#ifndef __EMSCRIPTEN__
+//		char data[2] = { 0 };
+//		glClearTexImage(GL_TEXTURE_2D, 0, GL_RG8, GL_UNSIGNED_BYTE, &data);
+//#endif
 	}
 
 	void Render(Scriber::Vertex* vertexBuffer, uint16_t* indexBuffer, uint16_t vertex_count, uint16_t primitiveCount) override
 	{
-		m_program->Use();
-
-		u_transform.ApplyValue(m_transform);
-		u_texture.ApplyValue(0);
-
-		glActiveTexture(GL_TEXTURE0);
-		// glBindTexture(GL_TEXTURE_2D, m_textureHandle);
-		glBindBuffer(GL_ARRAY_BUFFER, m_vertexBufferHandle);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_indexBufferHandle);
-
-		m_vertexSpec.Enable();
-
-		if (primitiveCount > 0)
-		{
-			glBufferData(GL_ARRAY_BUFFER, vertex_count * sizeof(Scriber::Vertex), vertexBuffer, GL_DYNAMIC_DRAW);
-			glBufferData(GL_ELEMENT_ARRAY_BUFFER, primitiveCount * 3 * sizeof(uint16_t), indexBuffer, GL_DYNAMIC_DRAW);
-			glDrawElements(GL_TRIANGLES, (GLsizei)primitiveCount * 3, GL_UNSIGNED_SHORT, nullptr); //m_indexArray.data());
-		}
-
-		m_vertexSpec.Disable();
-		glBindTexture(GL_TEXTURE_2D, 0);
-
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+//		m_program->Use();
+//
+//		u_transform.ApplyValue(m_transform);
+//		u_texture.ApplyValue(0);
+//
+//		glActiveTexture(GL_TEXTURE0);
+//		// glBindTexture(GL_TEXTURE_2D, m_textureHandle);
+//		glBindBuffer(GL_ARRAY_BUFFER, m_vertexBufferHandle);
+//		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_indexBufferHandle);
+//
+//		m_vertexSpec.Enable();
+//
+//		if (primitiveCount > 0)
+//		{
+//			glBufferData(GL_ARRAY_BUFFER, vertex_count * sizeof(Scriber::Vertex), vertexBuffer, GL_DYNAMIC_DRAW);
+//			glBufferData(GL_ELEMENT_ARRAY_BUFFER, primitiveCount * 3 * sizeof(uint16_t), indexBuffer, GL_DYNAMIC_DRAW);
+//			glDrawElements(GL_TRIANGLES, (GLsizei)primitiveCount * 3, GL_UNSIGNED_SHORT, nullptr); //m_indexArray.data());
+//		}
+//
+//		m_vertexSpec.Disable();
+//		glBindTexture(GL_TEXTURE_2D, 0);
+//
+//		glBindBuffer(GL_ARRAY_BUFFER, 0);
+//		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	}
 
 	bgfx::TextureHandle m_textureHandle;
 	Render::ProgramPtr m_program;
-	Render::VertexSpec m_vertexSpec;
+	bgfx::VertexLayout m_vertexSpec;
 	glm::mat4 m_transform;
 	Render::Uniform u_transform;
 	Render::Uniform u_texture;

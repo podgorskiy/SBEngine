@@ -8,6 +8,7 @@
 #include <sstream>
 #include <vector>
 #include <map>
+#include <yaml-cpp/yaml.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include "Render/DebugRenderer.h"
 #include "Render/TextureReaders/TextureLoader.h"
@@ -16,7 +17,8 @@
 //#include "Vector/nanovg.h"
 //#include "Vector/nanovg_backend.h"
 //#include "Vector/demo.h"
-#include "align.h"
+#include "utils/align.h"
+#include "utils/system_info.h"
 #include "aabb.h"
 #include <stb_image_write.h>
 
@@ -40,7 +42,30 @@
 
 Application::Application(int argc, const char* const* argv)
 {
-	gl3wInit();
+    spdlog::info("{}", utils::GetMemoryUsage());
+
+	exit(0);
+
+	bgfx::Init init;
+	init.type     = bgfx::RendererType::OpenGLES;
+	init.vendorId = 0;
+	init.resolution.width  = 1200;
+	init.resolution.height = 900;
+	init.resolution.reset  = BGFX_RESET_VSYNC;
+	bgfx::init(init);
+
+	bgfx::setDebug(BGFX_DEBUG_NONE
+		//	| BGFX_DEBUG_TEXT
+		//	| BGFX_DEBUG_STATS
+	);
+
+//static uint32_t reset_flags = BGFX_RESET_NONE
+//	//| BGFX_RESET_MSAA_X16
+//	| BGFX_RESET_FLUSH_AFTER_RENDER
+//	| BGFX_RESET_VSYNC
+//	| BGFX_RESET_FLIP_AFTER_RENDER
+//;
+
 
 #ifndef __EMSCRIPTEN__
 	{
@@ -64,18 +89,13 @@ Application::Application(int argc, const char* const* argv)
 		context.clearFilters(); // removes all filters added up to this point
 	}
 #endif
-
-	fsal::FileSystem fs;
-	fs.PushSearchPath("resources");
-	fs.PushSearchPath("../resources");
-
-	const char* OpenGLversion = (const char*)glGetString(GL_VERSION);
-	const char* GLSLversion = (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION);
-
-	spdlog::info("OpenGL {} GLSL: {}", OpenGLversion, GLSLversion);
-
-
-	glClearColor(0.7f, 0.7f, 0.7f, 1.0f);
+//
+//	const char* OpenGLversion = (const char*)glGetString(GL_VERSION);
+//	const char* GLSLversion = (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION);
+//
+//	spdlog::info("OpenGL {} GLSL: {}", OpenGLversion, GLSLversion);
+//
+//	glClearColor(0.7f, 0.7f, 0.7f, 1.0f);
 
 	m_uir.Init();
 }
@@ -86,7 +106,7 @@ Application::~Application()
 }
 
 
-void Application::Draw(float time)
+void Application::Update(float time, float deltaTime)
 {
 	Render::debug_guard<> debug_lock;
 
@@ -183,8 +203,16 @@ void Application::OnKeyAction(int key, char asci, int action, int mods)
 //	}
 }
 
-void Application::Resize(int width, int height)
+void Application::OnWindowResize(glm::ivec2 size)
 {
-	m_width = width;
-	m_height = height;
+	m_width = size.x;
+	m_height = size.y;
+}
+
+namespace ApplicationFactory
+{
+	std::shared_ptr<IApplication> NewApplication(int argc, char **argv)
+	{
+		return std::shared_ptr<IApplication>(new Application(argc, argv));
+	}
 }

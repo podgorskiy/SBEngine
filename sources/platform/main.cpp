@@ -1,12 +1,12 @@
 #include "Application.h"
-
+#include "ApplicationFactory.h"
+#include "glfw_callbacks.h"
+#include "utils/common.h"
 #include <GLFW/glfw3.h>
 #include <memory>
 #include <chrono>
+#include <yaml-cpp/yaml.h>
 #include "imgui.h"
-//#include "examples/imgui_impl_glfw.h"
-//#include "examples/imgui_impl_opengl3.h"
-
 
 #define NOMINMAX
 #ifdef _WIN32
@@ -29,7 +29,18 @@
 #include <emscripten/html5.h>
 #endif
 
-auto start = std::chrono::steady_clock::now();
+static auto start = std::chrono::steady_clock::now();
+static auto last_timestep = std::chrono::steady_clock::now();
+
+
+static void InstallCallbacks(GLFWwindow* window)
+{
+	glfwSetWindowSizeCallback(window, io::WindowSizeCallback);
+	glfwSetKeyCallback(window, io::KeyCallback);
+	glfwSetCharCallback(window, io::CharCallback);
+	glfwSetScrollCallback(window, io::ScrollCallback);
+	glfwSetMouseButtonCallback(window, io::MouseButtonCallback);
+}
 
 
 #ifdef __EMSCRIPTEN__
@@ -64,60 +75,60 @@ EM_BOOL mouseCb(int eventType, const EmscriptenMouseEvent* event, void* userData
 
 // static CustomPrinters cp;
 
-static uint32_t reset_flags = BGFX_RESET_NONE
-	//| BGFX_RESET_MSAA_X16
-	| BGFX_RESET_FLUSH_AFTER_RENDER
-	| BGFX_RESET_VSYNC
-	| BGFX_RESET_FLIP_AFTER_RENDER
-;
 
-
-void Update(void* window)
-{
-	auto app = static_cast<Application*>(glfwGetWindowUserPointer((GLFWwindow*)window));
-
-	auto current_timestamp = std::chrono::steady_clock::now();
-
-	std::chrono::duration<float> elapsed_time = (current_timestamp - start);
-
-	// ImGui_ImplOpenGL3_NewFrame();
-	// ImGui_ImplGlfw_NewFrame();
-	// ImGui::NewFrame();
-
-	app->Draw(elapsed_time.count());
-
-	// ImGui::Render();
-	// ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-#ifndef __EMSCRIPTEN__
-	glfwSwapInterval(1);
-#endif
-
-	/* Swap front and back buffers */
-	glfwSwapBuffers((GLFWwindow*)window);
-
-	/* Poll for and process events */
-	glfwPollEvents();
-}
+void Update(void* window);
 
 
 int main(int argc, const char* const* argv)
 {
+    spdlog::info("Command line args:");
+	for (int i = 0; i < argc; ++i)
+	{
+        spdlog::info("{}", argv[i]);
+	}
+
+    spdlog::info("Working directory: {}", utils::get_cwd().c_str());
+
+	glfwSetErrorCallback(io::ErrorCallback);
+
+    spdlog::info("Compiled against GLFW {}.{}.{}", GLFW_VERSION_MAJOR, GLFW_VERSION_MINOR, GLFW_VERSION_REVISION);
+
+	if (!glfwInit())
+	{
+		spdlog::error("Failed to initialize GLFW");
+		std::exit(EXIT_FAILURE);
+	}
+
+	fsal::FileSystem fs;
+	fs.PushSearchPath("resources");
+	fs.PushSearchPath("../resources");
+
+	YAML::Node config = YAML::Load(std::string(fs.Open("glfw_config.yaml")));
+
+	if (config["depth_bits"])
+		glfwWindowHint(GLFW_DEPTH_BITS, config["depth_bits"].as<int>(24));
+
+	glfwWindowHint(GLFW_RED_BITS, 8);
+	glfwWindowHint(GLFW_GREEN_BITS, 8);
+	glfwWindowHint(GLFW_BLUE_BITS, 8);
+	glfwWindowHint(GLFW_ALPHA_BITS, 8);
+
+	if (config["srgb"].as<bool>())
+		glfwWindowHint(GLFW_SRGB_CAPABLE, GL_TRUE);
+
+	if (config["double_buffer"].as<bool>())
+		glfwWindowHint(GLFW_DOUBLEBUFFER, GL_TRUE);
+
+	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+
 	GLFWwindow* window;
 	GLFWmonitor* monitor;
 	glm::ivec2 m_windowBufferSize;
 	int m_scale;
 	glm::vec2 m_dpi;
 
-	/* Initialize the library */
-	glfwInit();
-
-	glfwWindowHint(GLFW_SRGB_CAPABLE, GL_TRUE);
-	glfwWindowHint(GLFW_DOUBLEBUFFER, GL_TRUE);
-	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-
-	m_windowBufferSize.x = 1200;
-	m_windowBufferSize.y = 800;
+	m_windowBufferSize.x = config["width"].as<int>(1200);
+	m_windowBufferSize.y = config["height"].as<int>(800);
 
 	monitor = glfwGetPrimaryMonitor();
 	const GLFWvidmode* mode = glfwGetVideoMode(monitor);
@@ -125,24 +136,22 @@ int main(int argc, const char* const* argv)
 	glfwGetMonitorPhysicalSize(monitor, &monitorSizeInmm.x, &monitorSizeInmm.y);
 	glm::ivec2 monitorSizeInpixels(mode->width, mode->height);
 
+    spdlog::info("Monitor Physical Size: {}x{}mm.", monitorSizeInmm.x, monitorSizeInmm.y);
+
 	constexpr float mmPerInch = 25.4f;
 	m_dpi = glm::round(glm::vec2(monitorSizeInpixels) / glm::vec2(monitorSizeInmm) * mmPerInch);
+
+    spdlog::info("DPI: {}x{}", m_dpi.x, m_dpi.y);
 
 	constexpr float standardDPI = 96.0f;
 	m_scale = (int)glm::round(m_dpi / standardDPI).x;
 	m_scale = m_scale == 0 ? 1 : m_scale;
+    spdlog::info("Selected scaling: {}", m_scale);
+
 	//m_scale = 1.0;
 	m_windowBufferSize = glm::vec2(m_windowBufferSize) * (float)m_scale;
 
-
-	/* Create a windowed mode window and its OpenGL context */
-	window = glfwCreateWindow(m_windowBufferSize.x, m_windowBufferSize.y, "Hello World", nullptr, nullptr);
-
-	/* Make the window's context current */
-#ifndef __EMSCRIPTEN__
-	glfwMakeContextCurrent(window);
-    glfwSwapInterval(1);
-#endif
+	window = glfwCreateWindow(m_windowBufferSize.x, m_windowBufferSize.y, config["title"].as<std::string>("No title").c_str(), nullptr, nullptr);
 
 	bgfx::PlatformData pd;
 	bx::memSet(&pd, 0, sizeof(pd));
@@ -158,45 +167,20 @@ int main(int argc, const char* const* argv)
 	bgfx::setPlatformData(pd);
 	bgfx::renderFrame();
 
-	bgfx::Init init;
-	init.type     = bgfx::RendererType::OpenGLES;
-	init.vendorId = 0;
-	init.resolution.width  = 1200;
-	init.resolution.height = 900;
-	init.resolution.reset  = BGFX_RESET_VSYNC;
-	bgfx::init(init);
-
-	bgfx::setDebug(BGFX_DEBUG_NONE
-		//	| BGFX_DEBUG_TEXT
-		//	| BGFX_DEBUG_STATS
-	);
-
-//
-//    ImGui::CreateContext();
-//
-//	ImGui::StyleColorsDark();
-//
-//	ImGui_ImplGlfw_InitForOpenGL(window, false);
-
 	{
 		std::shared_ptr<Application> app = std::make_shared<Application>(argc, argv);
-
-	    const char* glsl_version = "#version 300 es";
-	    // ImGui_ImplOpenGL3_Init(glsl_version);
-
-		app->Resize(640, 640);
-		
 		glfwSetWindowUserPointer(window, app.get());
+		//InstallCallbacks(window);
 
 		glfwSetWindowSizeCallback(window, [](GLFWwindow* window, int width, int height)
 		{
-			Application* app = static_cast<Application*>(glfwGetWindowUserPointer(window));
-			app->Resize(width, height);
+			auto app = static_cast<Application*>(glfwGetWindowUserPointer(window));
+			//app->Resize(width, height);
 		});
 
 		glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int, int action, int mods)
 		{
-			Application* app = static_cast<Application*>(glfwGetWindowUserPointer(window));
+			auto app = static_cast<Application*>(glfwGetWindowUserPointer(window));
 			if (ImGui::IsAnyItemHovered())
 			{
 				ImGuiIO& io = ImGui::GetIO();
@@ -270,7 +254,7 @@ int main(int argc, const char* const* argv)
 			}
 		});
 
-		auto start = std::chrono::steady_clock::now();
+		start = std::chrono::steady_clock::now();
 
 #ifndef __EMSCRIPTEN__
 		while (!glfwWindowShouldClose(window))
@@ -288,10 +272,28 @@ int main(int argc, const char* const* argv)
 
 #ifndef __EMSCRIPTEN__
 		glfwSetWindowSizeCallback(window, nullptr);
-		// ImGui_ImplGlfw_Shutdown();
 		glfwTerminate();
 #endif
 	}
 
 	return 0;
+}
+
+
+void Update(void* window)
+{
+	auto current_timestamp = std::chrono::steady_clock::now();
+	std::chrono::duration<float> elapsed_time = (current_timestamp - start);
+	std::chrono::duration<float> delta_time = (current_timestamp - last_timestep);
+
+	auto app = static_cast<Application*>(glfwGetWindowUserPointer((GLFWwindow*)window));
+
+	double x, y;
+	glfwGetCursorPos((GLFWwindow*)window, &x, &y);
+
+	app->SetMouse(x, y, glfwGetMouseButton((GLFWwindow*)window, 0) == GLFW_PRESS);
+
+	app->Update(elapsed_time.count(), delta_time.count());
+
+	last_timestep = current_timestamp;
 }

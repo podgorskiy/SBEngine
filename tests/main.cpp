@@ -1,6 +1,6 @@
 // Tests
-#include "stack_vector.h"
-#include "priority_queue.h"
+#include "utils/stack_vector.h"
+#include "utils/priority_queue.h"
 #include <fsal.h>
 #include <spdlog/spdlog.h>
 #include <glm/glm.hpp>

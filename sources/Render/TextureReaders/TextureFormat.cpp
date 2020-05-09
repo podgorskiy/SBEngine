@@ -34,7 +34,7 @@ uint64_t Render::ParsePixelType(const char* s)
 	}
 	if (i == 0)
 	{
-		throw runtime_error("Format should start from channel names, such as: r, g, b, a, l, d. Got %c", buff[0]);
+		throw utils::runtime_error("Format should start from channel names, such as: r, g, b, a, l, d. Got %c", buff[0]);
 	}
 	for (int _i = i; _i < 4; _i++)
 	{
@@ -43,7 +43,7 @@ uint64_t Render::ParsePixelType(const char* s)
 
 	if (!(buff[i] >= '0' && buff[i] <= '9'))
 	{
-		throw runtime_error("Unexpected symbol after channel names: %c. Expected digits", buff[i]);
+		throw utils::runtime_error("Unexpected symbol after channel names: %c. Expected digits", buff[i]);
 	}
 
 	int j = 0;
@@ -90,12 +90,12 @@ uint64_t Render::ParsePixelType(const char* s)
 
 	if (*p != '\0')
 	{
-		throw runtime_error("Unexpected symbol at the end of the format: %c", *p);
+		throw utils::runtime_error("Unexpected symbol at the end of the format: %c", *p);
 	}
 
 	if (i != j)
 	{
-		throw runtime_error("Number of channel names and sizes do not match, got %d and %d", i, j);
+		throw utils::runtime_error("Number of channel names and sizes do not match, got %d and %d", i, j);
 	}
 	return type;
 }
@@ -412,7 +412,7 @@ std::vector<uint32_t> Render::GetGLMappedTypes(TextureFormat format)
 
 		default:
 			spdlog::error("Could not find proper GL mapping of format: {}", GetStringRepresentation(format));
-			throw runtime_error("Could not find proper GL mapping of format: %s", GetStringRepresentation(format).c_str());
+			throw utils::runtime_error("Could not find proper GL mapping of format: %s", GetStringRepresentation(format).c_str());
 	}
 	return {internal_format, import_format, channel_type};
 }

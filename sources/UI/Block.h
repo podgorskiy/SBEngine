@@ -1,5 +1,5 @@
 #pragma once
-#include "stack_vector.h"
+#include "utils/stack_vector.h"
 
 #include <inttypes.h>
 #include <glm/matrix.hpp>

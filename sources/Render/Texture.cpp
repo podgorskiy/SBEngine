@@ -86,7 +86,7 @@ TexturePtr Texture::LoadTexture(TextureReader reader)
 			texture->header.gltextype = GL_TEXTURE_CUBE_MAP;
 			break;
 		default:
-			throw runtime_error("Unkown type %d", texture->header.type);
+			throw utils::runtime_error("Unkown type %d", texture->header.type);
 	}
 
 	texture->Bind(0);

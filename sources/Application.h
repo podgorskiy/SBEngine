@@ -1,5 +1,6 @@
 #pragma once
 #include "Object.h"
+#include "IApplication.h"
 #include "Render/Texture.h"
 #include "Render/Shader.h"
 #include "Render/DebugRenderer.h"
@@ -7,16 +8,24 @@
 #include <glm/glm.hpp>
 
 
-class Application
+class Application: public IApplication
 {
 public:
 	Application(int argc, const char* const* argv);
-	~Application();
+	~Application() final;
 
-	void Draw(float time);
-	void Resize(int width, int height);
-
+	// IApplication
+	void Update(float time, float deltaTime) final;
+	void OnWindowResize(glm::ivec2 size) final;
 	void OnKeyAction(int key, char asci, int action, int mods);
+	void OnKey(int key, int scancode, int action, int mods) override {};
+	void OnSetChar(unsigned int c) override  {};
+	void OnMouseButton(int button, int action, int mods) override {};
+	void OnMouseMove(glm::vec2 pos) override {};
+	void OnScroll(glm::vec2 offset) override {};
+	void OnIconification(int iconified) override {};
+	void OnWindowClose() override {};
+	void SetMouse(float x, float y, bool mouseDown) override {};
 
 private:
 	Render::ProgramPtr m_program;

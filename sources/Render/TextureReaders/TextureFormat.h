@@ -1,5 +1,5 @@
 #pragma once
-#include "Render/runtime_error.h"
+#include "utils/common.h"
 #include <glm/glm.hpp>
 #include <inttypes.h>
 #include <stdlib.h>
