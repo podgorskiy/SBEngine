@@ -60,7 +60,7 @@ ENDFUNCTION(PREPEND)
 if(MSVC)
 else()
 	set(DEBUG_OPTIONS -g -Wall -DBX_CONFIG_DEBUG=1 -DBGFX_CONFIG_DEBUG=1)
-	set(RELEASE_OPTIONS -Ofast -fPIC -funsafe-math-optimizations -fno-strict-aliasing -fno-rtti -ffast-math -flto -msse2 -msse3 -msse4)
+	set(RELEASE_OPTIONS -g -Ofast -fPIC -funsafe-math-optimizations -fno-strict-aliasing -fno-rtti -ffast-math -msse2 -msse3 -msse4)
 endif()
 
 add_compile_options(
@@ -83,7 +83,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/imgui)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/glm)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/stb)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/fsal/sources)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/spdlog/include)
+# include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/spdlog/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/pugixml/src)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/lz4/lib)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/zlib)
@@ -105,6 +105,7 @@ add_subdirectory (libs/gl3w)
 add_subdirectory (libs/fsal)
 add_subdirectory (libs/scriberlib)
 add_subdirectory (libs/yaml-cpp)
+add_subdirectory (libs/spdlog)
 
 
 #####################################################################
@@ -305,6 +306,7 @@ endif()
 
 add_executable(Oquonie ${SOURCES} ${TESTS})
 target_link_libraries(Oquonie gl3w glfw bx bgfx pthread dl  imgui pugixml fsal lz4 zlib_static vorbis ogg scribe yaml-cpp ${OPENGL_LIBRARIES} ${OPENAL_LIBRARY})
+target_link_libraries(Oquonie PRIVATE spdlog::spdlog)
 
 configure_file(test_rgba8888.dds test_rgba8888.dds COPYONLY)
 configure_file(test_rgba8888.pvr test_rgba8888.pvr COPYONLY)

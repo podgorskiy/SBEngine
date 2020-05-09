@@ -182,77 +182,77 @@ int main(int argc, const char* const* argv)
 		glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int, int action, int mods)
 		{
 			auto app = static_cast<Application*>(glfwGetWindowUserPointer(window));
-			if (ImGui::IsAnyItemHovered())
-			{
-				ImGuiIO& io = ImGui::GetIO();
-				if (action == GLFW_PRESS)
-					io.KeysDown[key] = true;
-				if (action == GLFW_RELEASE)
-					io.KeysDown[key] = false;
-
-				io.KeyCtrl = io.KeysDown[GLFW_KEY_LEFT_CONTROL] || io.KeysDown[GLFW_KEY_RIGHT_CONTROL];
-				io.KeyShift = io.KeysDown[GLFW_KEY_LEFT_SHIFT] || io.KeysDown[GLFW_KEY_RIGHT_SHIFT];
-				io.KeyAlt = io.KeysDown[GLFW_KEY_LEFT_ALT] || io.KeysDown[GLFW_KEY_RIGHT_ALT];
-				io.KeySuper = io.KeysDown[GLFW_KEY_LEFT_SUPER] || io.KeysDown[GLFW_KEY_RIGHT_SUPER];
-			}
-			else
-			{
-				char asci = 0;
-				switch(key)
-				{
-					case GLFW_KEY_UP:
-						asci = 38;
-						break;
-					case GLFW_KEY_DOWN:
-						asci = 40;
-						break;
-					case GLFW_KEY_LEFT:
-						asci = 37;
-						break;
-					case GLFW_KEY_RIGHT:
-						asci = 39;
-					default:
-						break;
-				}
-				if (key == 32
-					|| key == 39
-					|| (key >= 44 && key <= 57)
-					|| key == 59
-					|| key == 61
-					|| (key >= 65 && key <= 93)
-					|| key == 96)
-				{
-					asci = key;
-				}
-				if (key == GLFW_KEY_ESCAPE)
-				{
-					asci = 27;
-				}
-
-				app->OnKeyAction(key, asci, action, mods);
-			}
+//			if (ImGui::IsAnyItemHovered())
+//			{
+//				ImGuiIO& io = ImGui::GetIO();
+//				if (action == GLFW_PRESS)
+//					io.KeysDown[key] = true;
+//				if (action == GLFW_RELEASE)
+//					io.KeysDown[key] = false;
+//
+//				io.KeyCtrl = io.KeysDown[GLFW_KEY_LEFT_CONTROL] || io.KeysDown[GLFW_KEY_RIGHT_CONTROL];
+//				io.KeyShift = io.KeysDown[GLFW_KEY_LEFT_SHIFT] || io.KeysDown[GLFW_KEY_RIGHT_SHIFT];
+//				io.KeyAlt = io.KeysDown[GLFW_KEY_LEFT_ALT] || io.KeysDown[GLFW_KEY_RIGHT_ALT];
+//				io.KeySuper = io.KeysDown[GLFW_KEY_LEFT_SUPER] || io.KeysDown[GLFW_KEY_RIGHT_SUPER];
+//			}
+//			else
+//			{
+//				char asci = 0;
+//				switch(key)
+//				{
+//					case GLFW_KEY_UP:
+//						asci = 38;
+//						break;
+//					case GLFW_KEY_DOWN:
+//						asci = 40;
+//						break;
+//					case GLFW_KEY_LEFT:
+//						asci = 37;
+//						break;
+//					case GLFW_KEY_RIGHT:
+//						asci = 39;
+//					default:
+//						break;
+//				}
+//				if (key == 32
+//					|| key == 39
+//					|| (key >= 44 && key <= 57)
+//					|| key == 59
+//					|| key == 61
+//					|| (key >= 65 && key <= 93)
+//					|| key == 96)
+//				{
+//					asci = key;
+//				}
+//				if (key == GLFW_KEY_ESCAPE)
+//				{
+//					asci = 27;
+//				}
+//
+//				app->OnKeyAction(key, asci, action, mods);
+//			}
 		});
 
 		glfwSetCharCallback(window, [](GLFWwindow*, unsigned int c)
 		{
-			ImGuiIO& io = ImGui::GetIO();
-			io.AddInputCharacter((unsigned short)c);
+//			ImGuiIO& io = ImGui::GetIO();
+//			io.AddInputCharacter((unsigned short)c);
 		});
 
 		glfwSetScrollCallback(window, [](GLFWwindow*, double /*xoffset*/, double yoffset)
 		{
-			ImGuiIO& io = ImGui::GetIO();
-			io.MouseWheel += (float)yoffset * 2.0f;
+//			ImGuiIO& io = ImGui::GetIO();
+//			io.MouseWheel += (float)yoffset * 2.0f;
 		});
 
 		glfwSetMouseButtonCallback(window, [](GLFWwindow*, int button, int action, int /*mods*/)
 		{
-			ImGuiIO& io = ImGui::GetIO();
-
-			if (button >= 0 && button < 3)
-			{
-				io.MouseDown[button] = action == GLFW_PRESS;
-			}
+//			ImGuiIO& io = ImGui::GetIO();
+//
+//			if (button >= 0 && button < 3)
+//			{
+//				io.MouseDown[button] = action == GLFW_PRESS;
+//			}
 		});
 
 		start = std::chrono::steady_clock::now();
@@ -286,6 +286,7 @@ void Update(void* window)
 	auto current_timestamp = std::chrono::steady_clock::now();
 	std::chrono::duration<float> elapsed_time = (current_timestamp - start);
 	std::chrono::duration<float> delta_time = (current_timestamp - last_timestep);
+	glfwPollEvents();
 
 	auto app = static_cast<Application*>(glfwGetWindowUserPointer((GLFWwindow*)window));
 

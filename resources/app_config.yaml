@@ -1,2 +1,9 @@
-backend: "OpenGLES"
+backend: "OpenGL"
 run_tests: False
+msaa16: False
+flush_after_render: True
+vsync: False
+flip_after_render: False
+srgb: True
+debug_text: True
+debug_stats: True

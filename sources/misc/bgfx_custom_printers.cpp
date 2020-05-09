@@ -1,4 +1,3 @@
-#pragma once
 #include "bgfx_custom_printers.h"
 #include "utils/string_format.h"
 #include <bgfx/bgfx.h>

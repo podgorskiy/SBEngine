@@ -70,11 +70,15 @@ Application::Application(int argc, const char* const* argv)
 	else
 		ASSERT(false, "Unknown backend: %s", backend_str.c_str())
 
+    spdlog::info("Using backend: {}", backend_str);
+
 	m_reset_flags = BGFX_RESET_NONE
-		//| BGFX_RESET_MSAA_X16
-		| BGFX_RESET_FLUSH_AFTER_RENDER
-		| BGFX_RESET_VSYNC
-		| BGFX_RESET_FLIP_AFTER_RENDER;
+		| (config["msaa16"].as<bool>() ? BGFX_RESET_MSAA_X16 : 0)
+		| (config["flush_after_render"].as<bool>() ? BGFX_RESET_FLUSH_AFTER_RENDER : 0)
+		| (config["vsync"].as<bool>() ? BGFX_RESET_VSYNC : 0)
+		| (config["flip_after_render"].as<bool>() ? BGFX_RESET_FLIP_AFTER_RENDER : 0)
+		| (config["srgb"].as<bool>() ? BGFX_RESET_SRGB_BACKBUFFER : 0)
+		;
 
 	bgfx::Init init;
 	init.type     = backend;
@@ -86,8 +90,8 @@ Application::Application(int argc, const char* const* argv)
 	bgfx::init(init);
 
 	bgfx::setDebug(BGFX_DEBUG_NONE
-		//	| BGFX_DEBUG_TEXT
-		//	| BGFX_DEBUG_STATS
+		| (config["debug_text"].as<bool>() ? BGFX_DEBUG_TEXT : 0)
+		| (config["debug_stats"].as<bool>() ? BGFX_DEBUG_STATS : 0)
 	);
 
 	if (config["run_tests"].as<bool>())
