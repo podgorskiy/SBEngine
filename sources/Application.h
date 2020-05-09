@@ -29,12 +29,13 @@ public:
 	void SetMouse(float x, float y, bool mouseDown) override {};
 
 private:
+	uint32_t m_reset_flags = 0;
+	glm::ivec2 m_windowBufferSize;
+	CustomPrinters m_cp;
+
 	Render::ProgramPtr m_program;
 	Render::DebugRenderer m_dr;
 	UI::Renderer m_uir;
-
-	CustomPrinters m_cp;
-
 
 	unsigned int u_modelView = -1;
 	unsigned int u_model = -1;
@@ -42,8 +43,6 @@ private:
 	unsigned int u_projection = -1;
 	unsigned int m_uniform_texture = -1;
 
-	int m_width;
-	int m_height;
 	Object m_obj;
 	Render::TexturePtr m_texture;
 };

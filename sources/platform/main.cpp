@@ -128,7 +128,7 @@ int main(int argc, const char* const* argv)
 	glm::vec2 m_dpi;
 
 	m_windowBufferSize.x = config["width"].as<int>(1200);
-	m_windowBufferSize.y = config["height"].as<int>(800);
+	m_windowBufferSize.y = config["height"].as<int>(900);
 
 	monitor = glfwGetPrimaryMonitor();
 	const GLFWvidmode* mode = glfwGetVideoMode(monitor);
@@ -164,17 +164,19 @@ int main(int argc, const char* const* argv)
 #endif
 
 	bgfx::setPlatformData(pd);
-	bgfx::renderFrame();
 
 	{
 		std::shared_ptr<Application> app = std::make_shared<Application>(argc, argv);
+		glfwGetWindowSize(window, &m_windowBufferSize[0], &m_windowBufferSize[1]);
+		app->OnWindowResize(m_windowBufferSize);
+
 		glfwSetWindowUserPointer(window, app.get());
 		//InstallCallbacks(window);
 
 		glfwSetWindowSizeCallback(window, [](GLFWwindow* window, int width, int height)
 		{
 			auto app = static_cast<Application*>(glfwGetWindowUserPointer(window));
-			//app->Resize(width, height);
+			app->OnWindowResize(glm::ivec2(width, height));
 		});
 
 		glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int, int action, int mods)
