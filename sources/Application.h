@@ -5,6 +5,7 @@
 #include "Render/Shader.h"
 #include "Render/DebugRenderer.h"
 #include "UI/UI_Backend.h"
+#include "misc/bgfx_custom_printers.h"
 #include <glm/glm.hpp>
 
 
@@ -31,6 +32,9 @@ private:
 	Render::ProgramPtr m_program;
 	Render::DebugRenderer m_dr;
 	UI::Renderer m_uir;
+
+	CustomPrinters m_cp;
+
 
 	unsigned int u_modelView = -1;
 	unsigned int u_model = -1;

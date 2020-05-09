@@ -59,7 +59,7 @@ ENDFUNCTION(PREPEND)
 
 if(MSVC)
 else()
-	set(DEBUG_OPTIONS -g -Wall)
+	set(DEBUG_OPTIONS -g -Wall -DBX_CONFIG_DEBUG=1 -DBGFX_CONFIG_DEBUG=1)
 	set(RELEASE_OPTIONS -Ofast -fPIC -funsafe-math-optimizations -fno-strict-aliasing -fno-rtti -ffast-math -flto -msse2 -msse3 -msse4)
 endif()
 

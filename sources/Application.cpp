@@ -18,7 +18,7 @@
 #include "utils/align.h"
 #include "utils/system_info.h"
 #include "utils/aabb.h"
-#include "doc_test_runner.h"
+#include "misc/doc_test_runner.h"
 #include <stb_image_write.h>
 
 
@@ -76,6 +76,7 @@ Application::Application(int argc, const char* const* argv)
 	init.resolution.width  = 1200;
 	init.resolution.height = 900;
 	init.resolution.reset  = BGFX_RESET_VSYNC;
+	init.callback = &m_cp;
 	bgfx::init(init);
 
 	bgfx::setDebug(BGFX_DEBUG_NONE
@@ -94,9 +95,7 @@ Application::Application(int argc, const char* const* argv)
 	{
 		run_doc_tests(argc, argv);
 	}
-	exit(0);
 
-//
 //	const char* OpenGLversion = (const char*)glGetString(GL_VERSION);
 //	const char* GLSLversion = (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION);
 //
