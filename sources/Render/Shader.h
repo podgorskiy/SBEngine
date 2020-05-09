@@ -1,6 +1,8 @@
 #pragma once
 #include "Types.h"
+#include "utils/common.h"
 #include <vector>
+#include <bgfx/bgfx.h>
 #include <array>
 #include <map>
 #include <memory>
@@ -8,63 +10,58 @@
 
 namespace Render
 {
-	typedef unsigned int GLHandle;
-	struct SHADER_TYPE
-	{
-		enum Type
-		{
-			VERTEX_SHADER,
-			GEOMETRY_SHADER,
-			FRAGMENT_SHADER,
-			COMPUTE_SHADER,
-		};
-	};
-
-	void ShaderCstr(GLHandle& handle,  SHADER_TYPE::Type T);
-	void ShaderDstr(GLHandle handle);
-
-	template<SHADER_TYPE::Type T>
 	class Shader
 	{
-		Shader(const Shader& other) = delete;
-		Shader& operator=(const Shader&) = delete;
 		friend class Program;
 	public:
-		Shader()
+		Shader(const Shader& other) = delete;
+		Shader& operator=(const Shader&) = delete;
+		Shader(const char* name, const uint8_t* data, size_t size): m_shader(bgfx::createShader(bgfx::copy(data, size)))
 		{
-			ShaderCstr(m_shader, T);
+			bgfx::setName(m_shader, name);
 		}
 
 		~Shader()
 		{
-			ShaderDstr(m_shader);
+			bgfx::destroy(m_shader);
 		}
 
-		bool CompileShader(const char* src);
-
 	private:
-		GLHandle m_shader;
+		bgfx::ShaderHandle m_shader;
 	};
-
-	bool CompileShader(GLHandle& handle, const char* src, SHADER_TYPE::Type T);
-
-	template<SHADER_TYPE::Type T>
-	inline bool Shader<T>::CompileShader(const char* src)
-	{
-		return Render::CompileShader(m_shader, src, T);
-	}
-
 
 	class Uniform
 	{
 	public:
-		Uniform(): m_handle(-1), m_type(VarType::INVALID), m_num(0) {}
-		Uniform(int handle, VarType::Type type, int num): m_handle(handle), m_type(type), m_num(num) {};
+		Uniform(const Uniform& other): m_owns(false)
+		{
+			if (other.m_owns)
+				throw utils::runtime_error("Can't copy uniform if it owns handle. Use UniformPtr");
+			m_handle = other.m_handle;
+			m_type = other.m_type;
+			m_num = other.m_num;
+		};
 
-		Uniform(const Uniform& other) = default;
-		Uniform& operator=(const Uniform&) = default;
+		Uniform& operator=(const Uniform& other)
+		{
+			if (other.m_owns)
+				throw utils::runtime_error("Can't copy uniform if it owns handle. Use UniformPtr");
+			m_handle = other.m_handle;
+			m_type = other.m_type;
+			m_num = other.m_num;
+			m_owns = false;
+		};
 
-		bool valid() const { return m_handle != -1; }
+		Uniform(): m_handle({bgfx::kInvalidHandle}), m_type(VarType::INVALID), m_num(0), m_owns(false) {}
+		explicit Uniform(bgfx::UniformHandle handle, bool owns=false);
+
+		~Uniform()
+		{
+			if (m_owns && valid())
+				bgfx::destroy(m_handle);
+		}
+
+		bool valid() const { return bgfx::isValid(m_handle); }
 
 		VarType::Type type() const { return m_type; };
 
@@ -79,12 +76,23 @@ namespace Render
 		template<typename T>
 		void ApplyValue(const std::vector<T>& value) const;
 
-		int m_handle;
 	protected:
+		bgfx::UniformHandle m_handle;
 		VarType::Type m_type;
 		uint16_t m_num;
+		bool m_owns;
 	};
 
+	typedef std::shared_ptr<Uniform> UniformPtr;
+
+	template<typename T>
+	UniformPtr MakeUniform(const char* name, int num=1)
+	{
+		auto type = VarType::GetType<T>();
+		auto bgfxtype = VarType::GetBGFXMapping(type);
+		auto handle = bgfx::createUniform(name, bgfxtype, num);
+		return std::make_shared<Uniform>(handle, true);
+	}
 
 	class Program
 	{
@@ -95,32 +103,25 @@ namespace Render
 		Program();
 		~Program();
 
-		bool Link(const Shader<SHADER_TYPE::COMPUTE_SHADER>& shader);
+		void Link(const Shader& shader);
 
-		bool Link(const Shader<SHADER_TYPE::VERTEX_SHADER>& vs, const Shader<SHADER_TYPE::FRAGMENT_SHADER>& fs);
-
-		bool Link(const Shader<SHADER_TYPE::VERTEX_SHADER>& vs, const Shader<SHADER_TYPE::GEOMETRY_SHADER>& gs, const Shader<SHADER_TYPE::FRAGMENT_SHADER>& fs);
+		void Link(const Shader& vs, const Shader& fs);
 
 		void Use() const;
 
-		int GetAttribLocation(const char* name) const;
-
-		int GetUniformLocation(const char* name) const;
-
 		Uniform GetUniform(const char* name);
 
-		Uniform GetUniform(int id) const { return m_uniforms[id]; }
+		Uniform GetUniform(int id) const { return Uniform(m_uniforms[id]); }
 
 		const auto& UniformMap() const { return m_uniformMap; }
 
 	private:
-		bool LinkImpl();
-		void InitUniforms();
+		void CollectUniforms(bgfx::ShaderHandle shader);
 
-		std::vector<Uniform> m_uniforms;
+		std::vector<bgfx::UniformHandle> m_uniforms;
 		std::map<std::string, uint16_t> m_uniformMap;
 
-		GLHandle m_program;
+		bgfx::ProgramHandle m_program;
 	};
 
 

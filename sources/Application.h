@@ -37,7 +37,7 @@ private:
 	Render::DebugRenderer m_dr;
 	UI::Renderer m_uir;
 
-	unsigned int u_modelView = -1;
+	Render::Uniform u_modelView;
 	unsigned int u_model = -1;
 
 	unsigned int u_projection = -1;

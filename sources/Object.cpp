@@ -131,11 +131,11 @@ void Object::Load(std::string path)
 
 	m_geometry.FillBuffers(vertices.data(), vertices.size(), sizeof(Vertex), indices.data(), indices.size(), 4);
 
-	m_vertexSpec = Render::VertexSpecMaker()
-			.PushType<glm::vec3>("a_position")
-			.PushType<glm::vec3>("a_normal")
-			.PushType<glm::vec2>("a_uv")
-			.PushType<glm::vec3>("a_tangent");
+//	m_vertexSpec = Render::VertexSpecMaker()
+//			.PushType<glm::vec3>("a_position")
+//			.PushType<glm::vec3>("a_normal")
+//			.PushType<glm::vec2>("a_uv")
+//			.PushType<glm::vec3>("a_tangent");
 
 }
 

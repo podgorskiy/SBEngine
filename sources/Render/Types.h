@@ -1,8 +1,7 @@
 #pragma once
 #include <inttypes.h>
-#ifdef BYTE
-#undef BYTE
-#endif
+#include <bgfx/bgfx.h>
+
 
 namespace Render
 {
@@ -45,18 +44,12 @@ namespace Render
 		template<VarType::Type T>
 		static const char* GetTypeName();
 
-		template<typename T>
-		static unsigned int GetGLMapping();
+		static bgfx::UniformType::Enum GetBGFXMapping(VarType::Type t);
 
-		template<unsigned int T>
-		static VarType::Type FromGLMapping();
-
-		template<VarType::Type T>
-		static unsigned int GetGLMapping();
-
-		static unsigned int GetGLMapping(VarType::Type t);
 		static const char* GetTypeName(VarType::Type t);
-		static VarType::Type FromGLMapping(unsigned int t);
+
+		static VarType::Type FromBGFXMapping(bgfx::UniformType::Enum t);
+
 
 		static bool IsInteger(VarType::Type t);
 		static bool IsSignedInteger(VarType::Type t);

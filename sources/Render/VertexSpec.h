@@ -40,11 +40,11 @@ namespace Render
 
 		void CollectHandles(const ProgramPtr& program)
 		{
-			for (int i = 0; m_attributes[i].components != 0; ++i)
-			{
-				Attribute& attr = m_attributes[i];
-				attr.handle = program->GetAttribLocation(attr.name.c_str());
-			}
+//			for (int i = 0; m_attributes[i].components != 0; ++i)
+//			{
+//				Attribute& attr = m_attributes[i];
+//				attr.handle = program->GetAttribLocation(attr.name.c_str());
+//			}
 		}
 
 		void Enable(const void* ptr = nullptr)
@@ -74,57 +74,57 @@ namespace Render
 
 		Attribute m_attributes[16];
 	};
-
-	class VertexSpecMaker
-	{
-		VertexSpec spec;
-		int num = 0;
-		int offset = 0;
-	public:
-		template<typename T>
-		class TypeDesc
-		{
-		public:
-			TypeDesc(): type(VarType::GetGLMapping<T>()), num(1), size(sizeof(T)){}
-			const unsigned int type;
-			const unsigned int num;
-			const unsigned int size;
-		};
-
-		template<int C, typename T>
-		class TypeDesc<glm::vec<C, T> >
-		{
-		public:
-			TypeDesc(): type(VarType::GetGLMapping<T>()), num(C), size(sizeof(T) * C){}
-			const unsigned int type;
-			const unsigned int num;
-			const unsigned int size;
-		};
-
-		template<typename T>
-		VertexSpecMaker& PushType(const std::string& name, bool normalized=false)
-		{
-			TypeDesc<T> tdesc;
-			spec.m_attributes[num].type = tdesc.type;
-			spec.m_attributes[num].name = name;
-			spec.m_attributes[num].offset = offset;
-			offset += tdesc.size;
-			spec.m_attributes[num].components = tdesc.num;
-			spec.m_attributes[num].normalized = normalized;
-			num += 1;
-			return *this;
-		}
-
-		VertexSpecMaker()
-		{}
-
-		operator VertexSpec()
-		{
-			for (int i = 0; i < num; ++i)
-			{
-				spec.m_attributes[i].stride = offset;
-			}
-			return spec;
-		}
-	};
+//
+//	class VertexSpecMaker
+//	{
+//		VertexSpec spec;
+//		int num = 0;
+//		int offset = 0;
+//	public:
+//		template<typename T>
+//		class TypeDesc
+//		{
+//		public:
+//			TypeDesc(): type(VarType::GetBGFXMapping<T>()), num(1), size(sizeof(T)){}
+//			const unsigned int type;
+//			const unsigned int num;
+//			const unsigned int size;
+//		};
+//
+//		template<int C, typename T>
+//		class TypeDesc<glm::vec<C, T> >
+//		{
+//		public:
+//			TypeDesc(): type(VarType::GetBGFXMapping<T>()), num(C), size(sizeof(T) * C){}
+//			const unsigned int type;
+//			const unsigned int num;
+//			const unsigned int size;
+//		};
+//
+//		template<typename T>
+//		VertexSpecMaker& PushType(const std::string& name, bool normalized=false)
+//		{
+//			TypeDesc<T> tdesc;
+//			spec.m_attributes[num].type = tdesc.type;
+//			spec.m_attributes[num].name = name;
+//			spec.m_attributes[num].offset = offset;
+//			offset += tdesc.size;
+//			spec.m_attributes[num].components = tdesc.num;
+//			spec.m_attributes[num].normalized = normalized;
+//			num += 1;
+//			return *this;
+//		}
+//
+//		VertexSpecMaker()
+//		{}
+//
+//		operator VertexSpec()
+//		{
+//			for (int i = 0; i < num; ++i)
+//			{
+//				spec.m_attributes[i].stride = offset;
+//			}
+//			return spec;
+//		}
+//	};
 }

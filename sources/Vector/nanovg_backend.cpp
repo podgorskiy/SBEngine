@@ -983,8 +983,8 @@ static void glnvg__renderFlush(void* uptr)
 
 
 		// TODO
-		glVertexAttribPointer(gl->program->GetAttribLocation("a_pos"), 2, GL_FLOAT, GL_FALSE, sizeof(NVGvertex), (const GLvoid*)(size_t)0);
-		glVertexAttribPointer(gl->program->GetAttribLocation("a_tcoord"), 2, GL_FLOAT, GL_FALSE, sizeof(NVGvertex), (const GLvoid*)(0 + 2*sizeof(float)));
+//		glVertexAttribPointer(gl->program->GetAttribLocation("a_pos"), 2, GL_FLOAT, GL_FALSE, sizeof(NVGvertex), (const GLvoid*)(size_t)0);
+//		glVertexAttribPointer(gl->program->GetAttribLocation("a_tcoord"), 2, GL_FLOAT, GL_FALSE, sizeof(NVGvertex), (const GLvoid*)(0 + 2*sizeof(float)));
 
 		// Set view and texture just once per frame.
 		gl->u_viewSize.ApplyValue(gl->view);

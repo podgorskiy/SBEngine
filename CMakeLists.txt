@@ -108,6 +108,8 @@ endif()
 # shaderc
 #####################################################################
 set(BGFX_DIR libs/bgfx)
+set(BIMG_DIR libs/bimg)
+set(BIMG_INCLUDE ${BIMG_DIR}/include)
 set(BGFX_INCLUDE ${BGFX_DIR}/include)
 set(SHADERC_DIR ${BGFX_DIR}/tools/shaderc)
 
@@ -173,6 +175,10 @@ add_executable(shaderc ${SHADERC_SOURCES} ${BGFX_3RDPARTY_SOURCES})
 target_include_directories(shaderc PRIVATE ${GLSLANG}/glslang/Public)
 target_include_directories(shaderc PRIVATE ${GLSLANG}/glslang/Include)
 target_include_directories(shaderc PRIVATE ${BGFX_DIR}/3rdparty/dxsdk/include)
+target_include_directories(shaderc PRIVATE ${BGFX_DIR}/include)
+target_include_directories(shaderc PRIVATE ${BGFX_DIR}/src)
+target_include_directories(shaderc PRIVATE ${BIMG_INCLUDE})
+target_include_directories(shaderc PRIVATE ${BGFX_DIR}/3rdparty/spirv-cross)
 
 target_link_libraries(shaderc PRIVATE bx glsl-optimizer spirv-cross spirv-opt glslang fcpp pthread dl)
 
@@ -249,7 +255,7 @@ endif()
 #####################################################################
 set(IMGUI_DIR libs/imgui)
 file(GLOB IMGUI_SOURCES ${IMGUI_DIR}/*.cpp ${IMGUI_DIR}/*.h )
-add_library(imgui ${IMGUI_SOURCES} ${IMGUI_DIR}/examples/imgui_impl_opengl3.cpp ${IMGUI_DIR}/examples/imgui_impl_glfw.cpp)
+add_library(imgui ${IMGUI_SOURCES})
 #####################################################################
 
 #####################################################################
@@ -374,25 +380,28 @@ add_custom_target(
 set(dst_dir ${CMAKE_CURRENT_SOURCE_DIR}/resources/shaders)
 set(exec ${CMAKE_BINARY_DIR}/shaderc -i ${CMAKE_CURRENT_SOURCE_DIR}/${BGFX_DIR}/src -i ${CMAKE_CURRENT_SOURCE_DIR}/shaders)
 file(MAKE_DIRECTORY ${dst_dir}/glsl)
-file(MAKE_DIRECTORY ${dst_dir}/spv)
-file(MAKE_DIRECTORY ${dst_dir}/mtl)
+file(MAKE_DIRECTORY ${dst_dir}/essl)
+file(MAKE_DIRECTORY ${dst_dir}/spirv)
+file(MAKE_DIRECTORY ${dst_dir}/metal)
 
 foreach(filename_fs ${files_fs})
 
 get_filename_component(file ${filename_fs} NAME_WE)
-add_custom_command(TARGET generate-shaders PRE_BUILD COMMAND ${exec}  -f  ${filename_fs} --platform  asm.js  -p 150 -o ${dst_dir}/glsl/${file}.bin --type fragment)
-add_custom_command(TARGET generate-shaders PRE_BUILD COMMAND ${exec}  -f  ${filename_fs} --platform  linux  -p spirv -o ${dst_dir}/spv/${file}.bin --type fragment)
+add_custom_command(TARGET generate-shaders PRE_BUILD COMMAND ${exec}  -f  ${filename_fs} --platform  asm.js  -p 150 -o ${dst_dir}/essl/${file}.bin --type fragment)
+add_custom_command(TARGET generate-shaders PRE_BUILD COMMAND ${exec}  -f  ${filename_fs} --platform  linux  -p 150 -o ${dst_dir}/glsl/${file}.bin --type fragment)
+add_custom_command(TARGET generate-shaders PRE_BUILD COMMAND ${exec}  -f  ${filename_fs} --platform  linux  -p spirv -o ${dst_dir}/spirv/${file}.bin --type fragment)
 #add_custom_command(TARGET generate-shaders PRE_BUILD COMMAND ${exec} -i ${BGFX_DIR}/src -f  ${filename_fs} --platform  windows --bin2c -p ps_3_0 -O 3 -o ${filename_fs}_dx9.h --type fragment)
 #add_custom_command(TARGET generate-shaders PRE_BUILD COMMAND ${exec} -i ${BGFX_DIR}/src -f  ${filename_fs} --platform  windows --bin2c -p ps_4_0 -O 3 -o ${filename_fs}_dx11.h --type fragment)
-add_custom_command(TARGET generate-shaders PRE_BUILD COMMAND ${exec}  -f  ${filename_fs} --platform  ios  -p metal  -O 3 -o ${dst_dir}/mtl/${file}.bin --type fragment)
+add_custom_command(TARGET generate-shaders PRE_BUILD COMMAND ${exec}  -f  ${filename_fs} --platform  ios  -p metal  -O 3 -o ${dst_dir}/metal/${file}.bin --type fragment)
 endforeach()
 foreach(filename_vs ${files_vs})
 get_filename_component(file  ${filename_vs} NAME_WE)
-add_custom_command(TARGET generate-shaders PRE_BUILD COMMAND ${exec} -f  ${filename_vs} --platform  asm.js -p 150 -o ${dst_dir}/glsl/${file}.bin --type vertex)
-add_custom_command(TARGET generate-shaders PRE_BUILD COMMAND ${exec} -f  ${filename_vs} --platform  linux -p spirv -o ${dst_dir}/spv/${file}.bin --type vertex)
+add_custom_command(TARGET generate-shaders PRE_BUILD COMMAND ${exec} -f  ${filename_vs} --platform  asm.js -p 150 -o ${dst_dir}/essl/${file}.bin --type vertex)
+add_custom_command(TARGET generate-shaders PRE_BUILD COMMAND ${exec} -f  ${filename_vs} --platform  linux -p 150 -o ${dst_dir}/glsl/${file}.bin --type vertex)
+add_custom_command(TARGET generate-shaders PRE_BUILD COMMAND ${exec} -f  ${filename_vs} --platform  linux -p spirv -o ${dst_dir}/spirv/${file}.bin --type vertex)
 #add_custom_command(TARGET generate-shaders PRE_BUILD COMMAND ${exec} -i ${CMAKE_CURRENT_SOURCE_DIR}/${BGFX_DIR}/src -f  ${filename_vs} --platform  windows --bin2c -p vs_3_0 -O 3 -o ${filename_vs}_dx9.h --type vertex)
 #add_custom_command(TARGET generate-shaders PRE_BUILD COMMAND ${exec} -i ${CMAKE_CURRENT_SOURCE_DIR}/${BGFX_DIR}/src -f  ${filename_vs} --platform  windows --bin2c -p vs_4_0 -O 3 -o ${filename_vs}_dx11.h --type vertex)
-add_custom_command(TARGET generate-shaders PRE_BUILD COMMAND ${exec} -f  ${filename_vs} --platform  ios  -p metal  -O 3 -o ${dst_dir}/mtl/${file}.bin --type vertex)
+add_custom_command(TARGET generate-shaders PRE_BUILD COMMAND ${exec} -f  ${filename_vs} --platform  ios  -p metal  -O 3 -o ${dst_dir}/metal/${file}.bin --type vertex)
 endforeach()
 
 # add_dependencies(FastPaint generate-shaders)

@@ -17,39 +17,39 @@ DebugRenderer::~DebugRenderer()
 
 void DebugRenderer::Init()
 {
-	const char* vertex_shader_src = R"(
-		attribute vec3 a_position;
-		attribute vec4 a_color;
-
-		uniform mat4 u_transform;
-
-		varying vec4 v_color;
-
-		void main()
-		{
-			v_color = a_color;
-			gl_Position = u_transform * vec4(a_position, 1.0);;
-		}
-	)";
-
-	const char* fragment_shader_src = R"(
-		varying vec4 v_color;
-
-		void main()
-		{
-			gl_FragColor = v_color;
-		}
-	)";
-
-	m_program = Render::MakeProgram(vertex_shader_src, fragment_shader_src);
-
-	m_vertexSpec = Render::VertexSpecMaker()
-			.PushType<glm::vec3>("a_position")
-			.PushType<glm::vec<4, uint8_t> >("a_color");
-
-	m_vertexSpec.CollectHandles(m_program);
-
-	m_uniform_transform = m_program->GetUniformLocation("u_transform");
+//	const char* vertex_shader_src = R"(
+//		attribute vec3 a_position;
+//		attribute vec4 a_color;
+//
+//		uniform mat4 u_transform;
+//
+//		varying vec4 v_color;
+//
+//		void main()
+//		{
+//			v_color = a_color;
+//			gl_Position = u_transform * vec4(a_position, 1.0);;
+//		}
+//	)";
+//
+//	const char* fragment_shader_src = R"(
+//		varying vec4 v_color;
+//
+//		void main()
+//		{
+//			gl_FragColor = v_color;
+//		}
+//	)";
+//
+//	m_program = Render::MakeProgram(vertex_shader_src, fragment_shader_src);
+//
+//	m_vertexSpec = Render::VertexSpecMaker()
+//			.PushType<glm::vec3>("a_position")
+//			.PushType<glm::vec<4, uint8_t> >("a_color");
+//
+//	m_vertexSpec.CollectHandles(m_program);
+//
+//	m_uniform_transform = m_program->GetUniformLocation("u_transform");
 }
 
 void DebugRenderer::PushVertex(const glm::vec3& p, const glm::ivec3& color)

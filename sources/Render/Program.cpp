@@ -6,116 +6,51 @@
 #include <glm/gtx/quaternion.hpp>
 #include <type_traits>
 #include <map>
+#include <fsal.h>
 
 
 namespace Render
 {
-	Program::Program()
-	{
-		m_program = glCreateProgram();
-	}
+	Program::Program(): m_program({bgfx::kInvalidHandle})
+	{}
 
 	Program::~Program()
 	{
-		glDeleteProgram(m_program);
+		bgfx::destroy(m_program);
 	}
 
-	bool Program::LinkImpl()
+	void Program::CollectUniforms(bgfx::ShaderHandle shader)
 	{
-		glLinkProgram(m_program);
-
-		int linked;
-		glGetProgramiv(m_program, GL_LINK_STATUS, &linked);
-		if (!linked)
-		{
-			GLint infoLen = 0;
-			glGetProgramiv(m_program, GL_INFO_LOG_LENGTH, &infoLen);
-			if (infoLen > 1)
-			{
-				char* buf = new char[infoLen];
-				glGetProgramInfoLog(m_program, infoLen, nullptr, buf);
-				spdlog::warn("Linking error: \n{}\n", buf);
-				delete[] buf;
-				return false;
-			}
-		}
-		InitUniforms();
-		return true;
-	}
-
-	void Program::InitUniforms()
-	{
-		int total = -1;
-		glGetProgramiv(m_program, GL_ACTIVE_UNIFORMS, &total);
-
+		constexpr int max_handles = 128;
+		bgfx::UniformHandle handles[max_handles];
+		int num = bgfx::getShaderUniforms(shader, handles, max_handles);
 		m_uniforms.clear();
 
-		for (int i = 0; i < total; ++i)
+		for (int i = 0; i < num; ++i)
 		{
-			int name_len = -1, num = -1;
-			GLenum type = GL_ZERO;
-			char name[256];
-			glGetActiveUniform(m_program, GLuint(i), sizeof(name) - 1, &name_len, &num, &type, name);
-			name[name_len] = 0;
-			GLuint location = glGetUniformLocation(m_program, name);
-			Uniform u(location, VarType::FromGLMapping(type), num);
-			m_uniforms.push_back(u);
-			m_uniformMap[name] = static_cast<int>(m_uniforms.size()) - 1;
+			bgfx::UniformInfo info = {{0}, bgfx::UniformType::End, 0};
+			bgfx::getUniformInfo(handles[i], info);
+			m_uniforms.push_back(handles[i]);
+			m_uniformMap[info.name] = static_cast<int>(m_uniforms.size()) - 1;
 		}
 	}
 
-	class Attacher
+	void Program::Link(const Shader& shader)
 	{
-		Attacher(const Attacher& other) = delete;
-		Attacher& operator=(const Attacher&) = delete;
-	public:
-		Attacher(GLuint program, GLuint shader) :program(program), shader(shader)
-		{
-			glAttachShader(program, shader);
-		}
-		~Attacher()
-		{
-			glDetachShader(program, shader);
-		}
-	private:
-		GLuint program;
-		GLuint shader;
-	};
-
-	bool Program::Link(const Shader<SHADER_TYPE::COMPUTE_SHADER>& shader)
-	{
-		Attacher attacher(m_program, shader.m_shader);
-		return LinkImpl();
+		CollectUniforms(shader.m_shader);
+		m_program = bgfx::createProgram(shader.m_shader);
 	}
 
-	bool Program::Link(const Shader<SHADER_TYPE::VERTEX_SHADER>& vs, const Shader<SHADER_TYPE::FRAGMENT_SHADER>& fs)
+	void Program::Link(const Shader& vs, const Shader& fs)
 	{
-		Attacher attacher_vs(m_program, vs.m_shader);
-		Attacher attacher_fs(m_program, fs.m_shader);
-		return LinkImpl();
-	}
-
-	bool Program::Link(const Shader<SHADER_TYPE::VERTEX_SHADER>& vs, const Shader<SHADER_TYPE::GEOMETRY_SHADER>& gs, const Shader<SHADER_TYPE::FRAGMENT_SHADER>& fs)
-	{
-		Attacher attacher_vs(m_program, vs.m_shader);
-		Attacher attacher_gs(m_program, gs.m_shader);
-		Attacher attacher_fs(m_program, fs.m_shader);
-		return LinkImpl();
+		CollectUniforms(vs.m_shader);
+		CollectUniforms(fs.m_shader);
+		m_program = bgfx::createProgram(vs.m_shader, fs.m_shader);
 	}
 
 	void Program::Use() const
 	{
-		glUseProgram(m_program);
-	}
-
-	int Program::GetAttribLocation(const char *name) const
-	{
-		return glGetAttribLocation(m_program, name);
-	}
-
-	int Program::GetUniformLocation(const char *name) const
-	{
-		return glGetUniformLocation(m_program, name);
+		//glUseProgram(m_program);
 	}
 
 	Uniform Program::GetUniform(const char* name)
@@ -124,25 +59,53 @@ namespace Render
 		auto it = m_uniformMap.find(name);
 		if (it != m_uniformMap.end())
 		{
-			return m_uniforms[it->second];
+			auto handle = m_uniforms[it->second];
+			return Uniform(handle);
 		}
-		return Uniform(-1, VarType::INVALID, 0);
+		return Uniform();
+	}
+
+	Uniform::Uniform(bgfx::UniformHandle handle, bool owns): m_handle({bgfx::kInvalidHandle}), m_owns(owns)
+	{
+		bgfx::UniformInfo info = {{0}, bgfx::UniformType::End, 0};
+		bgfx::getUniformInfo(handle, info);
+		m_handle = handle;
+		m_type = VarType::FromBGFXMapping(info.type);
+		m_num = info.num;
 	}
 
 	ProgramPtr MakeProgram(const char* vertex_shader, const char* fragment_shader)
 	{
-		bool succeeded = true;
-		Shader<SHADER_TYPE::VERTEX_SHADER> vs;
-		succeeded &= vs.CompileShader(vertex_shader);
-		Shader<SHADER_TYPE::FRAGMENT_SHADER> fs;
-		succeeded &= fs.CompileShader(fragment_shader);
-		ProgramPtr program(new Program);
-		succeeded &= program->Link(vs, fs);
-		if (succeeded)
+		const char* shaderPath = "???";
+
+		switch (bgfx::getRendererType())
 		{
-			return program;
+		case bgfx::RendererType::Noop:
+		case bgfx::RendererType::Direct3D9:  shaderPath = "shaders/dx9/";   break;
+		case bgfx::RendererType::Direct3D11:
+		case bgfx::RendererType::Direct3D12: shaderPath = "shaders/dx11/";  break;
+		case bgfx::RendererType::Gnm:        shaderPath = "shaders/pssl/";  break;
+		case bgfx::RendererType::Metal:      shaderPath = "shaders/metal/"; break;
+		case bgfx::RendererType::Nvn:        shaderPath = "shaders/nvn/";   break;
+		case bgfx::RendererType::OpenGL:     shaderPath = "shaders/glsl/";  break;
+		case bgfx::RendererType::OpenGLES:   shaderPath = "shaders/essl/";  break;
+		case bgfx::RendererType::Vulkan:     shaderPath = "shaders/spirv/"; break;
+
+		case bgfx::RendererType::Count:
+			throw utils::runtime_error("Unknow backend %s", bgfx::getRendererType());
 		}
-		return nullptr;
+
+		std::string vs_path = std::string(shaderPath) + vertex_shader;
+		std::string fs_path = std::string(shaderPath) + fragment_shader;
+		std::string vs = fsal::FileSystem().Open(vs_path);
+		std::string fs = fsal::FileSystem().Open(fs_path);
+
+		ProgramPtr program(new Program);
+
+		program->Link(
+				Shader(vertex_shader, (const uint8_t*)vs.data(), vs.size()),
+				Shader(fragment_shader, (const uint8_t*)fs.data(), vs.size()));
+		return program;
 	}
 
 	template<typename T>
@@ -163,91 +126,81 @@ namespace Render
 	void Uniform::ApplyValue<int>(const int& value) const
 	{
 		assert(VarType::IsSignedInteger(m_type) || VarType::IsSampler(m_type) );
-		glUniform1iv(m_handle, 1, reinterpret_cast<const GLint*>(&value));
+		bgfx::setUniform(m_handle, &value);
 	}
 
 	template<>
 	void Uniform::ApplyValue<int>(const int* value, int count) const
 	{
 		assert(VarType::IsSignedInteger(m_type) || VarType::IsSampler(m_type) );
-		glUniform1iv(m_handle, count, reinterpret_cast<const GLint*>(value));
+		bgfx::setUniform(m_handle, value, count);
 	}
 
 	template<>
 	void Uniform::ApplyValue<unsigned int>(const unsigned int& value) const
 	{
 		assert(VarType::IsUnsignedInteger(m_type) || VarType::IsSampler(m_type) );
-		glUniform1uiv(m_handle, 1, reinterpret_cast<const unsigned int*>(&value));
+		bgfx::setUniform(m_handle, &value);
 	}
 
 	template<>
 	void Uniform::ApplyValue<unsigned int>(const unsigned int* value, int count) const
 	{
 		assert(VarType::IsUnsignedInteger(m_type) || VarType::IsSampler(m_type) );
-		glUniform1uiv(m_handle, count, reinterpret_cast<const unsigned int*>(value));
+		bgfx::setUniform(m_handle, value, count);
 	}
 
-#define ADD_SPEC(C, T, T2, TA) \
+#define ADD_SPEC(TA) \
 	template<> \
 	void Uniform::ApplyValue<TA>(const TA& value) const \
 	{ \
 		assert(m_type == VarType::GetType<TA>()); \
-		glUniform##C##T##v(m_handle, 1, reinterpret_cast<const T2*>(&value)); \
+		bgfx::setUniform(m_handle, &value); \
 	} \
 	template<> \
 	void Uniform::ApplyValue<TA>(const TA* value, int count) const \
 	{ \
 		assert(m_type == VarType::GetType<TA>()); \
-		glUniform##C##T##v(m_handle, count, reinterpret_cast<const T2*>(value)); \
+		bgfx::setUniform(m_handle, value, count); \
 	}
 
-#define ADD_SPEC_M(C, T, T2, TA) \
-	template<> \
-	void Uniform::ApplyValue<TA>(const TA& value) const \
-	{ \
-		assert(m_type == VarType::GetType<TA>()); \
-		glUniformMatrix##C##T##v(m_handle, 1, false, reinterpret_cast<const T2*>(&value)); \
-	} \
-	template<> \
-	void Uniform::ApplyValue<TA>(const TA* value, int count) const \
-	{ \
-		assert(m_type == VarType::GetType<TA>()); \
-		glUniformMatrix##C##T##v(m_handle, 1, false, reinterpret_cast<const T2*>(value)); \
-	}
-
-#define ADD_SPEC_A(C, T, T2, TA) \
+#define ADD_SPEC_A(TA) \
 	template<> \
 	void Uniform::ApplyValue<TA>(const std::vector<TA>& value) const \
 	{ \
 		assert(m_type == VarType::GetType<TA>()); \
-		glUniform##C##T##v(m_handle, static_cast<GLsizei>(value.size()), reinterpret_cast<const T2*>(value.data())); \
+		bgfx::setUniform(m_handle, value.data(), static_cast<GLsizei>(value.size())); \
 	}
 
-	ADD_SPEC(1, f, float, float)
-	ADD_SPEC(2, f, float, glm::vec2)
-	ADD_SPEC(3, f, float, glm::vec3)
-	ADD_SPEC(4, f, float, glm::vec4)
-	ADD_SPEC(4, f, float, glm::quat)
+	ADD_SPEC(float)
+	ADD_SPEC(glm::vec2)
+	ADD_SPEC(glm::vec3)
+	ADD_SPEC(glm::vec4)
+	ADD_SPEC(glm::quat)
 
-	ADD_SPEC(2, i, int, glm::ivec2)
-	ADD_SPEC(3, i, int, glm::ivec3)
-	ADD_SPEC(4, i, int, glm::ivec4)
+	ADD_SPEC(glm::ivec2)
+	ADD_SPEC(glm::ivec3)
+	ADD_SPEC(glm::ivec4)
 
-	ADD_SPEC_M(2, f, float, glm::mat2)
-	ADD_SPEC_M(3, f, float, glm::mat3)
-	ADD_SPEC_M(4, f, float, glm::mat4)
+	ADD_SPEC(glm::mat2)
+	ADD_SPEC(glm::mat3)
+	ADD_SPEC(glm::mat4)
 
-	ADD_SPEC_A(1, f, float, float)
-	ADD_SPEC_A(2, f, float, glm::vec2)
-	ADD_SPEC_A(3, f, float, glm::vec3)
-	ADD_SPEC_A(4, f, float, glm::vec4)
-	ADD_SPEC_A(4, f, float, glm::quat)
+	ADD_SPEC_A(float)
+	ADD_SPEC_A(glm::vec2)
+	ADD_SPEC_A(glm::vec3)
+	ADD_SPEC_A(glm::vec4)
+	ADD_SPEC_A(glm::quat)
 
-	ADD_SPEC_A(2, i, int, glm::ivec2)
-	ADD_SPEC_A(3, i, int, glm::ivec3)
-	ADD_SPEC_A(4, i, int, glm::ivec4)
+	ADD_SPEC_A(glm::ivec2)
+	ADD_SPEC_A(glm::ivec3)
+	ADD_SPEC_A(glm::ivec4)
+
+	ADD_SPEC_A(glm::mat2)
+	ADD_SPEC_A(glm::mat3)
+	ADD_SPEC_A(glm::mat4)
 }
-//
+
 //#ifndef __EMSCRIPTEN__
 //#include <doctest.h>
 //

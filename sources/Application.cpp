@@ -70,7 +70,7 @@ Application::Application(int argc, const char* const* argv)
 	else
 		ASSERT(false, "Unknown backend: %s", backend_str.c_str())
 
-    spdlog::info("Using backend: {}", backend_str);
+    spdlog::info("Using backend: {}", bgfx::getRendererName(backend));
 
 	m_reset_flags = BGFX_RESET_NONE
 		| (config["msaa16"].as<bool>() ? BGFX_RESET_MSAA_X16 : 0)
@@ -108,6 +108,22 @@ Application::Application(int argc, const char* const* argv)
 
 	bgfx::setViewMode(0, bgfx::ViewMode::Sequential);
 
+	m_program = Render::MakeProgram("vs_unlit.bin", "fs_unlit.bin");
+
+	u_modelView = m_program->GetUniform("u_modelView");
+
+//	u_projection = m_program->GetUniformLocation("u_projection");
+//	m_uniform_texture = m_program->GetUniformLocation("u_texture");
+//
+//	m_obj.Load("LeePerrySmith.obj");
+//	m_obj.Collect(m_program);
+//	m_dr.Init();
+//	m_uir.Init();
+//
+//	{
+//		Render::debug_guard<> debug_lock;
+//		m_texture = Render::LoadTexture("test.png");
+//	}
 //	m_uir.Init();
 }
 

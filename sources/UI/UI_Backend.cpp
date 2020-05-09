@@ -207,15 +207,15 @@ void Renderer::Init()
 	)";
 
 	m_program = Render::MakeProgram(vertex_shader_src, fragment_shader_src);
-
-	m_vertexSpec = Render::VertexSpecMaker()
-			.PushType<glm::vec2>("a_position")
-			.PushType<glm::vec2>("a_uv")
-			.PushType<glm::vec<4, uint8_t> >("a_color", true);
-
-	m_vertexSpec.CollectHandles(m_program);
-
-	m_uniform_transform = m_program->GetUniformLocation("u_transform");
+//
+//	m_vertexSpec = Render::VertexSpecMaker()
+//			.PushType<glm::vec2>("a_position")
+//			.PushType<glm::vec2>("a_uv")
+//			.PushType<glm::vec<4, uint8_t> >("a_color", true);
+//
+//	m_vertexSpec.CollectHandles(m_program);
+//
+//	m_uniform_transform = m_program->GetUniformLocation("u_transform");
 
 	m_command_queue = fsal::File(new fsal::MemRefFile());
 
