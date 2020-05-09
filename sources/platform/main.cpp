@@ -138,8 +138,7 @@ int main(int argc, const char* const* argv)
 
     spdlog::info("Monitor Physical Size: {}x{}mm.", monitorSizeInmm.x, monitorSizeInmm.y);
 
-	constexpr float mmPerInch = 25.4f;
-	m_dpi = glm::round(glm::vec2(monitorSizeInpixels) / glm::vec2(monitorSizeInmm) * mmPerInch);
+	m_dpi = glm::round(glm::vec2(monitorSizeInpixels) / glm::vec2(monitorSizeInmm) * utils::k_mm_per_inch);
 
     spdlog::info("DPI: {}x{}", m_dpi.x, m_dpi.y);
 

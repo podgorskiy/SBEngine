@@ -1,5 +1,5 @@
 #include "Image.h"
-#include "GaussKernelGen.h"
+#include "utils/gaussiun_kernel.h"
 #include "opencv_cc.h"
 #include "parallelisation.h"
 #include <assert.h>

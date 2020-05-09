@@ -4,7 +4,7 @@
 #include "Render/Shader.h"
 #include "Render/VertexBuffer.h"
 #include "Render/VertexSpec.h"
-#include "aabb.h"
+#include "utils/aabb.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <vector>
 #include <fsal.h>
