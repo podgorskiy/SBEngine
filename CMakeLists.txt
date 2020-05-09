@@ -84,6 +84,8 @@ add_subdirectory (libs/scriberlib)
 add_subdirectory (libs/yaml-cpp)
 add_subdirectory (libs/spdlog)
 
+target_include_directories(fsal PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/libs/lz4/lib)
+
 
 #####################################################################
 # bx
@@ -172,7 +174,7 @@ target_include_directories(shaderc PRIVATE ${GLSLANG}/glslang/Public)
 target_include_directories(shaderc PRIVATE ${GLSLANG}/glslang/Include)
 target_include_directories(shaderc PRIVATE ${BGFX_DIR}/3rdparty/dxsdk/include)
 
-target_link_libraries(shaderc bx glsl-optimizer spirv-cross spirv-opt glslang fcpp pthread dl)
+target_link_libraries(shaderc PRIVATE bx glsl-optimizer spirv-cross spirv-opt glslang fcpp pthread dl)
 
 target_include_directories(shaderc PRIVATE ${BGFX_DIR}/3rdparty/fcpp)
 #####################################################################
@@ -184,14 +186,6 @@ target_include_directories(shaderc PRIVATE ${BGFX_DIR}/3rdparty/fcpp)
 #####################################################################
 set(BIMG_DIR libs/bimg)
 set(BIMG_INCLUDE ${BIMG_DIR}/include)
-include_directories(${BGFX_DIR}/3rdparty)
-include_directories(${BIMG_INCLUDE})
-include_directories(${BIMG_DIR}/3rdparty)
-include_directories(${BIMG_DIR}/3rdparty/iqa/include)
-include_directories(${BIMG_DIR}/3rdparty/nvtt)
-include_directories(${BIMG_DIR}/3rdparty/astc)
-include_directories(${BIMG_DIR}/3rdparty/astc-codec)
-include_directories(${BIMG_DIR}/3rdparty/astc-codec/include)
 file(GLOB BIMG_SOURCES ${BIMG_DIR}/src/image.* ${BIMG_DIR}/src/image_gnf.cpp ${BIMG_DIR}/src/decoder/astc_file.* ${BIMG_INCLUDE}/*.h)
 
 set(ASTC_CODEC_DIR ${BIMG_DIR}/3rdparty/astc-codec/src/decoder)
@@ -210,7 +204,15 @@ file(GLOB ASTC_3RDPARTY_SOURCES
 		)
 
 add_library(bimg ${BIMG_SOURCES} ${ASTC_3RDPARTY_SOURCES})
-target_link_libraries(bimg bx)
+target_link_libraries(bimg PUBLIC bx)
+target_include_directories(bimg PUBLIC ${BIMG_INCLUDE})
+target_include_directories(bimg PRIVATE ${BGFX_DIR}/3rdparty)
+target_include_directories(bimg PRIVATE ${BIMG_DIR}/3rdparty)
+target_include_directories(bimg PRIVATE ${BIMG_DIR}/3rdparty/iqa/include)
+target_include_directories(bimg PRIVATE ${BIMG_DIR}/3rdparty/nvtt)
+target_include_directories(bimg PRIVATE ${BIMG_DIR}/3rdparty/astc)
+target_include_directories(bimg PRIVATE ${BIMG_DIR}/3rdparty/astc-codec)
+target_include_directories(bimg PRIVATE ${BIMG_DIR}/3rdparty/astc-codec/include)
 #####################################################################
 
 #####################################################################
@@ -218,16 +220,6 @@ target_link_libraries(bimg bx)
 #####################################################################
 set(BGFX_DIR libs/bgfx)
 set(BGFX_INCLUDE ${BGFX_DIR}/include)
-include_directories(${BGFX_DIR}/tools/shaderc)
-include_directories(${BGFX_DIR}/3rdparty)
-include_directories(${BGFX_DIR}/3rdparty/khronos)
-include_directories(${BGFX_DIR}/3rdparty/spirv-cross)
-include_directories(${BGFX_DIR}/3rdparty/dxsdk/include)
-include_directories(libs/imgui)
-include_directories(${BGFX_INCLUDE})
-if(MSVC)
-include_directories(${BGFX_INCLUDE}/compat/msvc)
-endif()
 file(GLOB BGFX_SOURCES
 	${BGFX_DIR}/src/*.cpp
 	${BGFX_DIR}/src/*.h
@@ -236,8 +228,19 @@ file(GLOB BGFX_SOURCES
 	)
 list(REMOVE_ITEM BGFX_SOURCES BX_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/${BGFX_DIR}/src/amalgamated.cpp)
 add_library(bgfx ${BGFX_SOURCES})
-target_link_libraries(bgfx bx bimg X11)
+target_link_libraries(bgfx PRIVATE X11)
+target_link_libraries(bgfx PUBLIC bx bimg)
 target_compile_definitions(bgfx PUBLIC BGFX_CONFIG_DEBUG=1)
+target_include_directories(bgfx PRIVATE ${BGFX_DIR}/tools/shaderc)
+target_include_directories(bgfx PRIVATE ${BGFX_DIR}/3rdparty)
+target_include_directories(bgfx PRIVATE ${BGFX_DIR}/3rdparty/khronos)
+target_include_directories(bgfx PRIVATE ${BGFX_DIR}/3rdparty/spirv-cross)
+target_include_directories(bgfx PRIVATE ${BGFX_DIR}/3rdparty/dxsdk/include)
+target_include_directories(bgfx PUBLIC libs/imgui)
+target_include_directories(bgfx PUBLIC ${BGFX_INCLUDE})
+if(MSVC)
+target_compile_definitions(bgfx PUBLIC ${BGFX_INCLUDE}/compat/msvc)
+endif()
 #####################################################################
 
 
@@ -310,7 +313,7 @@ if (TESTS)
 endif()
 
 add_executable(Oquonie ${SOURCES} ${TESTS})
-target_link_libraries(Oquonie gl3w glfw bx bgfx pthread dl  imgui pugixml fsal lz4 zlib_static vorbis ogg scribe yaml-cpp ${OPENGL_LIBRARIES} ${OPENAL_LIBRARY})
+target_link_libraries(Oquonie PRIVATE gl3w glfw bx bgfx pthread dl  imgui pugixml fsal lz4 zlib_static vorbis ogg scribe yaml-cpp ${OPENGL_LIBRARIES} ${OPENAL_LIBRARY})
 target_link_libraries(Oquonie PRIVATE spdlog::spdlog)
 
 
@@ -324,7 +327,6 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/imgui)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/glm)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/stb)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/fsal/sources)
-# include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/spdlog/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/pugixml/src)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/lz4/lib)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/zlib)
@@ -354,14 +356,14 @@ configure_file(test.png test.png COPYONLY)
 
 if(MSVC)
 else()
-	target_link_libraries(Oquonie stdc++fs)
+	target_link_libraries(Oquonie PRIVATE stdc++fs)
 	target_compile_options(Oquonie PRIVATE -lstdc++fs -Wno-switch)
 	target_link_options(Oquonie PRIVATE -static-libstdc++)
 endif()
 
 
-file(GLOB files_vs "${CMAKE_CURRENT_SOURCE_DIR}/shaders/vs_*.sc")
-file(GLOB files_fs "${CMAKE_CURRENT_SOURCE_DIR}/shaders/fs_*.sc")
+file(GLOB_RECURSE files_vs "${CMAKE_CURRENT_SOURCE_DIR}/shaders/vs_*.sc")
+file(GLOB_RECURSE files_fs "${CMAKE_CURRENT_SOURCE_DIR}/shaders/fs_*.sc")
 
 add_custom_target(
     generate-shaders
@@ -370,7 +372,7 @@ add_custom_target(
 
 
 set(dst_dir ${CMAKE_CURRENT_SOURCE_DIR}/resources/shaders)
-set(exec ${CMAKE_BINARY_DIR}/shaderc -i ${CMAKE_CURRENT_SOURCE_DIR}/${BGFX_DIR}/src)
+set(exec ${CMAKE_BINARY_DIR}/shaderc -i ${CMAKE_CURRENT_SOURCE_DIR}/${BGFX_DIR}/src -i ${CMAKE_CURRENT_SOURCE_DIR}/shaders)
 file(MAKE_DIRECTORY ${dst_dir}/glsl)
 file(MAKE_DIRECTORY ${dst_dir}/spv)
 file(MAKE_DIRECTORY ${dst_dir}/mtl)
