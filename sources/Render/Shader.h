@@ -76,8 +76,8 @@ namespace Render
 		template<typename T>
 		void ApplyValue(const std::vector<T>& value) const;
 
-	protected:
 		bgfx::UniformHandle m_handle;
+	protected:
 		VarType::Type m_type;
 		uint16_t m_num;
 		bool m_owns;

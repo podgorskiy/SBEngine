@@ -111,11 +111,10 @@ Application::Application(int argc, const char* const* argv)
 
 	m_program = Render::MakeProgram("vs_unlit.bin", "fs_unlit.bin");
 
-	u_texture = m_program->GetUniform("u_modelView");
 	u_texture = m_program->GetUniform("u_texture");
-	u_projection = m_program->GetUniform("u_projection");
 
 	m_obj.Load("LeePerrySmith.obj");
+	m_texture = Render::LoadTexture("test.png");
 
 
 //	m_obj.Collect(m_program);
@@ -124,7 +123,6 @@ Application::Application(int argc, const char* const* argv)
 //
 //	{
 //		Render::debug_guard<> debug_lock;
-//		m_texture = Render::LoadTexture("test.png");
 //	}
 //	m_uir.Init();
 }
@@ -155,6 +153,8 @@ void Application::Update(float time, float deltaTime)
 
 	bgfx::setViewTransform(0, &view[0], &projection[0]);
 	bgfx::setTransform(&model[0]);
+
+	bgfx::setTexture(0, u_texture.m_handle,  m_texture->m_handle);
 
 	uint64_t state = 0
 				| BGFX_STATE_DEFAULT

@@ -7,6 +7,7 @@
 #include <vector>
 #include <string.h>
 #include <ctype.h>
+#include <bgfx/bgfx.h>
 
 
 namespace Render
@@ -172,5 +173,5 @@ namespace Render
 		}
 	};
 
-	std::vector<uint32_t> GetGLMappedTypes(TextureFormat format);
+	bgfx::TextureFormat::Enum GetBGFXMappedTypes(TextureFormat format);
 }

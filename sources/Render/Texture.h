@@ -3,6 +3,8 @@
 #include <string>
 #include <glm/glm.hpp>
 #include "Render/TextureReaders/IReader.h"
+#include <bgfx/bgfx.h>
+
 
 namespace Render
 {
@@ -26,26 +28,15 @@ namespace Render
 
 		Texture();
 
-		static TexturePtr LoadTexture(TextureReader reader);
-
-		void Bind(int slot);
-
-		void UnBind();
-
-		struct TextureHeader
-		{
-			glm::ivec3 size;
-			int MIPMapCount;
-			uint32_t gltextype;
-			TextureType type;
-			bool cubemap;
-			bool compressed;
-		};
-
 		~Texture();
 
+		static TexturePtr LoadTexture(TextureReader reader);
+
+		bgfx::TextureHandle m_handle;
 	private:
-		TextureHeader header;
-		unsigned int m_textureHandle;
+		glm::ivec3 m_size;
+		int m_mipmap_count;
+		TextureType m_type;
+		bool m_compressed;
 	};
 }

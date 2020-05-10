@@ -289,132 +289,114 @@ std::string GetStringRepresentation(TextureFormat format)
 	return buff;
 }
 
-std::vector<uint32_t> Render::GetGLMappedTypes(TextureFormat format)
-{
-	uint32_t internal_format = 0;
-	uint32_t import_format = 0;
-	// OpenGL 4    GL_RED, GL_RG, GL_RGB, GL_BGR, GL_RGBA, GL_BGRA, GL_RED_INTEGER, GL_RG_INTEGER, GL_RGB_INTEGER, GL_BGR_INTEGER, GL_RGBA_INTEGER, GL_BGRA_INTEGER, GL_STENCIL_INDEX, GL_DEPTH_COMPONENT, GL_DEPTH_STENCIL
-	// OpenGL ES3  GL_RED, GL_RED_INTEGER, GL_RG, GL_RG_INTEGER, GL_RGB, GL_RGB_INTEGER, GL_RGBA, GL_RGBA_INTEGER, GL_DEPTH_COMPONENT, GL_DEPTH_STENCIL, GL_LUMINANCE_ALPHA, GL_LUMINANCE, and GL_ALPHA.
-	uint32_t channel_type = 0;
-	// OpenGL 4    GL_UNSIGNED_BYTE, GL_BYTE, GL_UNSIGNED_SHORT, GL_SHORT, GL_UNSIGNED_INT, GL_INT, GL_HALF_FLOAT, GL_FLOAT, GL_UNSIGNED_BYTE_3_3_2, GL_UNSIGNED_BYTE_2_3_3_REV, GL_UNSIGNED_SHORT_5_6_5, GL_UNSIGNED_SHORT_5_6_5_REV, GL_UNSIGNED_SHORT_4_4_4_4, GL_UNSIGNED_SHORT_4_4_4_4_REV, GL_UNSIGNED_SHORT_5_5_5_1, GL_UNSIGNED_SHORT_1_5_5_5_REV, GL_UNSIGNED_INT_8_8_8_8, GL_UNSIGNED_INT_8_8_8_8_REV, GL_UNSIGNED_INT_10_10_10_2, and GL_UNSIGNED_INT_2_10_10_10_REV.
-	// OpenGL ES3  GL_UNSIGNED_BYTE, GL_BYTE, GL_UNSIGNED_SHORT, GL_SHORT, GL_UNSIGNED_INT, GL_INT, GL_HALF_FLOAT, GL_FLOAT, GL_UNSIGNED_SHORT_5_6_5, GL_UNSIGNED_SHORT_4_4_4_4, GL_UNSIGNED_SHORT_5_5_5_1, GL_UNSIGNED_INT_2_10_10_10_REV, GL_UNSIGNED_INT_10F_11F_11F_REV, GL_UNSIGNED_INT_5_9_9_9_REV, GL_UNSIGNED_INT_24_8, and GL_FLOAT_32_UNSIGNED_INT_24_8_REV.
 
+bgfx::TextureFormat::Enum Render::GetBGFXMappedTypes(TextureFormat format)
+{
 	bool _signed = Render::TextureFormat::IsSigned(format.type);
 	bool _normalized = Render::TextureFormat::IsNormalized(format.type);
 	bool _float = Render::TextureFormat::IsFloat(format.type);
 
+	typedef bgfx::TextureFormat TF;
+
+#define FORMAT(C, B) _normalized ? (_signed ? TF::C##B##S : TF::C##B) : (_signed ? TF::C##B##I : TF::C##B##U)
+#define FORMAT32(C) _float ? TF::C##32F : (_signed ? TF::C##32I : TF::C##32U)
+
 	switch (format.pixel_format)
 	{
 		case Render::PixelType<'r', 8>::ID:
-			import_format = _normalized ? GL_RED : GL_RED_INTEGER;
-			channel_type = _signed ? GL_BYTE : GL_UNSIGNED_BYTE;
-			internal_format = _normalized ? (_signed ? GL_R8_SNORM : GL_R8) : (_signed ? GL_R8I : GL_R8UI);
-			break;
+			return FORMAT(R, 8);
 
 		case Render::PixelType<'r', 16>::ID:
-			import_format = _normalized ? GL_RED : GL_RED_INTEGER;
-			channel_type = _signed ? GL_SHORT : GL_UNSIGNED_SHORT;
-			internal_format = _normalized ? (_signed ? GL_R16_SNORM : GL_R16) : (_signed ? GL_R16I : GL_R16UI);
-			break;
+			return FORMAT(R, 16);
 
 		case Render::PixelType<'r', 32>::ID:
-			import_format = _normalized ? GL_RED : GL_RED_INTEGER;
-			channel_type = _signed ? (_float ? GL_FLOAT : GL_INT) : GL_UNSIGNED_INT;
-			internal_format = _float ? GL_R32F : (_signed ? GL_R32I : GL_R32UI);
-			break;
+			return FORMAT32(R);
 
 		case Render::PixelType<'r', 8, 'g', 8>::ID:
-			import_format = _normalized ? GL_RG : GL_RG_INTEGER;
-			channel_type = _signed ? GL_BYTE : GL_UNSIGNED_BYTE;
-			internal_format = _normalized ? (_signed ? GL_RG8_SNORM : GL_RG8) : (_signed ? GL_RG8I : GL_RG8UI);
-			break;
+			return FORMAT(RG, 8);
 
 		case Render::PixelType<'r', 16, 'g', 16>::ID:
-			import_format = _normalized ? GL_RG : GL_RG_INTEGER;
-			channel_type = _signed ? GL_SHORT : GL_UNSIGNED_SHORT;
-			internal_format = _normalized ? (_signed ? GL_RG16_SNORM : GL_RG16) : (_signed ? GL_RG16I : GL_RG16UI);
-			break;
+			return FORMAT(RG, 16);
 
 		case Render::PixelType<'r', 32, 'g', 32>::ID:
-			import_format = _normalized ? GL_RG : GL_RG_INTEGER;
-			channel_type = _signed ? (_float ? GL_FLOAT : GL_INT) : GL_UNSIGNED_INT;
-			internal_format = _float ? GL_RG32F : (_signed ? GL_RG32I : GL_RG32UI);
-			break;
+			return FORMAT32(RG);
 
 		case Render::PixelType<'r', 8, 'g', 8, 'b', 8>::ID:
-			import_format = _normalized ? GL_RGB : GL_RGB_INTEGER;
-			channel_type = _signed ? GL_BYTE : GL_UNSIGNED_BYTE;
-			internal_format = _normalized ? (_signed ? GL_RGB8_SNORM : GL_RGB8) : (_signed ? GL_RGB8I : GL_RGB8UI);
-			break;
+			return FORMAT(RGB, 8);
 
-		case Render::PixelType<'r', 16, 'g', 16, 'b', 16>::ID:
-			import_format = _normalized ? GL_RGB : GL_RGB_INTEGER;
-			channel_type = _signed ? GL_SHORT : GL_UNSIGNED_SHORT;
-			internal_format = _normalized ? (_signed ? GL_RGB16_SNORM : GL_RGB16) : (_signed ? GL_RGB16I : GL_RGB16UI);
-			break;
+//		case Render::PixelType<'r', 16, 'g', 16, 'b', 16>::ID:
+//			return FORMAT(RGB, 16);
 
-		case Render::PixelType<'r', 32, 'g', 32, 'b', 32>::ID:
-			import_format = _normalized ? GL_RGB : GL_RGB_INTEGER;
-			channel_type = _signed ? (_float ? GL_FLOAT : GL_INT) : GL_UNSIGNED_INT;
-			internal_format = _float ? GL_RGB32F : (_signed ? GL_RGB32I : GL_RGB32UI);
-			break;
+//		case Render::PixelType<'r', 32, 'g', 32, 'b', 32>::ID:
+//			return FORMAT32(RGB);
 
 		case Render::PixelType<'r', 8, 'g', 8, 'b', 8, 'a', 8>::ID:
-			import_format = _normalized ? GL_RGBA : GL_RGBA_INTEGER;
-			channel_type = _signed ? GL_BYTE : GL_UNSIGNED_BYTE;
-			internal_format = _normalized ? (_signed ? GL_RGBA8_SNORM : GL_RGBA8) : (_signed ? GL_RGBA8I : GL_RGBA8UI);
-			break;
+			return FORMAT(RGBA, 8);
 
 		case Render::PixelType<'r', 16, 'g', 16, 'b', 16, 'a', 16>::ID:
-			import_format = _normalized ? GL_RGBA : GL_RGBA_INTEGER;
-			channel_type = _signed ? GL_SHORT : GL_UNSIGNED_SHORT;
-			internal_format = _normalized ? (_signed ? GL_RGBA16_SNORM : GL_RGBA16) : (_signed ? GL_RGBA16I
-			                                                                                   : GL_RGBA16UI);
-			break;
+			return FORMAT(RGBA,16);
 
 		case Render::PixelType<'r', 32, 'g', 32, 'b', 32, 'a', 32>::ID:
-			import_format = _normalized ? GL_RGBA : GL_RGBA_INTEGER;
-			channel_type = _signed ? (_float ? GL_FLOAT : GL_INT) : GL_UNSIGNED_INT;
-			internal_format = _float ? GL_RGBA32F : (_signed ? GL_RGBA32I : GL_RGBA32UI);
-			break;
-
+			return FORMAT32(RGBA);
 
 		case Render::PixelType<'r', 5, 'g', 6, 'b', 5>::ID:
 			assert(!_signed);
 			assert(_normalized);
-			import_format = GL_RGB;
-			channel_type = GL_UNSIGNED_SHORT_5_6_5;
-			internal_format = GL_RGB565;
-			break;
+			return TF::R5G6B5;
 
 		case Render::PixelType<'r', 4, 'g', 4, 'b', 4, 'a', 4>::ID:
 			assert(!_signed);
 			assert(_normalized);
-			import_format = GL_RGBA;
-			channel_type = GL_UNSIGNED_SHORT_4_4_4_4;
-			internal_format = GL_RGBA4;
-			break;
+			return TF::RGBA4;
 
 		case Render::PixelType<'r', 5, 'g', 5, 'b', 5, 'a', 1>::ID:
 			assert(!_signed);
 			assert(_normalized);
-			import_format = GL_RGBA;
-			channel_type = GL_UNSIGNED_SHORT_5_5_5_1;
-			internal_format = GL_RGB5_A1;
-			break;
+			return TF::RGB5A1;
 
 		case Render::PixelType<'r', 10, 'g', 10, 'b', 10, 'a', 2>::ID:
 			assert(!_signed);
-			import_format = _normalized ? GL_RGBA : GL_RGBA_INTEGER;
-			channel_type = GL_UNSIGNED_INT_10_10_10_2;
-			internal_format = _normalized ? GL_RGB10_A2 : GL_RGB10_A2UI;
-			break;
+			return TF::RGB10A2;
+
+		case TextureFormat::PVRTCI_2bpp_RGB:
+			return TF::PTC12;
+		case TextureFormat::PVRTCI_2bpp_RGBA:
+			return TF::PTC12A;
+		case TextureFormat::PVRTCI_4bpp_RGB:
+			return TF::PTC14;
+		case TextureFormat::PVRTCI_4bpp_RGBA:
+			return TF::PTC14A;
+		case TextureFormat::PVRTCII_2bpp:
+			return TF::PTC22;
+		case TextureFormat::ETC1:
+			return TF::ETC1;
+		case TextureFormat::DXT1:
+			return TF::BC1;
+		case TextureFormat::DXT3:
+			return TF::BC2;
+		case TextureFormat::ETC2_RGB:
+			return TF::ETC2;
+		case TextureFormat::ETC2_RGB_A1:
+			return TF::ETC2A1;
+		case TextureFormat::ETC2_RGBA:
+			return TF::ETC2A;
+		case TextureFormat::ASTC_4x4:
+			return TF::ASTC4x4;
+		case TextureFormat::ASTC_5x5:
+			return TF::ASTC5x5;
+		case TextureFormat::ASTC_6x6:
+			return TF::ASTC6x6;
+		case TextureFormat::ASTC_8x5:
+			return TF::ASTC8x5;
+		case TextureFormat::ASTC_8x6:
+			return TF::ASTC8x6;
+		case TextureFormat::ASTC_10x5:
+			return TF::ASTC10x5;
 
 		default:
 			spdlog::error("Could not find proper GL mapping of format: {}", GetStringRepresentation(format));
 			throw utils::runtime_error("Could not find proper GL mapping of format: %s", GetStringRepresentation(format).c_str());
 	}
-	return {internal_format, import_format, channel_type};
 }
 
 #ifndef __EMSCRIPTEN__

@@ -38,7 +38,6 @@ private:
 	UI::Renderer m_uir;
 
 	Render::Uniform u_texture;
-	Render::Uniform u_projection;
 
 	Object m_obj;
 	Render::TexturePtr m_texture;

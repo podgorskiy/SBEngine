@@ -1,7 +1,6 @@
 #include "Texture.h"
 #include "Render/TextureReaders/PVRReader.h"
 #include "Render/GLCompressionTypes.h"
-#include "Render/gl_headers.h"
 #include <fsal.h>
 #include <stdio.h>
 #include <spdlog/spdlog.h>
@@ -12,89 +11,77 @@
 
 using namespace Render;
 
-Texture::Texture(): header({{0, 0, 0}, 0, 0, Invalid, false, false }), m_textureHandle(uint32_t(-1))
-{
-	glGenTextures(1, &m_textureHandle);
-}
 
-void Texture::Bind(int slot)
+Texture::Texture(): m_size({0, 0, 0}), m_mipmap_count(0), m_type(Invalid),  m_compressed(false),
+	m_handle({bgfx::kInvalidHandle})
 {
-	glActiveTexture(GL_TEXTURE0 + slot);
-	glBindTexture(header.gltextype, m_textureHandle);
-}
-
-void Texture::UnBind()
-{
-	glBindTexture(header.gltextype, 0);
 }
 
 Texture::~Texture()
 {
-	if (m_textureHandle != uint32_t(-1))
+	if (bgfx::isValid(m_handle))
 	{
-		glDeleteTextures(1, &m_textureHandle);
-		m_textureHandle = -1;
+		bgfx::destroy(m_handle);
 	}
+}
+
+inline const bgfx::Memory* GetMemRef(IReader::Blob blob)
+{
+	return bgfx::makeRef(
+		blob.data.get(),
+		blob.size, [](void* ptr, void* userData)
+		{
+			delete (std::shared_ptr<uint8_t>*)userData;
+		},
+		new std::shared_ptr<uint8_t>(blob.data));
 }
 
 TexturePtr Texture::LoadTexture(TextureReader reader)
 {
 	TexturePtr texture = std::make_shared<Texture>();
-	texture->header.size = reader.GetSize(0);
+	texture->m_size = reader.GetSize(0);
 
 	auto decoded = Render::DecodePixelType((uint64_t)reader.GetFormat().pixel_format);
 	// int channel_count = decoded.channel_names.size();
 	int dimensionality = 3;
-	texture->header.type = Texture::Texture_3D;
-	if (texture->header.size.z == 1)
+	texture->m_type = Texture::Texture_3D;
+	if (texture->m_size.z == 1)
 	{
 		dimensionality = 2;
-		texture->header.type = Texture::Texture_2D;
+		texture->m_type = Texture::Texture_2D;
 	}
-	if (texture->header.size.y == 1)
-	{
-		dimensionality = 1;
-		texture->header.type = Texture::Texture_1D;
-	}
-	texture->header.cubemap = reader.GetFaceCount() == 6;
-	if (texture->header.cubemap)
+	bool cubemap = reader.GetFaceCount() == 6;
+	if (cubemap)
 	{
 		assert(dimensionality == 2);
-		texture->header.type = Texture::Texture_Cube;
+		texture->m_type = Texture::Texture_Cube;
 	}
 
-	assert(glm::all(glm::greaterThanEqual(texture->header.size, glm::ivec3(0))));
+	assert(glm::all(glm::greaterThanEqual(texture->m_size, glm::ivec3(0))));
 	assert(reader.GetFaceCount() == 1 || reader.GetFaceCount() == 6);
 
-	texture->header.MIPMapCount = reader.GetMipmapCount();
-	texture->header.cubemap = reader.GetFaceCount() == 6;
-	texture->header.compressed = decoded.compressed;
+	texture->m_mipmap_count = reader.GetMipmapCount();
+	texture->m_compressed = decoded.compressed;
 
-	texture->header.gltextype = 0;
-	switch(texture->header.type)
+	auto bgfx_format = Render::GetBGFXMappedTypes(reader.GetFormat());
+
+	uint64_t flags = BGFX_SAMPLER_UVW_CLAMP | BGFX_TEXTURE_SRGB;
+
+	switch(texture->m_type)
 	{
-		case Texture::Texture_1D:
-			texture->header.gltextype = GL_TEXTURE_1D;
-			break;
 		case Texture::Texture_2D:
-			texture->header.gltextype = GL_TEXTURE_2D;
+			texture->m_handle = bgfx::createTexture2D(texture->m_size.x, texture->m_size.y, texture->m_mipmap_count > 1, 1, bgfx_format, flags);
 			break;
 		case Texture::Texture_3D:
-			texture->header.gltextype = GL_TEXTURE_3D;
+			texture->m_handle = bgfx::createTexture3D(texture->m_size.x, texture->m_size.y, texture->m_size.z, texture->m_mipmap_count > 1, bgfx_format, flags);
 			break;
 		case Texture::Texture_Cube:
-			texture->header.gltextype = GL_TEXTURE_CUBE_MAP;
+			assert(texture->m_size.x == texture->m_size.y);
+			texture->m_handle = bgfx::createTextureCube(texture->m_size.x, texture->m_mipmap_count > 1, 1, bgfx_format, flags);
 			break;
 		default:
-			throw utils::runtime_error("Unkown type %d", texture->header.type);
+			throw utils::runtime_error("Unkown type %d", texture->m_type);
 	}
-
-	texture->Bind(0);
-
-	auto glformat = Render::GetGLMappedTypes(reader.GetFormat());
-	uint32_t internal_format = glformat[0];
-	uint32_t import_format = glformat[1];
-	uint32_t channel_type = glformat[2];
 
 	for (int mipmap = 0; mipmap < reader.GetMipmapCount(); ++mipmap)
 	{
@@ -102,29 +89,25 @@ TexturePtr Texture::LoadTexture(TextureReader reader)
 		{
 			auto block_size = reader.GetSize(mipmap);
 			auto blob = reader.Read(mipmap, face);
+			auto size = reader.GetSize(mipmap);
 
-			if (texture->header.compressed)
+			switch(texture->m_type)
 			{
-				glCompressedTexImage2D(texture->header.gltextype + face, mipmap, internal_format, block_size.x, block_size.y, 0, blob.size, blob.data.get());
-			}
-			else
-			{
-				glTexImage2D(texture->header.gltextype + face, mipmap, internal_format, block_size.x, block_size.y, 0, import_format, channel_type, blob.data.get());
+				case Texture::Texture_2D:
+					bgfx::updateTexture2D(texture->m_handle, 0, mipmap, 0, 0, size.x, size.y, GetMemRef(blob));
+					break;
+				case Texture::Texture_3D:
+					bgfx::updateTexture3D(texture->m_handle, mipmap, 0, 0, 0, size.x, size.y, size.z, GetMemRef(blob));
+					break;
+				case Texture::Texture_Cube:
+					assert(texture->m_size.x == texture->m_size.y);
+					bgfx::updateTextureCube(texture->m_handle, 0, face, mipmap, 0, 0, size.x, size.y, GetMemRef(blob));
+					break;
+				default:
+					throw utils::runtime_error("Unkown type %d", texture->m_type);
 			}
 		}
 	}
-
-	if (texture->header.MIPMapCount > 1)
-	{
-		glTexParameteri(texture->header.gltextype, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	}
-	else
-	{
-		glTexParameteri(texture->header.gltextype, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	}
-	glTexParameteri(texture->header.gltextype, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	texture->UnBind();
 
 	return texture;
 }
