@@ -20,6 +20,8 @@
 #include "utils/aabb.h"
 #include "misc/doc_test_runner.h"
 #include <stb_image_write.h>
+#include <bx/bx.h>
+#include <bx/math.h>
 
 
 #include "imgui.h"
@@ -34,7 +36,6 @@
 
 
 //Keyboard keyboard;
-
 
 Application::Application(int argc, const char* const* argv)
 {
@@ -110,12 +111,13 @@ Application::Application(int argc, const char* const* argv)
 
 	m_program = Render::MakeProgram("vs_unlit.bin", "fs_unlit.bin");
 
-	u_modelView = m_program->GetUniform("u_modelView");
+	u_texture = m_program->GetUniform("u_modelView");
+	u_texture = m_program->GetUniform("u_texture");
+	u_projection = m_program->GetUniform("u_projection");
 
-//	u_projection = m_program->GetUniformLocation("u_projection");
-//	m_uniform_texture = m_program->GetUniformLocation("u_texture");
-//
-//	m_obj.Load("LeePerrySmith.obj");
+	m_obj.Load("LeePerrySmith.obj");
+
+
 //	m_obj.Collect(m_program);
 //	m_dr.Init();
 //	m_uir.Init();
@@ -137,6 +139,29 @@ void Application::Update(float time, float deltaTime)
 {
 	bgfx::setViewRect(0, 0, 0, uint16_t(m_windowBufferSize.x), uint16_t(m_windowBufferSize.y));
 	bgfx::touch(0);
+
+	float aspect = m_windowBufferSize.x / (float)m_windowBufferSize.y;
+
+	float view_height = 2.2f;
+	float view_width = aspect * view_height;
+
+	float camera_rotation = -time * 0.1;
+
+	glm::mat4 projection = glm::perspectiveFov(1.0f, view_width, view_height, 0.01f, 1000.0f);
+	glm::vec3 camera_pos = glm::vec3(1.0, 0.5, 1.0) * 0.3f;
+	camera_pos = glm::rotate(glm::mat4(1.0), camera_rotation, glm::vec3(0.0f, 1.0f, 0.0f)) * glm::vec4(camera_pos, 1.0);
+	glm::mat4 view = glm::lookAt(camera_pos, glm::vec3(0.0), glm::vec3(0.0, 1.0, 0.0));
+	glm::mat4 model = glm::mat4(1.0f);
+
+	bgfx::setViewTransform(0, &view[0], &projection[0]);
+	bgfx::setTransform(&model[0]);
+
+	uint64_t state = 0
+				| BGFX_STATE_DEFAULT
+				;
+	bgfx::setState(state);
+
+	m_obj.Draw(0, m_program);
 
 
 //	Render::debug_guard<> debug_lock;

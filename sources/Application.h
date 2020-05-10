@@ -37,11 +37,8 @@ private:
 	Render::DebugRenderer m_dr;
 	UI::Renderer m_uir;
 
-	Render::Uniform u_modelView;
-	unsigned int u_model = -1;
-
-	unsigned int u_projection = -1;
-	unsigned int m_uniform_texture = -1;
+	Render::Uniform u_texture;
+	Render::Uniform u_projection;
 
 	Object m_obj;
 	Render::TexturePtr m_texture;

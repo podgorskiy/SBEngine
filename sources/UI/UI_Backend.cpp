@@ -365,7 +365,7 @@ void Renderer::Draw()
 	glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
 	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
 
-	m_program->Use();
+//	m_program->Use();
 	glUniformMatrix4fv(m_uniform_transform, 1, GL_FALSE, &m_prj[0][0]);
 
 	glBindBuffer(GL_ARRAY_BUFFER, m_vertexBufferHandle);

@@ -24,7 +24,6 @@ namespace Render
 		constexpr int max_handles = 128;
 		bgfx::UniformHandle handles[max_handles];
 		int num = bgfx::getShaderUniforms(shader, handles, max_handles);
-		m_uniforms.clear();
 
 		for (int i = 0; i < num; ++i)
 		{
@@ -37,20 +36,19 @@ namespace Render
 
 	void Program::Link(const Shader& shader)
 	{
+		m_uniforms.clear();
+		m_uniformMap.clear();
 		CollectUniforms(shader.m_shader);
 		m_program = bgfx::createProgram(shader.m_shader);
 	}
 
 	void Program::Link(const Shader& vs, const Shader& fs)
 	{
+		m_uniforms.clear();
+		m_uniformMap.clear();
 		CollectUniforms(vs.m_shader);
 		CollectUniforms(fs.m_shader);
 		m_program = bgfx::createProgram(vs.m_shader, fs.m_shader);
-	}
-
-	void Program::Use() const
-	{
-		//glUseProgram(m_program);
 	}
 
 	Uniform Program::GetUniform(const char* name)

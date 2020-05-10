@@ -949,7 +949,7 @@ static void glnvg__renderFlush(void* uptr)
 	if (gl->ncalls > 0) {
 
 		// Setup require GL state.
-		gl->program->Use();
+//		gl->program->Use();
 
 		glEnable(GL_CULL_FACE);
 		glCullFace(GL_BACK);

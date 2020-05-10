@@ -107,14 +107,13 @@ namespace Render
 
 		void Link(const Shader& vs, const Shader& fs);
 
-		void Use() const;
-
 		Uniform GetUniform(const char* name);
 
 		Uniform GetUniform(int id) const { return Uniform(m_uniforms[id]); }
 
 		const auto& UniformMap() const { return m_uniformMap; }
 
+		bgfx::ProgramHandle GetHandle() const { return m_program; }
 	private:
 		void CollectUniforms(bgfx::ShaderHandle shader);
 
@@ -129,4 +128,3 @@ namespace Render
 
 	ProgramPtr MakeProgram(const char* vertex_shader, const char* fragment_shader);
 }
-

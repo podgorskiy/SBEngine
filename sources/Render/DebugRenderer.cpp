@@ -111,7 +111,7 @@ void DebugRenderer::Draw(const glm::mat4& transform)
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
-	m_program->Use();
+//	m_program->Use();
 	glUniformMatrix4fv(m_uniform_transform, 1, GL_FALSE, &transform[0][0]);
 
 	m_vertexSpec.Enable(&m_vertexArray[0]);

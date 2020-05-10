@@ -1,7 +1,10 @@
 #include "Render/VertexBuffer.h"
 #include "Render/VertexSpec.h"
+#include "Render/Shader.h"
 #include <string>
 #include <glm/glm.hpp>
+#include <bgfx/bgfx.h>
+
 
 struct Vertex
 {
@@ -18,12 +21,10 @@ public:
 
 	void MakeBox();
 
-	void Collect(Render::ProgramPtr program);
-
-	void Bind();
-	void Draw();
-	void UnBind();
+	void Draw(int view, Render::ProgramPtr program);
 private:
-	Render::VertexBuffer m_geometry;
-	Render::VertexSpec m_vertexSpec;
+	bgfx::VertexBufferHandle m_vertexBuffer;
+	bgfx::IndexBufferHandle m_indexBuffer;
+	// Render::VertexBuffer m_geometry;
+	// Render::VertexSpec m_vertexSpec;
 };

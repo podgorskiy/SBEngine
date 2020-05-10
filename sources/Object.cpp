@@ -6,11 +6,13 @@
 #include <vector>
 #include <map>
 #include <string.h>
+#include <fsal.h>
+#include <MemRefFile.h>
+
 
 void Object::Load(std::string path)
 {
 	std::map<int, int> vertex_cache;
-	std::vector<Vertex> vertices;
 	std::vector<glm::vec3> positions;
 	std::vector<glm::vec2> uv_coordinates;
 	std::vector<int> indices;
@@ -20,6 +22,8 @@ void Object::Load(std::string path)
 	glm::vec3 pos;
 	glm::vec3 uv;
 	int current_index = 0;
+
+	std::vector<Vertex> vertices;
 
 	while (std::getline(file, str))
 	{
@@ -129,20 +133,16 @@ void Object::Load(std::string path)
 		vertices[i].tangent = glm::normalize(vertices[i].tangent - vertices[i].normal * glm::dot(vertices[i].normal, vertices[i].tangent));
 	}
 
-	m_geometry.FillBuffers(vertices.data(), vertices.size(), sizeof(Vertex), indices.data(), indices.size(), 4);
+	bgfx::VertexLayout layout;
+	layout.begin()
+	      .add(bgfx::Attrib::Position,  3, bgfx::AttribType::Float)
+	      .add(bgfx::Attrib::Normal   , 3, bgfx::AttribType::Float)
+	      .add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Float)
+		  .add(bgfx::Attrib::Color0,    3, bgfx::AttribType::Float)
+		  .end();
 
-//	m_vertexSpec = Render::VertexSpecMaker()
-//			.PushType<glm::vec3>("a_position")
-//			.PushType<glm::vec3>("a_normal")
-//			.PushType<glm::vec2>("a_uv")
-//			.PushType<glm::vec3>("a_tangent");
-
-}
-
-
-void Object::Collect(Render::ProgramPtr program)
-{
-	m_vertexSpec.CollectHandles(program);
+	m_vertexBuffer = bgfx::createVertexBuffer(bgfx::copy(vertices.data(), vertices.size() * sizeof(Vertex)), layout);
+	m_indexBuffer = bgfx::createIndexBuffer(bgfx::copy(indices.data(), indices.size() * sizeof(int)), BGFX_BUFFER_INDEX32);
 }
 
 
@@ -174,23 +174,21 @@ void Object::MakeBox()
 		indices.push_back(i * 4 + 3);
 	}
 
-	m_geometry.FillBuffers(vertices.data(), vertices.size(), sizeof(Vertex), indices.data(), indices.size(), 4);
+	bgfx::VertexLayout layout;
+	layout.begin()
+	      .add(bgfx::Attrib::Position,  3, bgfx::AttribType::Float)
+	      .add(bgfx::Attrib::Normal   , 3, bgfx::AttribType::Float)
+	      .add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Float)
+		  .add(bgfx::Attrib::Color0,    3, bgfx::AttribType::Float)
+		  .end();
+
+	m_vertexBuffer = bgfx::createVertexBuffer(bgfx::copy(vertices.data(), vertices.size()), layout);
+	m_indexBuffer = bgfx::createIndexBuffer(bgfx::copy(indices.data(), indices.size()), BGFX_BUFFER_INDEX32);
 }
 
-void Object::Draw()
+void Object::Draw(int view, Render::ProgramPtr program)
 {
-	m_geometry.DrawElements();
-	m_geometry.UnBind();
-}
-
-void Object::Bind()
-{
-	m_geometry.Bind();
-	m_vertexSpec.Enable();
-}
-
-void Object::UnBind()
-{
-	m_geometry.UnBind();
-	m_vertexSpec.Disable();
+	bgfx::setVertexBuffer(0, m_vertexBuffer);
+	bgfx::setIndexBuffer(m_indexBuffer);
+	bgfx::submit(view, program->GetHandle());
 }
