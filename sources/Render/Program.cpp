@@ -102,7 +102,7 @@ namespace Render
 
 		program->Link(
 				Shader(vertex_shader, (const uint8_t*)vs.data(), vs.size()),
-				Shader(fragment_shader, (const uint8_t*)fs.data(), vs.size()));
+				Shader(fragment_shader, (const uint8_t*)fs.data(), fs.size()));
 		return program;
 	}
 

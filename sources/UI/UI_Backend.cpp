@@ -13,23 +13,12 @@ using namespace UI;
 
 
 
-
 class TextBackend: public Scriber::IRenderAPI
 {
 public:
 	TextBackend()
 	{
 		int size = 1024;
-//		glGenTextures(1, &m_textureHandle);
-//		glActiveTexture(GL_TEXTURE0);
-//		glBindTexture(GL_TEXTURE_2D, m_textureHandle);
-//		glTexImage2D(GL_TEXTURE_2D, 0, GL_RG8, size, size, 0, GL_RG, GL_UNSIGNED_BYTE, nullptr);
-//		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-//		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-//		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-//		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-//		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-//		glBindTexture(GL_TEXTURE_2D, 0);
 
 		m_textureHandle = bgfx::createTexture2D(
 			(uint16_t)size
@@ -37,134 +26,87 @@ public:
 			, false
 			, 1
 			, bgfx::TextureFormat::RG8
-			, BGFX_SAMPLER_POINT
+			, BGFX_SAMPLER_POINT | BGFX_SAMPLER_UVW_CLAMP
 			, nullptr
 		);
 
-		const char* text_vertex_shader_src = R"(#version 300 es
-			uniform mat4 u_transform;
-
-			in vec2 a_position;
-			in vec2 a_uv;
-			in vec4 a_color;
-
-			out vec4 v_color;
-			out vec2 v_uv;
-
-			void main()
-			{
-				v_color = a_color;
-				v_uv = a_uv;
-				gl_Position = u_transform * vec4(a_position, 0.0, 1.0);
-			}
-		)";
-
-		const char* text_fragment_shader_src = R"(#version 300 es
-			precision mediump float;
-
-			uniform sampler2D u_texture;
-
-			in vec4 v_color;
-			in vec2 v_uv;
-
-			out vec4 result_color;
-
-			void main()
-			{
-				vec2 color = texelFetch(u_texture, ivec2(v_uv), 0).rg;
-
-				vec4 color_strock = vec4(vec3(0.0, 0.0, 0.0), color.g * v_color.a);
-				vec4 color_fill = vec4(v_color.rgb, color.r * v_color.a);
-
-				// backward blending order
-				float alpha = color_strock.a - color_strock.a * color_fill.a + color_fill.a;
-
-				result_color = vec4((color_strock.rgb * color_strock.a * (1.0 - color_fill.a) + color_fill.rgb * color_fill.a) / alpha, alpha);
-			}
-		)";
-
-		m_program = Render::MakeProgram(text_vertex_shader_src, text_fragment_shader_src);
+		m_program = Render::MakeProgram("vs_text.bin", "fs_text.bin");
 
 		m_vertexSpec
 			.begin()
-			.add(bgfx::Attrib::Position,  2, bgfx::AttribType::Int16)
-			.add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Int16)
+			.add(bgfx::Attrib::Position,  2, bgfx::AttribType::Float)
+			.add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Float)
 			.add(bgfx::Attrib::Color0,    4, bgfx::AttribType::Uint8, true)
 			.end();
 
-		glGenBuffers(1, &m_indexBufferHandle);
-		glGenBuffers(1, &m_vertexBufferHandle);
-
-		u_transform = m_program->GetUniform("u_transform");
 		u_texture = m_program->GetUniform("u_texture");
+		u_stroke = m_program->GetUniform("u_stroke");
+
+		ibh = bgfx::createDynamicIndexBuffer(1024 * 1024);
+		vbh = bgfx::createDynamicVertexBuffer(1024 * 1024, m_vertexSpec);
 	}
 
 	void SaveTextureToFile() override {};
 
 	void UpdateTexture(Scriber::Image glyph, Scriber::u16vec2 pos) override
 	{
+		const bgfx::Memory* memory = bgfx::copy(glyph.ptr<const uint8_t*>(0), (int)glyph.GetRowSizeAligned() * glyph.GetSize().y);
 		Scriber::ivec2 p(pos);
-		glActiveTexture(GL_TEXTURE0);
-		//glBindTexture(GL_TEXTURE_2D, m_textureHandle);
-
-		GLint oldUnpackAlignment;
-		glGetIntegerv(GL_UNPACK_ALIGNMENT, &oldUnpackAlignment);
-		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-
-		glTexSubImage2D(GL_TEXTURE_2D, 0, p.x, p.y, glyph.GetSize().x, glyph.GetSize().y, GL_RG, GL_UNSIGNED_BYTE, glyph.ptr<const uint8_t*>(0));
-
-		glBindTexture(GL_TEXTURE_2D, 0);
-
-		if (oldUnpackAlignment != 1)
-		{
-			glPixelStorei(GL_UNPACK_ALIGNMENT, oldUnpackAlignment);
-		}
+		bgfx::updateTexture2D(m_textureHandle, 0, 0, p.x, p.y, glyph.GetSize().x, glyph.GetSize().y, memory, glyph.GetRowSizeAligned());
 	}
 
 	void ClearTexture() override
 	{
-//#ifndef __EMSCRIPTEN__
-//		char data[2] = { 0 };
-//		glClearTexImage(GL_TEXTURE_2D, 0, GL_RG8, GL_UNSIGNED_BYTE, &data);
-//#endif
 	}
 
 	void Render(Scriber::Vertex* vertexBuffer, uint16_t* indexBuffer, uint16_t vertex_count, uint16_t primitiveCount) override
 	{
-//		m_program->Use();
-//
-//		u_transform.ApplyValue(m_transform);
-//		u_texture.ApplyValue(0);
-//
-//		glActiveTexture(GL_TEXTURE0);
-//		// glBindTexture(GL_TEXTURE_2D, m_textureHandle);
-//		glBindBuffer(GL_ARRAY_BUFFER, m_vertexBufferHandle);
-//		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_indexBufferHandle);
-//
-//		m_vertexSpec.Enable();
-//
-//		if (primitiveCount > 0)
-//		{
-//			glBufferData(GL_ARRAY_BUFFER, vertex_count * sizeof(Scriber::Vertex), vertexBuffer, GL_DYNAMIC_DRAW);
-//			glBufferData(GL_ELEMENT_ARRAY_BUFFER, primitiveCount * 3 * sizeof(uint16_t), indexBuffer, GL_DYNAMIC_DRAW);
-//			glDrawElements(GL_TRIANGLES, (GLsizei)primitiveCount * 3, GL_UNSIGNED_SHORT, nullptr); //m_indexArray.data());
-//		}
-//
-//		m_vertexSpec.Disable();
-//		glBindTexture(GL_TEXTURE_2D, 0);
-//
-//		glBindBuffer(GL_ARRAY_BUFFER, 0);
-//		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+		bgfx::setViewTransform(3, nullptr, &m_transform[0]);
+
+		float tmpbuffer[1024 * 24];
+
+		uint8_t* ptr = (uint8_t*)tmpbuffer;
+
+		for (int i = 0; i < vertex_count; ++i)
+		{
+			((float*)(ptr + i * (4 * 4 +4)))[0] = vertexBuffer[i].pos.x;
+			((float*)(ptr + i * (4 * 4 +4)))[1] = vertexBuffer[i].pos.y;
+			((float*)(ptr + i * (4 * 4 +4)))[2] = vertexBuffer[i].uv.x / 1024.0f;
+			((float*)(ptr + i * (4 * 4 +4)))[3] = vertexBuffer[i].uv.y / 1024.0f;
+			((float*)(ptr + i * (4 * 4 +4)))[4] = *(float*)&vertexBuffer[i].color;
+		}
+
+		bgfx::update(
+				ibh, 0, bgfx::copy(indexBuffer, primitiveCount * sizeof(short) * 3)
+		);
+
+		bgfx::update(
+				vbh, 0,bgfx::copy(ptr, vertex_count * (4 * 4 + 4))
+		);
+
+		bgfx::setVertexBuffer(0, vbh, 0, vertex_count);
+		bgfx::setIndexBuffer(ibh, 0, primitiveCount * 3);
+
+		bgfx::setTexture(0, u_texture.m_handle,  m_textureHandle);
+
+		u_stroke.ApplyValue(glm::vec4(0.0, 0.0, 0.0, 1.0));
+
+		uint64_t state = 0
+					| BGFX_STATE_WRITE_RGB
+					| BGFX_STATE_BLEND_FUNC(BGFX_STATE_BLEND_ONE, BGFX_STATE_BLEND_INV_SRC_ALPHA);
+		bgfx::setState(state);
+
+		bgfx::submit(3, m_program->GetHandle(), 0);
 	}
 
 	bgfx::TextureHandle m_textureHandle;
 	Render::ProgramPtr m_program;
 	bgfx::VertexLayout m_vertexSpec;
 	glm::mat4 m_transform;
-	Render::Uniform u_transform;
 	Render::Uniform u_texture;
-	uint32_t m_vertexBufferHandle;
-	uint32_t m_indexBufferHandle;
+	Render::Uniform u_stroke;
+	bgfx::DynamicIndexBufferHandle ibh;
+	bgfx::DynamicVertexBufferHandle vbh;
 };
 
 
@@ -179,34 +121,34 @@ Renderer::~Renderer()
 
 void Renderer::Init()
 {
-	const char* vertex_shader_src = R"(#version 300 es
-		in vec2 a_position;
-		in vec2 a_uv;
-		in vec4 a_color;
+//	const char* vertex_shader_src = R"(#version 300 es
+//		in vec2 a_position;
+//		in vec2 a_uv;
+//		in vec4 a_color;
+//
+//		uniform mat4 u_transform;
+//
+//		out vec4 v_color;
+//
+//		void main()
+//		{
+//			v_color = a_color;
+//			gl_Position = u_transform * vec4(a_position, 0.0, 1.0);
+//		}
+//	)";
+//
+//	const char* fragment_shader_src = R"(#version 300 es
+//		precision mediump float;
+//		in vec4 v_color;
+//		out vec4 color;
+//
+//		void main()
+//		{
+//			color = v_color;
+//		}
+//	)";
 
-		uniform mat4 u_transform;
-
-		out vec4 v_color;
-
-		void main()
-		{
-			v_color = a_color;
-			gl_Position = u_transform * vec4(a_position, 0.0, 1.0);
-		}
-	)";
-
-	const char* fragment_shader_src = R"(#version 300 es
-		precision mediump float;
-		in vec4 v_color;
-		out vec4 color;
-
-		void main()
-		{
-			color = v_color;
-		}
-	)";
-
-	m_program = Render::MakeProgram(vertex_shader_src, fragment_shader_src);
+//  m_program = Render::MakeProgram(vertex_shader_src, fragment_shader_src);
 //
 //	m_vertexSpec = Render::VertexSpecMaker()
 //			.PushType<glm::vec2>("a_position")
@@ -219,8 +161,8 @@ void Renderer::Init()
 
 	m_command_queue = fsal::File(new fsal::MemRefFile());
 
-	glGenBuffers(1, &m_indexBufferHandle);
-	glGenBuffers(1, &m_vertexBufferHandle);
+//	glGenBuffers(1, &m_indexBufferHandle);
+//	glGenBuffers(1, &m_vertexBufferHandle);
 
 	Scriber::Driver::SetCustomIOFunctions(
 			[this](const char* filename, const char* mode)
@@ -274,8 +216,6 @@ void Renderer::Init()
 	m_text_backend = std::make_shared<TextBackend>();
 	m_text_driver.SetBackend(m_text_backend);
 
-	m_fs.PushSearchPath("resources");
-	m_fs.PushSearchPath("../resources");
 	auto id = m_text_driver.NewTypeface("NotoSans");
 	m_text_driver.AndFontToTypeface(id, "fonts/NotoSans-Regular.ttf", Scriber::FontStyle::Regular);
 }
@@ -349,48 +289,48 @@ void Renderer::Draw()
 				m_command_queue.Read(len);
 				auto ptr = (const char*)m_command_queue.GetDataPointer() + m_command_queue.Tell();
 				m_command_queue.Seek(len, fsal::File::CurrentPosition);
-				m_text_driver.DrawLabel(ptr, rect.minp.x, rect.minp.y, Scriber::Font(0, 16, Scriber::FontStyle::Regular, 0x8FFFFFFF));
+				m_text_driver.DrawLabel(ptr, rect.minp.x, rect.minp.y, Scriber::Font(0, 32, Scriber::FontStyle::Regular, 0xFFFFFFFF, 1));
 			}
 			break;
 		}
 	}
 	m_command_queue.Seek(0);
-
-	GLint id;
-	glGetIntegerv(GL_CURRENT_PROGRAM, &id);
-
-	glEnable(GL_BLEND);
-	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_SCISSOR_TEST);
-	glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
-	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
-
-//	m_program->Use();
-	glUniformMatrix4fv(m_uniform_transform, 1, GL_FALSE, &m_prj[0][0]);
-
-	glBindBuffer(GL_ARRAY_BUFFER, m_vertexBufferHandle);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_indexBufferHandle);
-
-	m_vertexSpec.Enable();
-
-	glBufferData(GL_ARRAY_BUFFER, m_vertexArray.size() * sizeof(Vertex), m_vertexArray.data(), GL_DYNAMIC_DRAW);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_indexArray.size() * sizeof(int), m_indexArray.data(), GL_DYNAMIC_DRAW);
-
-	if (m_vertexArray.size() > 2)
-	{
-		glDrawElements(GL_TRIANGLES, (GLsizei)m_indexArray.size(), GL_UNSIGNED_INT, 0); //m_indexArray.data());
-	}
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-	m_vertexSpec.Disable();
+//
+//	GLint id;
+//	glGetIntegerv(GL_CURRENT_PROGRAM, &id);
+//
+//	glEnable(GL_BLEND);
+//	glDisable(GL_DEPTH_TEST);
+//	glDisable(GL_SCISSOR_TEST);
+//	glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
+//	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
+//
+////	m_program->Use();
+//	glUniformMatrix4fv(m_uniform_transform, 1, GL_FALSE, &m_prj[0][0]);
+//
+//	glBindBuffer(GL_ARRAY_BUFFER, m_vertexBufferHandle);
+//	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_indexBufferHandle);
+//
+//	m_vertexSpec.Enable();
+//
+//	glBufferData(GL_ARRAY_BUFFER, m_vertexArray.size() * sizeof(Vertex), m_vertexArray.data(), GL_DYNAMIC_DRAW);
+//	glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_indexArray.size() * sizeof(int), m_indexArray.data(), GL_DYNAMIC_DRAW);
+//
+//	if (m_vertexArray.size() > 2)
+//	{
+//		glDrawElements(GL_TRIANGLES, (GLsizei)m_indexArray.size(), GL_UNSIGNED_INT, 0); //m_indexArray.data());
+//	}
+//
+//	glBindBuffer(GL_ARRAY_BUFFER, 0);
+//	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+//
+//	m_vertexSpec.Disable();
 
 	auto r = std::static_pointer_cast<TextBackend>(m_text_backend);
 	r->m_transform = m_prj;
 	m_text_driver.Render();
 
-	glUseProgram(id);
+//	glUseProgram(id);
 
 	m_vertexArray.resize(0);
 	m_indexArray.resize(0);

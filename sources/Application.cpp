@@ -88,6 +88,8 @@ Application::Application(int argc, const char* const* argv)
 	init.resolution.height = 900;
 	init.resolution.reset  = m_reset_flags;
 	init.callback = &m_cp;
+	init.debug = true;
+	init.profile = true;
 	bgfx::init(init);
 
 	bgfx::setDebug(BGFX_DEBUG_NONE
@@ -102,7 +104,7 @@ Application::Application(int argc, const char* const* argv)
 
 	bgfx::setViewClear(0
 		, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH | BGFX_CLEAR_STENCIL
-		, 0xb2b2b2ff
+		, config["srgb"].as<bool>() ? 0x727272ff : 0xb2b2b2ff
 		, 1.0f
 		, 0
 	);
@@ -117,14 +119,13 @@ Application::Application(int argc, const char* const* argv)
 	m_texture = Render::LoadTexture("test.png");
 
 
-//	m_obj.Collect(m_program);
 //	m_dr.Init();
 //	m_uir.Init();
 //
 //	{
 //		Render::debug_guard<> debug_lock;
 //	}
-//	m_uir.Init();
+	m_uir.Init();
 }
 
 
@@ -137,6 +138,9 @@ void Application::Update(float time, float deltaTime)
 {
 	bgfx::setViewRect(0, 0, 0, uint16_t(m_windowBufferSize.x), uint16_t(m_windowBufferSize.y));
 	bgfx::touch(0);
+	bgfx::setViewFrameBuffer(3, BGFX_INVALID_HANDLE);
+	bgfx::setViewRect(3, 0, 0, uint16_t(m_windowBufferSize.x), uint16_t(m_windowBufferSize.y));
+	bgfx::touch(3);
 
 	float aspect = m_windowBufferSize.x / (float)m_windowBufferSize.y;
 
@@ -163,9 +167,6 @@ void Application::Update(float time, float deltaTime)
 
 	m_obj.Draw(0, m_program);
 
-
-//	Render::debug_guard<> debug_lock;
-//
 //	// Oquonie::GetInstance()->m_music->m_audio.Update();
 //
 //	glEnable(GL_DEPTH_TEST);
@@ -173,53 +174,53 @@ void Application::Update(float time, float deltaTime)
 //	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 //
 //	glViewport(0, 0, m_width, m_height);
+
+	{
+		glm::aabb2 view_box(glm::vec2(0.0), m_windowBufferSize);
+
+		UI::View view;
+		view.size_in_dots = view_box.size();
+		view.dpi = 72;
+
+		using namespace UI::lit;
+
+		auto root_block = UI::make_block(30_lpe, 200_w, 50_t, 50_bpe);
+		auto block2 = UI::make_block(30_lpe, 200_w, 50_t, 50_bpe);
+		root_block->AddChild(block2);
+
+		UI::DoLayout(root_block, view);
+		m_uir.SetProjection(view_box);
+
+		auto prj =glm::ortho(view_box.minp.x, view_box.maxp.x, view_box.maxp.y, view_box.minp.y);
+
+		UI::Traverse(root_block, nullptr, [prj, this](UI::Block* block, UI::Block* parent)
+		{
+			//Render::DrawRect(m_dr, box.minp, box.maxp, prj);
+			auto box = block->GetBox();
+			m_uir.Rect(box);
+			m_uir.Text(box, "ПОМОГИТЕ ПОЖАЛУЙСТАHello!!!\n\nauto shadowPaint = nvgBoxGradient(vg, glm::aabb2(box.minp + glm::vec2(0.0f, 2.0f), box.maxp + glm::vec2(0.0f, 2.0f)), cornerRadius*2, 10, nvgRGBA(0,0,0,128), nvgRGBA(0,0,0,0));");
+//			float cornerRadius = 3.0f;
 //
-//	{
-//		glm::aabb2 view_box(glm::vec2(0.0), glm::vec2(m_width, m_height));
-//
-//		UI::View view;
-//		view.size_in_dots = view_box.size();
-//		view.dpi = 72;
-//
-//		using namespace UI::lit;
-//
-//		auto root_block = UI::make_block(30_lpe, 200_w, 50_t, 50_bpe);
-//		auto block2 = UI::make_block(30_lpe, 200_w, 50_t, 50_bpe);
-//		root_block->AddChild(block2);
-//
-//		UI::DoLayout(root_block, view);
-//		m_uir.SetProjection(view_box);
-//
-//		auto prj =glm::ortho(view_box.minp.x, view_box.maxp.x, view_box.maxp.y, view_box.minp.y);
-//
-//		UI::Traverse(root_block, nullptr, [prj, this](UI::Block* block, UI::Block* parent)
-//		{
-//			//Render::DrawRect(m_dr, box.minp, box.maxp, prj);
 //			auto box = block->GetBox();
-//			m_uir.Rect(box);
-//			m_uir.Text(box, "ПОМОГИТЕ ПОЖАЛУЙСТАHello!!!\n\nauto shadowPaint = nvgBoxGradient(vg, glm::aabb2(box.minp + glm::vec2(0.0f, 2.0f), box.maxp + glm::vec2(0.0f, 2.0f)), cornerRadius*2, 10, nvgRGBA(0,0,0,128), nvgRGBA(0,0,0,0));");
-////			float cornerRadius = 3.0f;
-////
-////			auto box = block->GetBox();
-////
-////			nvgBeginPath(vg);
-////			nvgRoundedRect(vg, box, cornerRadius);
-////			nvgFillColor(vg, nvgRGBA(28,30,34,192));
-////			// nvgFillColor(vg, nvgRGBA(255,192,0,255));
-////			nvgFill(vg);
-////
-////			// Drop shadow
-////			auto shadowPaint = nvgBoxGradient(vg, glm::aabb2(box.minp + glm::vec2(0.0f, 2.0f), box.maxp + glm::vec2(0.0f, 2.0f)), cornerRadius*2, 10, nvgRGBA(0,0,0,128), nvgRGBA(0,0,0,0));
-////			nvgBeginPath(vg);
-////			nvgRect(vg, glm::aabb2(box.minp - glm::vec2(10.0f), box.maxp + glm::vec2(10.0f, 20.0f)));
-////			nvgRoundedRect(vg, box, cornerRadius);
-////			nvgPathWinding(vg, NVG_HOLE);
-////			nvgFillPaint(vg, shadowPaint);
-////			nvgFill(vg);
-//		});
 //
-//		m_uir.Draw();
+//			nvgBeginPath(vg);
+//			nvgRoundedRect(vg, box, cornerRadius);
+//			nvgFillColor(vg, nvgRGBA(28,30,34,192));
+//			// nvgFillColor(vg, nvgRGBA(255,192,0,255));
+//			nvgFill(vg);
 //
+//			// Drop shadow
+//			auto shadowPaint = nvgBoxGradient(vg, glm::aabb2(box.minp + glm::vec2(0.0f, 2.0f), box.maxp + glm::vec2(0.0f, 2.0f)), cornerRadius*2, 10, nvgRGBA(0,0,0,128), nvgRGBA(0,0,0,0));
+//			nvgBeginPath(vg);
+//			nvgRect(vg, glm::aabb2(box.minp - glm::vec2(10.0f), box.maxp + glm::vec2(10.0f, 20.0f)));
+//			nvgRoundedRect(vg, box, cornerRadius);
+//			nvgPathWinding(vg, NVG_HOLE);
+//			nvgFillPaint(vg, shadowPaint);
+//			nvgFill(vg);
+		});
+
+		m_uir.Draw();
+
 ////
 ////		ImGui::Begin("Glyph cache");
 ////		ImGui::Image((ImTextureID)m_uir.GetGlyphTexture(), ImVec2(1024, 1024));
@@ -241,7 +242,7 @@ void Application::Update(float time, float deltaTime)
 ////		}
 ////#endif
 ////		ImGui::End();
-//	}
+	}
 
 	bgfx::frame();
 }
