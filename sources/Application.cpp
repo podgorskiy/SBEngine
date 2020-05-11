@@ -22,6 +22,7 @@
 #include <stb_image_write.h>
 #include <bx/bx.h>
 #include <bx/math.h>
+#include "views.h"
 
 
 #include "imgui.h"
@@ -136,11 +137,11 @@ Application::~Application()
 
 void Application::Update(float time, float deltaTime)
 {
-	bgfx::setViewRect(0, 0, 0, uint16_t(m_windowBufferSize.x), uint16_t(m_windowBufferSize.y));
-	bgfx::touch(0);
-	bgfx::setViewFrameBuffer(3, BGFX_INVALID_HANDLE);
-	bgfx::setViewRect(3, 0, 0, uint16_t(m_windowBufferSize.x), uint16_t(m_windowBufferSize.y));
-	bgfx::touch(3);
+	bgfx::setViewRect(ViewIds::Main, 0, 0, uint16_t(m_windowBufferSize.x), uint16_t(m_windowBufferSize.y));
+	bgfx::touch(ViewIds::Main);
+	bgfx::setViewFrameBuffer(ViewIds::GUI, BGFX_INVALID_HANDLE);
+	bgfx::setViewRect(ViewIds::GUI, 0, 0, uint16_t(m_windowBufferSize.x), uint16_t(m_windowBufferSize.y));
+	bgfx::touch(ViewIds::GUI);
 
 	float aspect = m_windowBufferSize.x / (float)m_windowBufferSize.y;
 
@@ -155,7 +156,7 @@ void Application::Update(float time, float deltaTime)
 	glm::mat4 view = glm::lookAt(camera_pos, glm::vec3(0.0), glm::vec3(0.0, 1.0, 0.0));
 	glm::mat4 model = glm::mat4(1.0f);
 
-	bgfx::setViewTransform(0, &view[0], &projection[0]);
+	bgfx::setViewTransform(ViewIds::Main, &view[0], &projection[0]);
 	bgfx::setTransform(&model[0]);
 
 	bgfx::setTexture(0, u_texture.m_handle,  m_texture->m_handle);
@@ -165,15 +166,10 @@ void Application::Update(float time, float deltaTime)
 				;
 	bgfx::setState(state);
 
-	m_obj.Draw(0, m_program);
+	m_obj.Draw(ViewIds::Main, m_program);
 
 //	// Oquonie::GetInstance()->m_music->m_audio.Update();
-//
-//	glEnable(GL_DEPTH_TEST);
-//	glDepthFunc(GL_LESS);
-//	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-//
-//	glViewport(0, 0, m_width, m_height);
+
 
 	{
 		glm::aabb2 view_box(glm::vec2(0.0), m_windowBufferSize);
@@ -189,11 +185,11 @@ void Application::Update(float time, float deltaTime)
 		root_block->AddChild(block2);
 
 		UI::DoLayout(root_block, view);
-		m_uir.SetProjection(view_box);
 
-		auto prj =glm::ortho(view_box.minp.x, view_box.maxp.x, view_box.maxp.y, view_box.minp.y);
+		auto prj = glm::ortho(view_box.minp.x, view_box.maxp.x, view_box.maxp.y, view_box.minp.y);
+		bgfx::setViewTransform(ViewIds::GUI, nullptr, &prj[0]);
 
-		UI::Traverse(root_block, nullptr, [prj, this](UI::Block* block, UI::Block* parent)
+		UI::Traverse(root_block, nullptr, [this](UI::Block* block, UI::Block* parent)
 		{
 			//Render::DrawRect(m_dr, box.minp, box.maxp, prj);
 			auto box = block->GetBox();

@@ -74,10 +74,6 @@ namespace UI
 
 		void Init();
 		void Draw();
-		void SetProjection(glm::aabb2 view_box)
-		{
-			m_prj =glm::ortho(view_box.minp.x, view_box.maxp.x, view_box.maxp.y, view_box.minp.y);
-		}
 
 		void PushVertex(glm::vec2 p, glm::vec2 uv, color color);
 
@@ -89,7 +85,6 @@ namespace UI
 		std::vector<glm::vec2> m_path;
 		std::vector<int> m_indexArray;
 		std::vector<Vertex> m_vertexArray;
-		glm::mat4 m_prj;
 		unsigned int m_uniform_transform;
 		Render::ProgramPtr m_program;
 		Render::VertexSpec m_vertexSpec;

@@ -6,6 +6,7 @@
 #include <spdlog/spdlog.h>
 
 #include <bgfx/bgfx.h>
+#include "views.h"
 
 
 using namespace Render;
@@ -61,8 +62,6 @@ public:
 
 	void Render(Scriber::Vertex* vertexBuffer, uint16_t* indexBuffer, uint16_t vertex_count, uint16_t primitiveCount) override
 	{
-		bgfx::setViewTransform(3, nullptr, &m_transform[0]);
-
 		float tmpbuffer[1024 * 24];
 
 		uint8_t* ptr = (uint8_t*)tmpbuffer;
@@ -71,8 +70,8 @@ public:
 		{
 			((float*)(ptr + i * (4 * 4 +4)))[0] = vertexBuffer[i].pos.x;
 			((float*)(ptr + i * (4 * 4 +4)))[1] = vertexBuffer[i].pos.y;
-			((float*)(ptr + i * (4 * 4 +4)))[2] = vertexBuffer[i].uv.x / 1024.0f;
-			((float*)(ptr + i * (4 * 4 +4)))[3] = vertexBuffer[i].uv.y / 1024.0f;
+			((float*)(ptr + i * (4 * 4 +4)))[2] = vertexBuffer[i].uv.x;
+			((float*)(ptr + i * (4 * 4 +4)))[3] = vertexBuffer[i].uv.y;
 			((float*)(ptr + i * (4 * 4 +4)))[4] = *(float*)&vertexBuffer[i].color;
 		}
 
@@ -96,13 +95,12 @@ public:
 					| BGFX_STATE_BLEND_FUNC(BGFX_STATE_BLEND_ONE, BGFX_STATE_BLEND_INV_SRC_ALPHA);
 		bgfx::setState(state);
 
-		bgfx::submit(3, m_program->GetHandle(), 0);
+		bgfx::submit(ViewIds::GUI, m_program->GetHandle(), 0);
 	}
 
 	bgfx::TextureHandle m_textureHandle;
 	Render::ProgramPtr m_program;
 	bgfx::VertexLayout m_vertexSpec;
-	glm::mat4 m_transform;
 	Render::Uniform u_texture;
 	Render::Uniform u_stroke;
 	bgfx::DynamicIndexBufferHandle ibh;
@@ -327,10 +325,7 @@ void Renderer::Draw()
 //	m_vertexSpec.Disable();
 
 	auto r = std::static_pointer_cast<TextBackend>(m_text_backend);
-	r->m_transform = m_prj;
 	m_text_driver.Render();
-
-//	glUseProgram(id);
 
 	m_vertexArray.resize(0);
 	m_indexArray.resize(0);

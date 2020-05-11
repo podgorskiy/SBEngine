@@ -7,8 +7,7 @@ SAMPLER2D(u_texture, 0);
 
 void main()
 {
-	// vec2 color = texelFetch(u_texture, ivec2(v_uv), 0).rg;
-	vec2 color = texture2D(u_texture, v_uv / 1.0).rg;
+	vec2 color = texelFetch(u_texture, ivec2(v_uv), 0).rg;
 
 	// color = pow(color, vec2(2.2));
 
