@@ -1,5 +1,4 @@
 #include "Application.h"
-#include "Render/gl_headers.h"
 #include <bgfx/bgfx.h>
 #include <stdio.h>
 #include <spdlog/spdlog.h>
@@ -12,7 +11,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include "Render/DebugRenderer.h"
 #include "Render/TextureReaders/TextureLoader.h"
-#include "Render/GLDebugMessage.h"
 #include "UI/Block.h"
 #include "utils/assertion.h"
 #include "utils/align.h"
@@ -27,16 +25,16 @@
 
 #include "imgui.h"
 #include "examples/imgui_impl_opengl3.h"
-//#include <Tile.h>
-//#include <Wall.h>
-//#include <Oquonie.h>
-//#include <World.h>
-//#include <Keyboard.h>
-//#include <Music.h>
-//#include "Audio.h"
+#include <Tile.h>
+#include <Wall.h>
+#include <Oquonie.h>
+#include <World.h>
+#include <Keyboard.h>
+#include <Music.h>
+#include "Audio.h"
 
 
-//Keyboard keyboard;
+Keyboard keyboard;
 
 Application::Application(int argc, const char* const* argv)
 {
@@ -119,9 +117,10 @@ Application::Application(int argc, const char* const* argv)
 	m_obj.Load("LeePerrySmith.obj");
 	m_texture = Render::LoadTexture("test.png");
 
+	Oquonie::GetInstance()->Install();
+	Oquonie::GetInstance()->Start();
 
 //	m_dr.Init();
-//	m_uir.Init();
 //
 //	{
 //		Render::debug_guard<> debug_lock;
@@ -168,7 +167,7 @@ void Application::Update(float time, float deltaTime)
 
 	m_obj.Draw(ViewIds::Main, m_program);
 
-//	// Oquonie::GetInstance()->m_music->m_audio.Update();
+	Oquonie::GetInstance()->m_music->m_audio.Update();
 
 
 	{
@@ -246,14 +245,14 @@ void Application::Update(float time, float deltaTime)
 
 void Application::OnKeyAction(int key, char asci, int action, int mods)
 {
-//	if (action == 0)
-//	{
-//		keyboard.ListenOnKeyDown(asci);
-//	}
-//	else if (action == 1)
-//	{
-//		keyboard.ListenOnKeyUp(asci);
-//	}
+	if (action == 0)
+	{
+		keyboard.ListenOnKeyDown(asci);
+	}
+	else if (action == 1)
+	{
+		keyboard.ListenOnKeyUp(asci);
+	}
 }
 
 void Application::OnWindowResize(glm::ivec2 size)

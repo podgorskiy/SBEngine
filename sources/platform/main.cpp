@@ -196,41 +196,41 @@ int main(int argc, const char* const* argv)
 //				io.KeySuper = io.KeysDown[GLFW_KEY_LEFT_SUPER] || io.KeysDown[GLFW_KEY_RIGHT_SUPER];
 //			}
 //			else
-//			{
-//				char asci = 0;
-//				switch(key)
-//				{
-//					case GLFW_KEY_UP:
-//						asci = 38;
-//						break;
-//					case GLFW_KEY_DOWN:
-//						asci = 40;
-//						break;
-//					case GLFW_KEY_LEFT:
-//						asci = 37;
-//						break;
-//					case GLFW_KEY_RIGHT:
-//						asci = 39;
-//					default:
-//						break;
-//				}
-//				if (key == 32
-//					|| key == 39
-//					|| (key >= 44 && key <= 57)
-//					|| key == 59
-//					|| key == 61
-//					|| (key >= 65 && key <= 93)
-//					|| key == 96)
-//				{
-//					asci = key;
-//				}
-//				if (key == GLFW_KEY_ESCAPE)
-//				{
-//					asci = 27;
-//				}
-//
-//				app->OnKeyAction(key, asci, action, mods);
-//			}
+			{
+				char asci = 0;
+				switch(key)
+				{
+					case GLFW_KEY_UP:
+						asci = 38;
+						break;
+					case GLFW_KEY_DOWN:
+						asci = 40;
+						break;
+					case GLFW_KEY_LEFT:
+						asci = 37;
+						break;
+					case GLFW_KEY_RIGHT:
+						asci = 39;
+					default:
+						break;
+				}
+				if (key == 32
+					|| key == 39
+					|| (key >= 44 && key <= 57)
+					|| key == 59
+					|| key == 61
+					|| (key >= 65 && key <= 93)
+					|| key == 96)
+				{
+					asci = key;
+				}
+				if (key == GLFW_KEY_ESCAPE)
+				{
+					asci = 27;
+				}
+
+				app->OnKeyAction(key, asci, action, mods);
+			}
 		});
 
 		glfwSetCharCallback(window, [](GLFWwindow*, unsigned int c)

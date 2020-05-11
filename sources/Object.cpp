@@ -1,5 +1,4 @@
 #include "Object.h"
-#include "Render/gl_headers.h"
 #include <glm/glm.hpp>
 #include <fstream>
 #include <sstream>

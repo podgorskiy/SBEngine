@@ -105,36 +105,36 @@ void DebugRenderer::EmitTriangles()
 
 void DebugRenderer::Draw(const glm::mat4& transform)
 {
-	GLint id;
-	glGetIntegerv(GL_CURRENT_PROGRAM, &id);
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-//	m_program->Use();
-	glUniformMatrix4fv(m_uniform_transform, 1, GL_FALSE, &transform[0][0]);
-
-	m_vertexSpec.Enable(&m_vertexArray[0]);
-
-	if (m_lineIndexArray.size() > 1)
-	{
-		glDrawElements(GL_LINES, (GLsizei)m_lineIndexArray.size(), GL_UNSIGNED_INT, &m_lineIndexArray[0]);
-	}
-	if (m_pointIndexArray.size() > 0)
-	{
-		glDrawElements(GL_POINTS, (GLsizei)m_pointIndexArray.size(), GL_UNSIGNED_INT, &m_pointIndexArray[0]);
-	}
-	if (m_trianglesIndexArray.size() > 2)
-	{
-		glDrawElements(GL_TRIANGLES, (GLsizei)m_trianglesIndexArray.size(), GL_UNSIGNED_INT, &m_trianglesIndexArray[0]);
-	}
-
-	m_vertexSpec.Disable();
-	glUseProgram(id);
-
-	m_vertexIt = 0;
-	m_lineIndexArray.resize(0);
-	m_pointIndexArray.resize(0);
-	m_trianglesIndexArray.resize(0);
-	m_vertexArray.resize(0);
+//	GLint id;
+//	glGetIntegerv(GL_CURRENT_PROGRAM, &id);
+//
+//	glBindBuffer(GL_ARRAY_BUFFER, 0);
+//	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+//
+////	m_program->Use();
+//	glUniformMatrix4fv(m_uniform_transform, 1, GL_FALSE, &transform[0][0]);
+//
+//	m_vertexSpec.Enable(&m_vertexArray[0]);
+//
+//	if (m_lineIndexArray.size() > 1)
+//	{
+//		glDrawElements(GL_LINES, (GLsizei)m_lineIndexArray.size(), GL_UNSIGNED_INT, &m_lineIndexArray[0]);
+//	}
+//	if (m_pointIndexArray.size() > 0)
+//	{
+//		glDrawElements(GL_POINTS, (GLsizei)m_pointIndexArray.size(), GL_UNSIGNED_INT, &m_pointIndexArray[0]);
+//	}
+//	if (m_trianglesIndexArray.size() > 2)
+//	{
+//		glDrawElements(GL_TRIANGLES, (GLsizei)m_trianglesIndexArray.size(), GL_UNSIGNED_INT, &m_trianglesIndexArray[0]);
+//	}
+//
+//	m_vertexSpec.Disable();
+//	glUseProgram(id);
+//
+//	m_vertexIt = 0;
+//	m_lineIndexArray.resize(0);
+//	m_pointIndexArray.resize(0);
+//	m_trianglesIndexArray.resize(0);
+//	m_vertexArray.resize(0);
 }

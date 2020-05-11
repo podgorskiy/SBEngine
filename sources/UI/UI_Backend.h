@@ -2,7 +2,6 @@
 #include "Render/Texture.h"
 #include <glm/glm.hpp>
 #include "Render/Shader.h"
-#include "Render/VertexBuffer.h"
 #include "Render/VertexSpec.h"
 #include "utils/aabb.h"
 #include <glm/gtc/matrix_transform.hpp>

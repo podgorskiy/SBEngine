@@ -1,5 +1,4 @@
 #include "TextureFormat.h"
-#include "Render/gl_headers.h"
 #include <spdlog/spdlog.h>
 
 using namespace Render;

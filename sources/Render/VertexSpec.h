@@ -1,7 +1,6 @@
 #pragma once
 #include "Shader.h"
 #include "Types.h"
-#include "Render/gl_headers.h"
 #include <glm/glm.hpp>
 #include <vector>
 #include <string>
@@ -49,27 +48,27 @@ namespace Render
 
 		void Enable(const void* ptr = nullptr)
 		{
-			for (int i = 0; m_attributes[i].components != 0; ++i)
-			{
-				Attribute& attr = m_attributes[i];
-				if (attr.handle == uint32_t(-1))
-					continue;
-				glEnableVertexAttribArray(attr.handle);
-				auto offset_ = static_cast<size_t>(attr.offset);
-				glVertexAttribPointer(attr.handle, attr.components, attr.type, attr.normalized, attr.stride,
-				                      (uint8_t*)ptr + offset_);
-			}
+//			for (int i = 0; m_attributes[i].components != 0; ++i)
+//			{
+//				Attribute& attr = m_attributes[i];
+//				if (attr.handle == uint32_t(-1))
+//					continue;
+//				glEnableVertexAttribArray(attr.handle);
+//				auto offset_ = static_cast<size_t>(attr.offset);
+//				glVertexAttribPointer(attr.handle, attr.components, attr.type, attr.normalized, attr.stride,
+//				                      (uint8_t*)ptr + offset_);
+//			}
 		}
 
 		void Disable()
 		{
-			for (int i = 0; m_attributes[i].components != 0; ++i)
-			{
-				Attribute& attr = m_attributes[i];
-				if (attr.handle == uint32_t(-1))
-					continue;
-				glDisableVertexAttribArray(attr.handle);
-			}
+//			for (int i = 0; m_attributes[i].components != 0; ++i)
+//			{
+//				Attribute& attr = m_attributes[i];
+//				if (attr.handle == uint32_t(-1))
+//					continue;
+//				glDisableVertexAttribArray(attr.handle);
+//			}
 		}
 
 		Attribute m_attributes[16];

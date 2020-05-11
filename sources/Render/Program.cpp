@@ -1,5 +1,4 @@
 #include "Shader.h"
-#include "Render/gl_headers.h"
 #include <stdio.h>
 #include <spdlog/spdlog.h>
 #include <glm/glm.hpp>
@@ -167,7 +166,7 @@ namespace Render
 	void Uniform::ApplyValue<TA>(const std::vector<TA>& value) const \
 	{ \
 		assert(m_type == VarType::GetType<TA>()); \
-		bgfx::setUniform(m_handle, value.data(), static_cast<GLsizei>(value.size())); \
+		bgfx::setUniform(m_handle, value.data(), static_cast<int>(value.size())); \
 	}
 
 	ADD_SPEC(float)

@@ -1,4 +1,3 @@
-#include "Render/VertexBuffer.h"
 #include "Render/VertexSpec.h"
 #include "Render/Shader.h"
 #include <string>

@@ -1,6 +1,5 @@
 #include "Texture.h"
 #include "Render/TextureReaders/PVRReader.h"
-#include "Render/GLCompressionTypes.h"
 #include <fsal.h>
 #include <stdio.h>
 #include <spdlog/spdlog.h>

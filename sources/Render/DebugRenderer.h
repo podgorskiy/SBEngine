@@ -1,6 +1,5 @@
 #pragma once
 #include "Shader.h"
-#include "VertexBuffer.h"
 #include "VertexSpec.h"
 #include <glm/glm.hpp>
 #include <vector>

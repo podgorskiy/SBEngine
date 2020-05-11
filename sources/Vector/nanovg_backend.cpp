@@ -19,13 +19,12 @@
 #include "nanovg.h"
 #include "nanovg_backend.h"
 #include "Render/Shader.h"
-#include "Render/gl_headers.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
 
-
+#if 0
 
 // These are additional flags on top of NVGimageFlags.
 enum NVGimageFlagsGL {
@@ -1363,3 +1362,4 @@ GLuint nvglImageHandle(NVGcontext* ctx, int image)
 	GLNVGtexture* tex = glnvg__findTexture(gl, image);
 	return tex->tex;
 }
+#endif

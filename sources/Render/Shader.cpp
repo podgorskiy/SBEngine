@@ -1,5 +1,4 @@
 #include "Shader.h"
-#include "Render/gl_headers.h"
 #include <spdlog/spdlog.h>
 #include <stdio.h>
 
