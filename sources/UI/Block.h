@@ -50,6 +50,10 @@ namespace UI
 		enum Unit: uint8_t
 		{
 			Percentage,
+			ValueHeight,
+			ValueWidth,
+			ValueMin,
+			ValueMax,
 			Pixel,
 			Point
 		};
@@ -69,7 +73,10 @@ namespace UI
     Constraint operator "" _##T##U(unsigned long long int x) { return Constraint(Constraint::Type, Constraint::Unit, (float)x); }
 
 #define LITERAL(Type, T)\
-    _LITERAL(Type, T, Percentage, pe) _LITERAL(Type, T, Pixel, pi) _LITERAL(Type, T, Point, ) _LITERAL(Type, T, Point, po)
+    _LITERAL(Type, T, Percentage, pe) _LITERAL(Type, T, Pixel, px) _LITERAL(Type, T, Point, pt) \
+    _LITERAL(Type, T, ValueHeight, vh) _LITERAL(Type, T, ValueWidth, vw) \
+    _LITERAL(Type, T, ValueMin, vmin) _LITERAL(Type, T, ValueMin, vmax) \
+    _LITERAL(Type, T, Point, )
 
 		LITERAL(Left, l)
 		LITERAL(Right, r)
@@ -163,6 +170,10 @@ namespace UI
 			switch(cnst[i].unit)
 			{
 				case Constraint::Percentage: p *= cnst[i].value / 100.0f; break;
+				case Constraint::ValueHeight: p = p_size.y; p *= cnst[i].value / 100.0f; break;
+				case Constraint::ValueWidth: p = p_size.x; p *= cnst[i].value / 100.0f; break;
+				case Constraint::ValueMin: p = glm::min(p_size.x, p_size.y); p *= cnst[i].value / 100.0f; break;
+				case Constraint::ValueMax: p = glm::max(p_size.x, p_size.y); p *= cnst[i].value / 100.0f; break;
 				case Constraint::Pixel: p /= cnst[i].value / ppd; break;
 				case Constraint::Point: p = cnst[i].value; break;
 			}
@@ -194,22 +205,22 @@ namespace UI
 				case Constraint::CenterLeft | Constraint::Width:
 					l = r = pl + cst_values[id][id_map[Constraint::CenterLeft]];
 					w = cst_values[id][id_map[Constraint::Width]];
-					r -= w / 2.0f;
-					l += w / 2.0f;
+					r += w / 2.0f;
+					l -= w / 2.0f;
 					break;
 				case Constraint::Width | Constraint::CenterRight:
 					l = r = pr - cst_values[id][id_map[Constraint::CenterRight]];
 					w = cst_values[id][id_map[Constraint::Width]];
-					r -= w / 2.0f;
-					l += w / 2.0f;
+					r += w / 2.0f;
+					l -= w / 2.0f;
 					break;
 				case Constraint::Left | Constraint::Right | Constraint::Width:
 					l = pl + cst_values[id][id_map[Constraint::Left]];
 					r = pr - cst_values[id][id_map[Constraint::Right]];
 					w = (cst_values[id][id_map[Constraint::Width]] + (r - l)) / 2.0f;
 					l = r = (l + r) / 2.0;
-					r -= w / 2.0f;
-					l += w / 2.0f;
+					r += w / 2.0f;
+					l -= w / 2.0f;
 					break;
 				default:
 					spdlog::error("Unsupported combination of constraints: {}", mask[id]);
