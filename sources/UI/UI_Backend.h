@@ -83,13 +83,12 @@ namespace UI
 		fsal::FileSystem m_fs;
 
 		std::vector<glm::vec2> m_path;
-		std::vector<int> m_indexArray;
+		std::vector<uint16_t> m_indexArray;
 		std::vector<Vertex> m_vertexArray;
-		unsigned int m_uniform_transform;
 		Render::ProgramPtr m_program;
-		Render::VertexSpec m_vertexSpec;
-		uint32_t m_vertexBufferHandle;
-		uint32_t m_indexBufferHandle;
+		bgfx::VertexLayout m_vertexSpec;
+		bgfx::DynamicIndexBufferHandle m_ibh;
+		bgfx::DynamicVertexBufferHandle m_vbh;
 		fsal::File m_command_queue;
 		Scriber::IRenderAPIPtr m_text_backend;
 	};
