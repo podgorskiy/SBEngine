@@ -41,9 +41,6 @@ public:
 
 		u_texture = m_program->GetUniform("u_texture");
 		u_stroke = m_program->GetUniform("u_stroke");
-
-		ibh = bgfx::createDynamicIndexBuffer(1024 * 1024);
-		vbh = bgfx::createDynamicVertexBuffer(1024 * 1024, m_vertexSpec);
 	}
 
 	void SaveTextureToFile() override {};
@@ -61,16 +58,17 @@ public:
 
 	void Render(Scriber::Vertex* vertexBuffer, uint16_t* indexBuffer, uint16_t vertex_count, uint16_t primitiveCount) override
 	{
-		bgfx::update(
-				ibh, 0, bgfx::makeRef(indexBuffer, primitiveCount * sizeof(short) * 3)
-		);
+		bgfx::TransientVertexBuffer tvb;
+		bgfx::TransientIndexBuffer tib;
 
-		bgfx::update(
-				vbh, 0,bgfx::makeRef(vertexBuffer, vertex_count * (4 * 2 + 4))
-		);
+		bgfx::allocTransientVertexBuffer(&tvb, vertex_count, m_vertexSpec);
+		bgfx::allocTransientIndexBuffer(&tib, primitiveCount * 3);
 
-		bgfx::setVertexBuffer(0, vbh, 0, vertex_count);
-		bgfx::setIndexBuffer(ibh, 0, primitiveCount * 3);
+		memcpy(tvb.data, vertexBuffer, vertex_count * sizeof(Scriber::Vertex));
+		memcpy(tib.data, indexBuffer, primitiveCount * 3 * sizeof(uint16_t));
+
+		bgfx::setVertexBuffer(0, &tvb, 0, vertex_count);
+		bgfx::setIndexBuffer(&tib, 0, primitiveCount * 3);
 
 		bgfx::setTexture(0, u_texture.m_handle,  m_textureHandle);
 
@@ -89,8 +87,6 @@ public:
 	bgfx::VertexLayout m_vertexSpec;
 	Render::Uniform u_texture;
 	Render::Uniform u_stroke;
-	bgfx::DynamicIndexBufferHandle ibh;
-	bgfx::DynamicVertexBufferHandle vbh;
 };
 
 
@@ -105,7 +101,10 @@ Renderer::~Renderer()
 
 void Renderer::Init()
 {
-	m_program = Render::MakeProgram("vs_gui.bin", "fs_gui.bin");
+	m_programCol = Render::MakeProgram("vs_gui.bin", "fs_gui.bin");
+	m_programTex = Render::MakeProgram("vs_gui.bin", "fs_gui_tex.bin");
+
+	u_texture = m_programTex->GetUniform("u_texture");
 
 	m_vertexSpec
 		.begin()
@@ -113,9 +112,6 @@ void Renderer::Init()
 		.add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Float)
 		.add(bgfx::Attrib::Color0,    4, bgfx::AttribType::Uint8, true)
 		.end();
-
-	m_ibh = bgfx::createDynamicIndexBuffer(1024 * 1024);
-	m_vbh = bgfx::createDynamicVertexBuffer(1024 * 1024, m_vertexSpec);
 
 	m_command_queue = fsal::File(new fsal::MemRefFile());
 
@@ -175,12 +171,20 @@ void Renderer::Init()
 	m_text_driver.AndFontToTypeface(id, "fonts/NotoSans-Regular.ttf", Scriber::FontStyle::Regular);
 }
 
-void Renderer::Rect(glm::aabb2 rect, glm::aabb2 uv, int8_t rounding)
+void Renderer::Rect(glm::aabb2 rect, color col)
 {
-	m_command_queue.Write(C_Rect);
-	m_command_queue.Write(rounding);
+	m_command_queue.Write(C_RectCol);
+	m_command_queue.Write(rect);
+	m_command_queue.Write(col);
+}
+
+
+void Renderer::Rect(glm::aabb2 rect, bgfx::TextureHandle texture, glm::aabb2 uv, int8_t rounding)
+{
+	m_command_queue.Write(C_RectTex);
 	m_command_queue.Write(rect);
 	m_command_queue.Write(uv);
+	m_command_queue.Write(texture);
 }
 
 void Renderer::Text(glm::aabb2 rect, const char* text, size_t len)
@@ -213,30 +217,52 @@ void Renderer::Draw()
 	m_command_queue.Seek(0);
 	m_vertexArray.resize(0);
 	m_indexArray.resize(0);
-	
+
+	bgfx::TextureHandle tex;
+
 	Command cmd;
 	while (m_command_queue.Read(cmd) && cmd != C_End)
 	{
+		bool need_flush = false;
 		switch(cmd)
 		{
-			case C_Rect:
+			case C_RectCol:
 			{
 				glm::aabb2 rect;
-				glm::aabb2 uv;
-				int8_t rounding;
-				m_command_queue.Read(rounding);
+				color col;
 				m_command_queue.Read(rect);
-				m_command_queue.Read(uv);
+				m_command_queue.Read(col);
 				uint16_t vertexIt = m_vertexArray.size();
-				m_vertexArray.emplace_back(rect.minp, uv.minp, color(0, 0, 0, 230));
-				m_vertexArray.emplace_back(glm::vec2({rect.maxp.x, rect.minp.y}), glm::vec2({uv.maxp.x, uv.minp.y}), color(0, 0, 0, 230));
-				m_vertexArray.emplace_back(rect.maxp, uv.maxp, color(0, 0, 0, 230));
-				m_vertexArray.emplace_back(glm::vec2({rect.minp.x, rect.maxp.y}), glm::vec2({uv.minp.x, uv.maxp.y}), color(0, 0, 0, 230));
+				m_vertexArray.emplace_back(rect.minp, glm::vec2(0.0, 0.0), col);
+				m_vertexArray.emplace_back(glm::vec2({rect.maxp.x, rect.minp.y}), glm::vec2(0.0, 0.0), col);
+				m_vertexArray.emplace_back(rect.maxp, glm::vec2(0.0, 0.0), col);
+				m_vertexArray.emplace_back(glm::vec2({rect.minp.x, rect.maxp.y}), glm::vec2(0.0, 0.0), col);
 				uint16_t indices[] = { vertexIt, uint16_t(vertexIt + 2), uint16_t(vertexIt + 1), vertexIt, uint16_t(vertexIt + 3), uint16_t(vertexIt + 2)};
 				m_indexArray.resize(m_indexArray.size() + 6);
 				uint16_t* ptr = &*(m_indexArray.end() - 6);
 				memcpy(ptr, indices, 6 * sizeof(uint16_t));
 			}
+			need_flush = true;
+			break;
+
+			case C_RectTex:
+			{
+				glm::aabb2 rect;
+				glm::aabb2 uv;
+				m_command_queue.Read(rect);
+				m_command_queue.Read(uv);
+				m_command_queue.Read(tex);
+				uint16_t vertexIt = m_vertexArray.size();
+				m_vertexArray.emplace_back(rect.minp, uv.minp, 0xFFFFFFFF_c);
+				m_vertexArray.emplace_back(glm::vec2({rect.maxp.x, rect.minp.y}), glm::vec2({uv.maxp.x, uv.minp.y}), 0xFFFFFFFF_c);
+				m_vertexArray.emplace_back(rect.maxp, uv.maxp, 0xFFFFFFFF_c);
+				m_vertexArray.emplace_back(glm::vec2({rect.minp.x, rect.maxp.y}), glm::vec2({uv.minp.x, uv.maxp.y}), 0xFFFFFFFF_c);
+				uint16_t indices[] = { vertexIt, uint16_t(vertexIt + 2), uint16_t(vertexIt + 1), vertexIt, uint16_t(vertexIt + 3), uint16_t(vertexIt + 2)};
+				m_indexArray.resize(m_indexArray.size() + 6);
+				uint16_t* ptr = &*(m_indexArray.end() - 6);
+				memcpy(ptr, indices, 6 * sizeof(uint16_t));
+			}
+			need_flush = true;
 			break;
 
 			case C_Text:
@@ -249,31 +275,79 @@ void Renderer::Draw()
 				m_command_queue.Seek(len, fsal::File::CurrentPosition);
 				m_text_driver.DrawLabel(ptr, rect.minp.x, rect.minp.y, Scriber::Font(0, 32, Scriber::FontStyle::Regular, 0xFFFFFFFF, 1));
 			}
+			need_flush = true;
 			break;
+		}
+
+
+		switch(cmd)
+		{
+			case C_RectCol:
+			{
+				int num_vertex = m_vertexArray.size();
+				int num_index = m_indexArray.size();
+				bgfx::TransientVertexBuffer tvb;
+				bgfx::TransientIndexBuffer tib;
+
+				bgfx::allocTransientVertexBuffer(&tvb, num_vertex, m_vertexSpec);
+				bgfx::allocTransientIndexBuffer(&tib, num_index);
+
+				memcpy(tvb.data, m_vertexArray.data(), num_vertex * sizeof(Vertex));
+				memcpy(tib.data, m_indexArray.data(), num_index * sizeof(uint16_t));
+
+				m_vertexArray.resize(0);
+				m_indexArray.resize(0);
+
+				bgfx::setVertexBuffer(0, &tvb, 0, num_vertex);
+				bgfx::setIndexBuffer(&tib, 0, num_index);
+
+				uint64_t state = 0
+				                 | BGFX_STATE_WRITE_RGB
+				                 | BGFX_STATE_BLEND_FUNC(BGFX_STATE_BLEND_SRC_ALPHA, BGFX_STATE_BLEND_INV_SRC_ALPHA);
+				bgfx::setState(state);
+
+				bgfx::submit(ViewIds::GUI, m_programCol->GetHandle(), 0);
+			}
+			break;
+			case C_RectTex:
+			{
+				int num_vertex = m_vertexArray.size();
+				int num_index = m_indexArray.size();
+				bgfx::TransientVertexBuffer tvb;
+				bgfx::TransientIndexBuffer tib;
+
+				bgfx::allocTransientVertexBuffer(&tvb, num_vertex, m_vertexSpec);
+				bgfx::allocTransientIndexBuffer(&tib, num_index);
+
+				memcpy(tvb.data, m_vertexArray.data(), num_vertex * sizeof(Vertex));
+				memcpy(tib.data, m_indexArray.data(), num_index * sizeof(uint16_t));
+
+				m_vertexArray.resize(0);
+				m_indexArray.resize(0);
+
+				bgfx::setVertexBuffer(0, &tvb, 0, num_vertex);
+				bgfx::setIndexBuffer(&tib, 0, num_index);
+
+				bgfx::setTexture(0, u_texture.m_handle, tex);
+
+				uint64_t state = 0
+				                 | BGFX_STATE_WRITE_RGB
+				                 | BGFX_STATE_BLEND_FUNC(BGFX_STATE_BLEND_SRC_ALPHA, BGFX_STATE_BLEND_INV_SRC_ALPHA);
+				bgfx::setState(state);
+
+				bgfx::submit(ViewIds::GUI, m_programTex->GetHandle(), 0);
+			}
+			break;
+			case C_Text:
+			{
+				m_text_driver.Render();
+			}
+			break;
+		}
+
+		if (need_flush)
+		{
 		}
 	}
 	m_command_queue.Seek(0);
-
-	bgfx::update(
-			m_ibh, 0, bgfx::makeRef(m_indexArray.data(), m_indexArray.size() * sizeof(uint16_t))
-	);
-
-	bgfx::update(
-			m_vbh, 0, bgfx::makeRef(m_vertexArray.data(), m_vertexArray.size() * sizeof(Vertex))
-	);
-
-	bgfx::setVertexBuffer(0, m_vbh, 0, m_vertexArray.size());
-	bgfx::setIndexBuffer(m_ibh, 0, m_indexArray.size());
-
-	// bgfx::setTexture(0, u_texture.m_handle, m_textureHandle);
-
-	uint64_t state = 0
-	                 | BGFX_STATE_WRITE_RGB
-	                 | BGFX_STATE_BLEND_FUNC(BGFX_STATE_BLEND_ONE, BGFX_STATE_BLEND_INV_SRC_ALPHA);
-	bgfx::setState(state);
-
-	bgfx::submit(ViewIds::GUI, m_program->GetHandle(), 0);
-
-	auto r = std::static_pointer_cast<TextBackend>(m_text_backend);
-	m_text_driver.Render();
 }

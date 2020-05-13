@@ -103,7 +103,7 @@ Application::Application(int argc, const char* const* argv)
 
 	bgfx::setViewClear(0
 		, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH | BGFX_CLEAR_STENCIL
-		, config["srgb"].as<bool>() ? 0x727272ff : 0xb2b2b2ff
+		, 0x000000ff
 		, 1.0f
 		, 0
 	);
@@ -115,10 +115,14 @@ Application::Application(int argc, const char* const* argv)
 	u_texture = m_program->GetUniform("u_texture");
 
 	m_obj.Load("LeePerrySmith.obj");
-	m_texture = Render::LoadTexture("test.png");
+	m_texture = Render::LoadTexture("graphics/floor/2.png");
+	m_texturew = Render::LoadTexture("graphics/wall/20.png");
 
 	Oquonie::GetInstance()->Install();
 	Oquonie::GetInstance()->Start();
+
+	bgfx::setViewName(ViewIds::Main, "Main");
+	bgfx::setViewName(ViewIds::GUI, "GUI");
 
 //	m_dr.Init();
 //
@@ -158,14 +162,14 @@ void Application::Update(float time, float deltaTime)
 	bgfx::setViewTransform(ViewIds::Main, &view[0], &projection[0]);
 	bgfx::setTransform(&model[0]);
 
-	bgfx::setTexture(0, u_texture.m_handle,  m_texture->m_handle);
+//	bgfx::setTexture(0, u_texture.m_handle,  m_texture->m_handle);
+//
+//	uint64_t state = 0
+//				| BGFX_STATE_DEFAULT
+//				;
+//	bgfx::setState(state);
 
-	uint64_t state = 0
-				| BGFX_STATE_DEFAULT
-				;
-	bgfx::setState(state);
-
-	m_obj.Draw(ViewIds::Main, m_program);
+	// m_obj.Draw(ViewIds::Main, m_program);
 
 	Oquonie::GetInstance()->m_music->m_audio.Update();
 
@@ -178,65 +182,50 @@ void Application::Update(float time, float deltaTime)
 		view.dpi = 72;
 
 		using namespace UI::lit;
+		using UI::operator""_c;
 
-		auto root_block = UI::make_block(30_lpe, 200_w, 50_t, 50_bpe);
-		auto block2 = UI::make_block(30_lpe, 200_w, 50_t, 50_bpe);
-		root_block->AddChild(block2);
+		auto root = UI::make_block({0_l, 100_wpe, 0_t, 100_hpe}, 0xFFFFFFFF_c);
+		auto stage = UI::make_block({130_wvh, 130_hvh, 50_clpe, 60_ctpe});
+		root->AddChild(stage);
+		auto room = UI::make_block({100_wpe, 100_hpe, 5_tvh, 0_l});
+		stage->AddChild(room);
 
-		UI::DoLayout(root_block, view);
+		auto tile1a = UI::make_block({20_wpe, 40_hpe, 30_tpe, 20_lpe}, m_texture, S::Contain, P::leftCenter);
+		auto tile2a = UI::make_block({20_wpe, 40_hpe, 25_tpe, 30_lpe}, m_texture, S::Contain, P::leftCenter);
+		auto tile3a = UI::make_block({20_wpe, 40_hpe, 20_tpe, 40_lpe}, m_texture, S::Contain, P::leftCenter);
+
+		auto tile1b = UI::make_block({20_wpe, 40_hpe, 35_tpe, 30_lpe}, m_texture, S::Contain, P::leftCenter);
+		auto tile2b = UI::make_block({20_wpe, 40_hpe, 30_tpe, 40_lpe}, m_texture, S::Contain, P::leftCenter);
+		auto tile3b = UI::make_block({20_wpe, 40_hpe, 25_tpe, 50_lpe}, m_texture, S::Contain, P::leftCenter);
+
+		auto tile1c = UI::make_block({20_wpe, 40_hpe, 40_tpe, 40_lpe}, m_texture, S::Contain, P::leftCenter);
+		auto tile2c = UI::make_block({20_wpe, 40_hpe, 35_tpe, 50_lpe}, m_texture, S::Contain, P::leftCenter);
+		auto tile3c = UI::make_block({20_wpe, 40_hpe, 30_tpe, 60_lpe}, m_texture, S::Contain, P::leftCenter);
+
+		auto wall1a = UI::make_block({20_wpe, 40_hpe, 18_tpe, 10_lpe}, m_texturew, S::Contain, P::leftCenter, T::FlipX);
+
+		room->AddChild(wall1a);
+
+		room->AddChild(tile3a);
+		room->AddChild(tile2a);
+		room->AddChild(tile1a);
+
+		room->AddChild(tile3b);
+		room->AddChild(tile2b);
+		room->AddChild(tile1b);
+
+		room->AddChild(tile3c);
+		room->AddChild(tile2c);
+		room->AddChild(tile1c);
+
+		UI::DoLayout(root, view);
 
 		auto prj = glm::ortho(view_box.minp.x, view_box.maxp.x, view_box.maxp.y, view_box.minp.y);
 		bgfx::setViewTransform(ViewIds::GUI, nullptr, &prj[0]);
 
-		UI::Traverse(root_block, nullptr, [this](UI::Block* block, UI::Block* parent)
-		{
-			//Render::DrawRect(m_dr, box.minp, box.maxp, prj);
-			auto box = block->GetBox();
-			m_uir.Rect(box);
-			m_uir.Text(box, "ПОМОГИТЕ ПОЖАЛУЙСТАHello!!!\n\nauto shadowPaint = nvgBoxGradient(vg, glm::aabb2(box.minp + glm::vec2(0.0f, 2.0f), box.maxp + glm::vec2(0.0f, 2.0f)), cornerRadius*2, 10, nvgRGBA(0,0,0,128), nvgRGBA(0,0,0,0));");
-//			float cornerRadius = 3.0f;
-//
-//			auto box = block->GetBox();
-//
-//			nvgBeginPath(vg);
-//			nvgRoundedRect(vg, box, cornerRadius);
-//			nvgFillColor(vg, nvgRGBA(28,30,34,192));
-//			// nvgFillColor(vg, nvgRGBA(255,192,0,255));
-//			nvgFill(vg);
-//
-//			// Drop shadow
-//			auto shadowPaint = nvgBoxGradient(vg, glm::aabb2(box.minp + glm::vec2(0.0f, 2.0f), box.maxp + glm::vec2(0.0f, 2.0f)), cornerRadius*2, 10, nvgRGBA(0,0,0,128), nvgRGBA(0,0,0,0));
-//			nvgBeginPath(vg);
-//			nvgRect(vg, glm::aabb2(box.minp - glm::vec2(10.0f), box.maxp + glm::vec2(10.0f, 20.0f)));
-//			nvgRoundedRect(vg, box, cornerRadius);
-//			nvgPathWinding(vg, NVG_HOLE);
-//			nvgFillPaint(vg, shadowPaint);
-//			nvgFill(vg);
-		});
+		UI::Render(&m_uir, root);
 
-		m_uir.Draw();
-
-////
-////		ImGui::Begin("Glyph cache");
-////		ImGui::Image((ImTextureID)m_uir.GetGlyphTexture(), ImVec2(1024, 1024));
-////#ifndef __EMSCRIPTEN__
-////		if (ImGui::Button("Save to file"))
-////		{
-////			GLint current_texture;
-////			glGetIntegerv(GL_TEXTURE_BINDING_2D, &current_texture);
-////			glBindTexture(GL_TEXTURE_2D, m_uir.GetGlyphTexture());
-////			int texDims[2];
-////			glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &texDims[0]);
-////			glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &texDims[1]);
-////
-////			static std::vector<uint8_t> data;
-////			data.resize(misc::align(texDims[0] * 3, 4) * texDims[1]);
-////			glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_UNSIGNED_BYTE, &data[0]);
-////
-////			stbi_write_png("glyph_cache.png", texDims[0], texDims[1], 3, data.data(), misc::align(texDims[0] * 3, 4));
-////		}
-////#endif
-////		ImGui::End();
+		//m_uir.Text(box, "ПОМОГИТЕ ПОЖАЛУЙСТАHello!!!\n\nauto shadowPaint = nvgBoxGradient(vg, glm::aabb2(box.minp + glm::vec2(0.0f, 2.0f), box.maxp + glm::vec2(0.0f, 2.0f)), cornerRadius*2, 10, nvgRGBA(0,0,0,128), nvgRGBA(0,0,0,0));");
 	}
 
 	bgfx::frame();

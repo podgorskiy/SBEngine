@@ -33,6 +33,9 @@ namespace Render
 		static TexturePtr LoadTexture(TextureReader reader);
 
 		bgfx::TextureHandle m_handle;
+
+		glm::ivec3 GetSize() { return m_size; }
+		TextureType GetType() { return m_type; }
 	private:
 		glm::ivec3 m_size;
 		int m_mipmap_count;

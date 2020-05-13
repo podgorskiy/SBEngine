@@ -1,5 +1,6 @@
 #pragma once
 #include "utils/stack_vector.h"
+#include "Render/color.h"
 
 #include <inttypes.h>
 #include <glm/matrix.hpp>
@@ -9,6 +10,7 @@
 #include <memory>
 #include "utils/aabb.h"
 #include <initializer_list>
+#include <type_traits>
 
 
 namespace UI
@@ -66,11 +68,49 @@ namespace UI
 		float value;
 	};
 
+	struct ImSize
+	{
+		enum Enum: uint8_t
+		{
+			Auto,
+			Contain,
+			Cover,
+			Fill,
+		};
+	};
+
+	struct ImPos
+	{
+		enum Enum: uint8_t
+		{
+			LeftTop,
+			leftCenter,
+			leftBottom,
+			RightTop,
+			RightCenter,
+			RightBottom,
+			CenterTop,
+			CenterCenter,
+			CenterBottom,
+		};
+	};
+
+	struct ImTransform
+	{
+		enum Enum: uint8_t
+		{
+			None  = 0,
+			FlipX = 1 << 0,
+			FlipY = 1 << 1
+		};
+	};
+
+
 	namespace lit
 	{
 #define _LITERAL(Type, T, Unit, U) \
-    Constraint operator "" _##T##U(long double x) { return Constraint(Constraint::Type, Constraint::Unit, (float)x); }\
-    Constraint operator "" _##T##U(unsigned long long int x) { return Constraint(Constraint::Type, Constraint::Unit, (float)x); }
+    inline Constraint operator "" _##T##U(long double x) { return Constraint(Constraint::Type, Constraint::Unit, (float)x); }\
+    inline Constraint operator "" _##T##U(unsigned long long int x) { return Constraint(Constraint::Type, Constraint::Unit, (float)x); }
 
 #define LITERAL(Type, T)\
     _LITERAL(Type, T, Percentage, pe) _LITERAL(Type, T, Pixel, px) _LITERAL(Type, T, Point, pt) \
@@ -88,16 +128,66 @@ namespace UI
 		LITERAL(Height, h)
 		LITERAL(CenterTop, ct)
 		LITERAL(CenterBottom, cb)
+
+		typedef UI::ImSize S;
+		typedef UI::ImPos P;
+		typedef UI::ImTransform T;
 	}
 
 	class Block;
 	typedef std::shared_ptr<Block> BlockPtr;
+
+	class IEmitter
+	{
+	public:
+		virtual void operator ()(UI::Renderer*, const Block*, float time, int flags) = 0;
+		virtual ~IEmitter() = default;
+	};
+
+	class SFillEmitter: public IEmitter
+	{
+	public:
+		explicit SFillEmitter(color c);
+		virtual void operator ()(UI::Renderer*, const Block*, float time, int flags);
+	private:
+		UI::color col;
+	};
+
+	class SImageEmitter: public IEmitter
+	{
+	public:
+		SImageEmitter(Render::TexturePtr tex, ImSize::Enum size,  ImPos::Enum pos,  ImTransform::Enum t);
+		virtual void operator ()(UI::Renderer*, const Block*, float time, int flags);
+	private:
+		glm::ivec2 image_size;
+		Render::TexturePtr tex;
+		UI::ImSize::Enum size;
+		UI::ImPos::Enum pos;
+		ImTransform::Enum t;
+	};
+
+	struct EmitterSizeCheck
+	{
+		enum
+		{
+			DataSize = 40,
+		};
+		void check()
+		{
+			static_assert(DataSize >= sizeof(IEmitter), "");
+			static_assert(DataSize >= sizeof(SImageEmitter), "");
+		}
+	};
 
 	class Block
 	{
 		friend void Traverse(const BlockPtr& block, const BlockPtr& parent, const std::function<void(Block* block, Block* parent)>& lambda);
 	public:
 		Block() = default;
+		~Block()
+		{
+			if (has_emitter) GetEmitter()->~IEmitter();
+		}
 
 		explicit Block(std::initializer_list<Constraint> cnst): m_constraints(cnst) {}
 
@@ -119,6 +209,7 @@ namespace UI
 		void SetBox(const glm::aabb2& box) { m_box = box; }
 		void PushConstraint(const Constraint& cnst) { m_constraints.push_back(cnst); };
 		const stack::vector<Constraint, 4>& GetConstraints() const { return m_constraints; };
+		void Emit(UI::Renderer* r, float time = 0.0f, int flags = 0) {	if (has_emitter) (*GetEmitter())(r, this, time, flags); }
 
 //		virtual inline void Event(EventTouch* event)
 //		{
@@ -131,21 +222,46 @@ namespace UI
 //				l=m_childs.size();
 //			}
 //		}
+		template <typename R, typename... Ts>
+		void EmplaceEmitter(Ts&&... args) {
+		    new (userdata) R(std::forward<Ts>(args)...);
+		    has_emitter = true;
+		}
 	private:
+		IEmitter* GetEmitter() { return (IEmitter*)userdata; }
+
 		glm::aabb2 m_box;
 		stack::vector<Constraint, 4> m_constraints;
 		stack::vector<BlockPtr, 4> m_childs;
 		glm::vec2 m_rotation = glm::vec2(1.0f, 0.0f);
-		char m_name[64] = {0};
+		uint8_t userdata[EmitterSizeCheck::DataSize] = {0};
+		bool has_emitter = false;
 	};
 
-	template<class ...Ts>
-    BlockPtr make_block(Ts... inputs)
+    inline BlockPtr make_block(std::initializer_list<Constraint> constraints)
     {
-    	return std::make_shared<Block>(std::initializer_list<Constraint>({inputs...}));
+    	return std::make_shared<Block>(std::initializer_list<Constraint>(constraints));
     }
 
-	void Traverse(const BlockPtr& block, const BlockPtr& parent, const std::function<void(Block* block, Block* parent)>& lambda)
+    inline BlockPtr make_block(std::initializer_list<Constraint> constraints, color c)
+    {
+    	auto block = std::make_shared<Block>(std::initializer_list<Constraint>(constraints));
+    	block->EmplaceEmitter<SFillEmitter>(c);
+    	return block;
+    }
+
+    inline BlockPtr make_block(std::initializer_list<Constraint> constraints,
+    		Render::TexturePtr tex,
+    		ImSize::Enum size = ImSize::Auto,
+    		ImPos::Enum pos = ImPos::LeftTop,
+    		ImTransform::Enum t = ImTransform::None)
+    {
+    	auto block = std::make_shared<Block>(std::initializer_list<Constraint>(constraints));
+    	block->EmplaceEmitter<SImageEmitter>(std::move(tex), size, pos, t);
+    	return block;
+    }
+
+	inline void Traverse(const BlockPtr& block, const BlockPtr& parent, const std::function<void(Block* block, Block* parent)>& lambda)
 	{
 		lambda(block.get(), parent.get());
 		for (auto& child: block->m_childs)
@@ -154,7 +270,16 @@ namespace UI
 		}
 	}
 
-	glm::aabb2 SolveConstraints(const glm::aabb2& parent_box, const Constraint* cnst, int count, float ppd)
+	inline void Render(UI::Renderer* renderer, const BlockPtr& root, float time = 0.0f, int flags = 0)
+	{
+		Traverse(root, nullptr, [renderer, time, flags](UI::Block* block, UI::Block* parent)
+		{
+			block->Emit(renderer, time, flags);
+		});
+		renderer->Draw();
+	}
+
+	inline glm::aabb2 SolveConstraints(const glm::aabb2& parent_box, const Constraint* cnst, int count, float ppd)
 	{
 		uint8_t mask[2] = {0};
 		float cst_values[2][5];
@@ -231,7 +356,7 @@ namespace UI
 		return box;
 	}
 
-	void DoLayout(const BlockPtr& block, const View& view)
+	inline void DoLayout(const BlockPtr& block, const View& view)
 	{
 		Traverse(block, nullptr, [view](Block* block, Block* parent)
 		{

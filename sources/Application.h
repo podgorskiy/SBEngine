@@ -41,4 +41,5 @@ private:
 
 	Object m_obj;
 	Render::TexturePtr m_texture;
+	Render::TexturePtr m_texturew;
 };
