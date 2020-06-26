@@ -1,4 +1,4 @@
-backend: "Vulkan"
+backend: "OpenGL"
 run_tests: False
 msaa16: False
 flush_after_render: True

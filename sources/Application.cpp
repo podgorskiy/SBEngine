@@ -203,8 +203,20 @@ void Application::Update(float time, float deltaTime)
 		auto tile3c = UI::make_block({20_wpe, 40_hpe, 30_tpe, 60_lpe}, m_texture, S::Contain, P::leftCenter);
 
 		auto wall1a = UI::make_block({20_wpe, 40_hpe, 18_tpe, 10_lpe}, m_texturew, S::Contain, P::leftCenter, T::FlipX);
+		auto wall2a = UI::make_block({20_wpe, 40_hpe, 13_tpe, 20_lpe}, m_texturew, S::Contain, P::leftCenter, T::FlipX);
+		auto wall3a = UI::make_block({20_wpe, 40_hpe,  8_tpe, 30_lpe}, m_texturew, S::Contain, P::leftCenter, T::FlipX);
 
+		auto wall1b = UI::make_block({20_wpe, 40_hpe,  8_tpe, 50_lpe}, m_texturew, S::Contain, P::leftCenter);
+		auto wall2b = UI::make_block({20_wpe, 40_hpe, 13_tpe, 60_lpe}, m_texturew, S::Contain, P::leftCenter);
+		auto wall3b = UI::make_block({20_wpe, 40_hpe, 18_tpe, 70_lpe}, m_texturew, S::Contain, P::leftCenter);
+
+		room->AddChild(wall3a);
+		room->AddChild(wall2a);
 		room->AddChild(wall1a);
+
+		room->AddChild(wall1b);
+		room->AddChild(wall2b);
+		room->AddChild(wall3b);
 
 		room->AddChild(tile3a);
 		room->AddChild(tile2a);

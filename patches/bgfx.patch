@@ -1,0 +1,782 @@
+ 3rdparty/freetype/freetype.h              |   7 +-
+ examples/31-rsm/makefile                  | 162 +++++++++++++++++++++++++++++-
+ examples/common/imgui/fs_imgui_image.sc   |   7 +-
+ examples/common/imgui/fs_ocornut_imgui.sc |  29 +++++-
+ examples/common/nanovg/fontstash.h        |   5 +-
+ examples/common/nanovg/nanovg.cpp         |   1 +
+ examples/common/nanovg/nanovg_bgfx.cpp    |  25 ++---
+ examples/common/nanovg/vs_nanovg_fill.sc  |  13 +--
+ include/bgfx/bgfx.h                       |  15 +++
+ include/bgfx/embedded_shader.h            |   7 --
+ src/bgfx.cpp                              |  36 +++++++
+ src/bgfx_p.h                              |  94 +++++++++++++++++
+ src/renderer_gl.cpp                       |  76 ++++++++++++--
+ src/renderer_gl.h                         |   1 +
+ 14 files changed, 423 insertions(+), 55 deletions(-)
+
+diff --git a/3rdparty/freetype/freetype.h b/3rdparty/freetype/freetype.h
+index fb67c097..6ac3911f 100644
+--- a/3rdparty/freetype/freetype.h
++++ b/3rdparty/freetype/freetype.h
+@@ -1355,7 +1355,8 @@ FT_BEGIN_HEADER
+ /*   defined.                                                            */
+ /*                                                                       */
+ /* #define TT_CONFIG_OPTION_SUBPIXEL_HINTING */
+-#undef TT_CONFIG_OPTION_SUBPIXEL_HINTING
++#define TT_CONFIG_OPTION_SUBPIXEL_HINTING
++
+ /*************************************************************************/
+ /*                                                                       */
+ /* If you define TT_CONFIG_OPTION_UNPATENTED_HINTING, a special version  */
+@@ -1404,7 +1405,7 @@ FT_BEGIN_HEADER
+ /*   }                                                                   */
+ /*                                                                       */
+ /* #define TT_CONFIG_OPTION_UNPATENTED_HINTING */
+-#undef TT_CONFIG_OPTION_UNPATENTED_HINTING
++#define TT_CONFIG_OPTION_UNPATENTED_HINTING
+ /*************************************************************************/
+ /*                                                                       */
+ /* Define TT_CONFIG_OPTION_INTERPRETER_SWITCH to compile the TrueType    */
+@@ -1554,7 +1555,7 @@ FT_BEGIN_HEADER
+    * hinting is requested by the definitions above.
+    */
+ #define  TT_USE_BYTECODE_INTERPRETER
+-#undef   TT_CONFIG_OPTION_UNPATENTED_HINTING
++#define   TT_CONFIG_OPTION_UNPATENTED_HINTING
+ FT_END_HEADER
+ /* END */
+ /***************************************************************************/
+diff --git a/examples/31-rsm/makefile b/examples/31-rsm/makefile
+index 94d3aae7..828a8897 100644
+--- a/examples/31-rsm/makefile
++++ b/examples/31-rsm/makefile
+@@ -7,4 +7,164 @@ BGFX_DIR=../..
+ RUNTIME_DIR=$(BGFX_DIR)/examples/runtime
+ BUILD_DIR=../../.build
+ 
+-include $(BGFX_DIR)/scripts/shader.mk
++SHADERC:="../build/Debug/shaderc"
++
++# Define SHADERS_DIR if your shader files are in a different dir than the makefile including this.
++# Notice: If defined, SHADERS_DIR should end with dir slash '/'.
++# Example:
++#     SHADERS_DIR=shader_files/
++
++#ifndef TARGET
++.PHONY: all
++all:
++	@echo Usage: make TARGET=# [clean, all, rebuild]
++	@echo "  TARGET=0 (hlsl  - d3d9)"
++	@echo "  TARGET=1 (hlsl  - d3d11)"
++	@echo "  TARGET=2 (essl  - nacl)"
++	@echo "  TARGET=3 (essl  - android)"
++	@echo "  TARGET=4 (glsl)"
++	@echo "  TARGET=5 (metal)"
++	@echo "  TARGET=6 (pssl)"
++	@echo "  TARGET=7 (spriv)"
++	TARGET:=4
++	
++
++.PHONY: rebuild
++rebuild:
++	@make -s --no-print-directory TARGET=0 clean all
++	@make -s --no-print-directory TARGET=1 clean all
++	@make -s --no-print-directory TARGET=2 clean all
++	@make -s --no-print-directory TARGET=3 clean all
++	@make -s --no-print-directory TARGET=4 clean all
++	@make -s --no-print-directory TARGET=5 clean all
++	@make -s --no-print-directory TARGET=7 clean all
++
++#else
++
++ADDITIONAL_INCLUDES?=
++
++ifeq ($(TARGET), 0)
++VS_FLAGS=--platform windows -p vs_3_0 -O 3
++FS_FLAGS=--platform windows -p ps_3_0 -O 3
++SHADER_PATH=shaders/dx9
++else
++ifeq ($(TARGET), 1)
++VS_FLAGS=--platform windows -p vs_4_0 -O 3
++FS_FLAGS=--platform windows -p ps_4_0 -O 3
++CS_FLAGS=--platform windows -p cs_5_0 -O 1
++SHADER_PATH=shaders/dx11
++else
++ifeq ($(TARGET), 2)
++VS_FLAGS=--platform nacl
++FS_FLAGS=--platform nacl
++SHADER_PATH=shaders/essl
++else
++ifeq ($(TARGET), 3)
++VS_FLAGS=--platform android
++FS_FLAGS=--platform android
++CS_FLAGS=--platform android
++SHADER_PATH=shaders/essl
++else
++ifeq ($(TARGET), 4)
++VS_FLAGS=--platform linux -p 120
++FS_FLAGS=--platform linux -p 120
++CS_FLAGS=--platform linux -p 430
++SHADER_PATH=shaders/glsl
++else
++ifeq ($(TARGET), 5)
++VS_FLAGS=--platform osx -p metal
++FS_FLAGS=--platform osx -p metal
++CS_FLAGS=--platform osx -p metal
++SHADER_PATH=shaders/metal
++else
++ifeq ($(TARGET), 6)
++VS_FLAGS=--platform orbis -p pssl
++FS_FLAGS=--platform orbis -p pssl
++CS_FLAGS=--platform orbis -p pssl
++SHADER_PATH=shaders/pssl
++else
++ifeq ($(TARGET), 7)
++VS_FLAGS=--platform linux -p spirv
++FS_FLAGS=--platform linux -p spirv
++CS_FLAGS=--platform linux -p spirv
++SHADER_PATH=shaders/spirv
++endif
++endif
++endif
++endif
++endif
++endif
++endif
++endif
++
++THISDIR := $(dir $(lastword $(MAKEFILE_LIST)))
++VS_FLAGS+=-i $(THISDIR)../src/ $(ADDITIONAL_INCLUDES)
++FS_FLAGS+=-i $(THISDIR)../src/ $(ADDITIONAL_INCLUDES)
++CS_FLAGS+=-i $(THISDIR)../src/ $(ADDITIONAL_INCLUDES)
++
++BUILD_OUTPUT_DIR=$(addprefix ./, $(RUNTIME_DIR)/$(SHADER_PATH))
++BUILD_INTERMEDIATE_DIR=$(addprefix $(BUILD_DIR)/, $(SHADER_PATH))
++
++VS_SOURCES=$(notdir $(wildcard $(addprefix $(SHADERS_DIR), vs_*.sc)))
++VS_DEPS=$(addprefix $(BUILD_INTERMEDIATE_DIR)/,$(addsuffix .bin.d, $(basename $(notdir $(VS_SOURCES)))))
++
++FS_SOURCES=$(notdir $(wildcard $(addprefix $(SHADERS_DIR), fs_*.sc)))
++FS_DEPS=$(addprefix $(BUILD_INTERMEDIATE_DIR)/,$(addsuffix .bin.d, $(basename $(notdir $(FS_SOURCES)))))
++
++CS_SOURCES=$(notdir $(wildcard $(addprefix $(SHADERS_DIR), cs_*.sc)))
++CS_DEPS=$(addprefix $(BUILD_INTERMEDIATE_DIR)/,$(addsuffix .bin.d, $(basename $(notdir $(CS_SOURCES)))))
++
++VS_BIN = $(addprefix $(BUILD_INTERMEDIATE_DIR)/, $(addsuffix .bin, $(basename $(notdir $(VS_SOURCES)))))
++FS_BIN = $(addprefix $(BUILD_INTERMEDIATE_DIR)/, $(addsuffix .bin, $(basename $(notdir $(FS_SOURCES)))))
++CS_BIN = $(addprefix $(BUILD_INTERMEDIATE_DIR)/, $(addsuffix .bin, $(basename $(notdir $(CS_SOURCES)))))
++
++BIN = $(VS_BIN) $(FS_BIN)
++ASM = $(VS_ASM) $(FS_ASM)
++
++ifeq ($(TARGET), $(filter $(TARGET),1 3 4 6))
++BIN += $(CS_BIN)
++ASM += $(CS_ASM)
++endif
++
++$(BUILD_INTERMEDIATE_DIR)/vs_%.bin : $(SHADERS_DIR)vs_%.sc
++	@echo [$(<)]
++	$(SILENT) $(SHADERC) $(VS_FLAGS) --type vertex --depends -o $(@) -f $(<) --disasm
++	$(SILENT) cp $(@) $(BUILD_OUTPUT_DIR)/$(@F)
++
++$(BUILD_INTERMEDIATE_DIR)/fs_%.bin : $(SHADERS_DIR)fs_%.sc
++	@echo [$(<)]
++	$(SILENT) $(SHADERC) $(FS_FLAGS) --type fragment --depends -o $(@) -f $(<) --disasm
++	$(SILENT) cp $(@) $(BUILD_OUTPUT_DIR)/$(@F)
++
++$(BUILD_INTERMEDIATE_DIR)/cs_%.bin : $(SHADERS_DIR)cs_%.sc
++	@echo [$(<)]
++	$(SILENT) $(SHADERC) $(CS_FLAGS) --type compute --depends -o $(@) -f $(<) --disasm
++	$(SILENT) cp $(@) $(BUILD_OUTPUT_DIR)/$(@F)
++
++.PHONY: all
++all: dirs $(BIN)
++	@echo Target $(SHADER_PATH)
++
++.PHONY: clean
++clean:
++	@echo Cleaning...
++	@-rm -vf $(BIN)
++
++.PHONY: cleanall
++cleanall:
++	@echo Cleaning...
++	@-$(call CMD_RMDIR,$(BUILD_INTERMEDIATE_DIR))
++
++.PHONY: dirs
++dirs:
++	@-$(call CMD_MKDIR,$(BUILD_INTERMEDIATE_DIR))
++	@-$(call CMD_MKDIR,$(BUILD_OUTPUT_DIR))
++
++.PHONY: rebuild
++rebuild: clean all
++
++#endif # TARGET
++
++-include $(VS_DEPS)
++-include $(FS_DEPS)
++-include $(CS_DEPS)
+diff --git a/examples/common/imgui/fs_imgui_image.sc b/examples/common/imgui/fs_imgui_image.sc
+index c7ee13d9..5be63b25 100644
+--- a/examples/common/imgui/fs_imgui_image.sc
++++ b/examples/common/imgui/fs_imgui_image.sc
+@@ -10,12 +10,7 @@ $input v_texcoord0
+ uniform vec4 u_imageLodEnabled;
+ SAMPLER2D(s_texColor, 0);
+ 
+-#define u_imageLod     u_imageLodEnabled.x
+-#define u_imageEnabled u_imageLodEnabled.y
+-
+ void main()
+ {
+-	vec3 color = texture2DLod(s_texColor, v_texcoord0, u_imageLod).xyz;
+-	float alpha = 0.2 + 0.8*u_imageEnabled;
+-	gl_FragColor = vec4(color, alpha);
++	gl_FragColor = texture(s_texColor, v_texcoord0);
+ }
+diff --git a/examples/common/imgui/fs_ocornut_imgui.sc b/examples/common/imgui/fs_ocornut_imgui.sc
+index f07729cb..239978f3 100644
+--- a/examples/common/imgui/fs_ocornut_imgui.sc
++++ b/examples/common/imgui/fs_ocornut_imgui.sc
+@@ -4,8 +4,33 @@ $input v_color0, v_texcoord0
+ 
+ SAMPLER2D(s_tex, 0);
+ 
++uniform mat3 u_paintMat;
++uniform vec4 u_innerCol;
++uniform vec4 u_outerCol;
++uniform vec4 u_extentRadius;
++uniform vec4 u_params;
++
++#define u_extent       (u_extentRadius.xy)
++#define u_radius       (u_extentRadius.z)
++#define u_feather      (u_params.x)
++
++float sdroundrect(vec2 pt, vec2 ext, float rad)
++{
++	vec2 ext2 = ext - vec2(rad,rad);
++	vec2 d = abs(pt) - ext2;
++	return min(max(d.x, d.y), 0.0) + length(max(d, 0.0) ) - rad;
++}
++
+ void main()
+ {
+-	vec4 texel = texture2D(s_tex, v_texcoord0);
+-	gl_FragColor = texel * v_color0; 
++	vec4 result;
++	float scissor = scissorMask(v_position);
++	
++	// Calculate gradient color using box gradient
++	vec2 pt = mul(u_paintMat, vec3(v_position, 1.0) ).xy;
++	float d = clamp( (sdroundrect(pt, u_extent, u_radius) + u_feather*0.5) / u_feather, 0.0, 1.0);
++	vec4 color = mix(u_innerCol, u_outerCol, d);
++
++	vec4 texel = texture(s_tex, v_texcoord0);
++	gl_FragColor = texel * v_color0 * color;
+ }
+diff --git a/examples/common/nanovg/fontstash.h b/examples/common/nanovg/fontstash.h
+index 53cb4bdc..efee97df 100644
+--- a/examples/common/nanovg/fontstash.h
++++ b/examples/common/nanovg/fontstash.h
+@@ -141,10 +141,7 @@ void fonsDrawDebug(FONScontext* s, float x, float y);
+ 
+ #ifdef FONS_USE_FREETYPE
+ 
+-#include <ft2build.h>
+-#include FT_FREETYPE_H
+-#include FT_ADVANCES_H
+-#include <math.h>
++#include <freetype/freetype.h>
+ 
+ struct FONSttFontImpl {
+ 	FT_Face font;
+diff --git a/examples/common/nanovg/nanovg.cpp b/examples/common/nanovg/nanovg.cpp
+index dcd652c8..528f733b 100644
+--- a/examples/common/nanovg/nanovg.cpp
++++ b/examples/common/nanovg/nanovg.cpp
+@@ -34,6 +34,7 @@ BX_PRAGMA_DIAGNOSTIC_PUSH();
+ BX_PRAGMA_DIAGNOSTIC_IGNORED_CLANG_GCC("-Wunused-parameter");
+ BX_PRAGMA_DIAGNOSTIC_IGNORED_GCC("-Wunused-result");
+ #define FONTSTASH_IMPLEMENTATION
++#define FONS_USE_FREETYPE
+ #include "fontstash.h"
+ BX_PRAGMA_DIAGNOSTIC_POP();
+ 
+diff --git a/examples/common/nanovg/nanovg_bgfx.cpp b/examples/common/nanovg/nanovg_bgfx.cpp
+index e019d389..6af08cfc 100644
+--- a/examples/common/nanovg/nanovg_bgfx.cpp
++++ b/examples/common/nanovg/nanovg_bgfx.cpp
+@@ -35,13 +35,13 @@
+ 
+ BX_PRAGMA_DIAGNOSTIC_IGNORED_MSVC(4244); // warning C4244: '=' : conversion from '' to '', possible loss of data
+ 
+-#include "vs_nanovg_fill.bin.h"
+-#include "fs_nanovg_fill.bin.h"
++#include "vs_nanovg_fill.sc_glsl"
++#include "fs_nanovg_fill.sc_glsl"
+ 
+ static const bgfx::EmbeddedShader s_embeddedShaders[] =
+ {
+-	BGFX_EMBEDDED_SHADER(vs_nanovg_fill),
+-	BGFX_EMBEDDED_SHADER(fs_nanovg_fill),
++	BGFX_EMBEDDED_SHADER(vs_nanovg_fill_sc),
++	BGFX_EMBEDDED_SHADER(fs_nanovg_fill_sc),
+ 
+ 	BGFX_EMBEDDED_SHADER_END()
+ };
+@@ -253,8 +253,8 @@ namespace
+ 
+ 		bgfx::RendererType::Enum type = bgfx::getRendererType();
+ 		gl->prog = bgfx::createProgram(
+-						  bgfx::createEmbeddedShader(s_embeddedShaders, type, "vs_nanovg_fill")
+-						, bgfx::createEmbeddedShader(s_embeddedShaders, type, "fs_nanovg_fill")
++						  bgfx::createEmbeddedShader(s_embeddedShaders, type, "vs_nanovg_fill_sc")
++						, bgfx::createEmbeddedShader(s_embeddedShaders, type, "fs_nanovg_fill_sc")
+ 						, true
+ 						);
+ 
+@@ -273,14 +273,7 @@ namespace
+ 		gl->u_params          = bgfx::createUniform("u_params",          bgfx::UniformType::Vec4);
+ 		gl->s_tex             = bgfx::createUniform("s_tex",             bgfx::UniformType::Int1);
+ 
+-		if (bgfx::getRendererType() == bgfx::RendererType::Direct3D9)
+-		{
+-			gl->u_halfTexel   = bgfx::createUniform("u_halfTexel",       bgfx::UniformType::Vec4);
+-		}
+-		else
+-		{
+-			gl->u_halfTexel.idx = bgfx::kInvalidHandle;
+-		}
++		gl->u_halfTexel = bgfx::createUniform("u_halfTexel", bgfx::UniformType::Vec4);
+ 
+ 		s_nvgDecl
+ 			.begin()
+@@ -331,8 +324,8 @@ namespace
+ 						, false
+ 						, 1
+ 						, NVG_TEXTURE_RGBA == _type ? bgfx::TextureFormat::RGBA8 : bgfx::TextureFormat::R8
+-						, BGFX_TEXTURE_NONE
+-						);
++						, BGFX_TEXTURE_NONE | BGFX_TEXTURE_MIN_POINT | BGFX_TEXTURE_MAG_POINT
++		);
+ 
+ 		if (NULL != mem)
+ 		{
+diff --git a/examples/common/nanovg/vs_nanovg_fill.sc b/examples/common/nanovg/vs_nanovg_fill.sc
+index b1cb88e4..6a5ee8b6 100644
+--- a/examples/common/nanovg/vs_nanovg_fill.sc
++++ b/examples/common/nanovg/vs_nanovg_fill.sc
+@@ -3,21 +3,14 @@ $output v_position, v_texcoord0
+ 
+ #include "../common.sh"
+ 
+-#define NEED_HALF_TEXEL (BGFX_SHADER_LANGUAGE_HLSL < 4)
+-
+ uniform vec4 u_viewSize;
+ 
+-#if NEED_HALF_TEXEL
+ uniform vec4 u_halfTexel;
+-#endif // NEED_HALF_TEXEL
+ 
+ void main()
+ {
+-#if !NEED_HALF_TEXEL
+-	const vec4 u_halfTexel = vec4_splat(0.0);
+-#endif // !NEED_HALF_TEXEL
+-
+ 	v_position  = a_position;
+-	v_texcoord0 = a_texcoord0+u_halfTexel.xy;
+-	gl_Position = vec4(2.0*v_position.x/u_viewSize.x - 1.0, 1.0 - 2.0*v_position.y/u_viewSize.y, 0.0, 1.0);
++	v_texcoord0 = a_texcoord0 + u_halfTexel.xy;
++
++	gl_Position = vec4(2.0*(v_position.x + 0.5)/u_viewSize.x - 1.0, 1.0 - 2.0*(v_position.y + 0.5)/u_viewSize.y, 0.0, 1.0);
+ }
+diff --git a/include/bgfx/bgfx.h b/include/bgfx/bgfx.h
+index e39b8398..44517501 100644
+--- a/include/bgfx/bgfx.h
++++ b/include/bgfx/bgfx.h
+@@ -360,6 +360,18 @@ namespace bgfx
+ 		};
+ 	};
+ 
++	struct ShaderType
++	{
++		enum Enum
++		{
++			Vertex,
++			Fragments,
++			Compute,
++
++			Count
++		};
++	};
++
+ 	static const uint16_t kInvalidHandle = UINT16_MAX;
+ 
+ 	BGFX_HANDLE(DynamicIndexBufferHandle);
+@@ -1534,6 +1546,9 @@ namespace bgfx
+ 	///
+ 	ShaderHandle createShader(const Memory* _mem);
+ 
++
++	ShaderHandle createShaderGLSL(const Memory* _mem, ShaderType::Enum type);
++
+ 	/// Returns num of uniforms, and uniform handles used inside shader.
+ 	///
+ 	/// @param[in] _handle Shader handle.
+diff --git a/include/bgfx/embedded_shader.h b/include/bgfx/embedded_shader.h
+index 6bffbf58..cbf01eab 100644
+--- a/include/bgfx/embedded_shader.h
++++ b/include/bgfx/embedded_shader.h
+@@ -94,14 +94,7 @@
+ 			{                                                                                      \
+ 				#_name,                                                                            \
+ 				{                                                                                  \
+-					BGFX_EMBEDDED_SHADER_DX9BC(bgfx::RendererType::Direct3D9,  _name)              \
+-					BGFX_EMBEDDED_SHADER_DXBC (bgfx::RendererType::Direct3D11, _name)              \
+-					BGFX_EMBEDDED_SHADER_DXBC (bgfx::RendererType::Direct3D12, _name)              \
+-					BGFX_EMBEDDED_SHADER_PSSL (bgfx::RendererType::Gnm,        _name)              \
+-					BGFX_EMBEDDED_SHADER_METAL(bgfx::RendererType::Metal,      _name)              \
+-					BGFX_EMBEDDED_SHADER_ESSL (bgfx::RendererType::OpenGLES,   _name)              \
+ 					BGFX_EMBEDDED_SHADER_GLSL (bgfx::RendererType::OpenGL,     _name)              \
+-					BGFX_EMBEDDED_SHADER_SPIRV(bgfx::RendererType::Vulkan,     _name)              \
+ 					{ bgfx::RendererType::Noop,  (const uint8_t*)"VSH\x5\x0\x0\x0\x0\x0\x0", 10 }, \
+ 					{ bgfx::RendererType::Count, NULL, 0 }                                         \
+ 				}                                                                                  \
+diff --git a/src/bgfx.cpp b/src/bgfx.cpp
+index 53d06768..141eb80b 100644
+--- a/src/bgfx.cpp
++++ b/src/bgfx.cpp
+@@ -2279,6 +2279,35 @@ namespace bgfx
+ 				}
+ 				break;
+ 
++			case CommandBuffer::CreateShaderGLSL_VS:
++				{
++					ShaderHandle handle;
++					_cmdbuf.read(handle);
++
++					Memory* mem;
++					_cmdbuf.read(mem);
++
++					m_renderCtx->createShaderGLSL_VS(handle, mem);
++
++					release(mem);
++				}
++				break;
++
++			case CommandBuffer::CreateShaderGLSL_FS:
++				{
++					ShaderHandle handle;
++					_cmdbuf.read(handle);
++
++					Memory* mem;
++					_cmdbuf.read(mem);
++
++					m_renderCtx->createShaderGLSL_FS(handle, mem);
++
++					release(mem);
++				}
++				break;
++
++
+ 			case CommandBuffer::DestroyShader:
+ 				{
+ 					ShaderHandle handle;
+@@ -3052,6 +3081,13 @@ error:
+ 		return s_ctx->createShader(_mem);
+ 	}
+ 
++	ShaderHandle createShaderGLSL(const Memory* _mem, ShaderType::Enum type)
++	{
++		BGFX_CHECK_MAIN_THREAD();
++		BX_CHECK(NULL != _mem, "_mem can't be NULL");
++		return s_ctx->createShaderGLSL(_mem, type);
++	}
++
+ 	uint16_t getShaderUniforms(ShaderHandle _handle, UniformHandle* _uniforms, uint16_t _max)
+ 	{
+ 		BGFX_CHECK_MAIN_THREAD();
+diff --git a/src/bgfx_p.h b/src/bgfx_p.h
+index b7c77b28..0ce3f77f 100644
+--- a/src/bgfx_p.h
++++ b/src/bgfx_p.h
+@@ -630,6 +630,8 @@ namespace bgfx
+ 			CreateDynamicVertexBuffer,
+ 			UpdateDynamicVertexBuffer,
+ 			CreateShader,
++			CreateShaderGLSL_VS,
++			CreateShaderGLSL_FS,
+ 			CreateProgram,
+ 			CreateTexture,
+ 			UpdateTexture,
+@@ -2262,6 +2264,8 @@ namespace bgfx
+ 		virtual void updateDynamicVertexBuffer(VertexBufferHandle _handle, uint32_t _offset, uint32_t _size, Memory* _mem) = 0;
+ 		virtual void destroyDynamicVertexBuffer(VertexBufferHandle _handle) = 0;
+ 		virtual void createShader(ShaderHandle _handle, Memory* _mem) = 0;
++		virtual void createShaderGLSL_VS(ShaderHandle _handle, Memory* _mem) {};
++		virtual void createShaderGLSL_FS(ShaderHandle _handle, Memory* _mem) {};
+ 		virtual void destroyShader(ShaderHandle _handle) = 0;
+ 		virtual void createProgram(ProgramHandle _handle, ShaderHandle _vsh, ShaderHandle _fsh) = 0;
+ 		virtual void destroyProgram(ProgramHandle _handle) = 0;
+@@ -3145,6 +3149,95 @@ namespace bgfx
+ 			return handle;
+ 		}
+ 
++		BGFX_API_FUNC(ShaderHandle createShaderGLSL(const Memory* _mem, ShaderType::Enum type))
++		{
++			bx::MemoryReader reader(_mem->data, _mem->size);
++
++			const uint32_t shaderHash = bx::hashMurmur2A(_mem->data, _mem->size);
++			const uint16_t idx = m_shaderHashMap.find(shaderHash);
++			if (kInvalidHandle != idx)
++			{
++				ShaderHandle handle = { idx };
++				shaderIncRef(handle);
++				release(_mem);
++				return handle;
++			}
++
++			ShaderHandle handle = { m_shaderHandle.alloc() };
++
++			BX_WARN(isValid(handle), "Failed to allocate shader handle.");
++			if (isValid(handle))
++			{
++				bool ok = m_shaderHashMap.insert(shaderHash, handle.idx);
++				BX_CHECK(ok, "Shader already exists!"); BX_UNUSED(ok);
++
++				ShaderRef& sr = m_shaderRef[handle.idx];
++				sr.m_refCount = 1;
++				sr.m_hash = 0;
++				sr.m_num = 0;
++				sr.m_uniforms = NULL;
++
++				/*
++				UniformHandle* uniforms = (UniformHandle*)alloca(count * sizeof(UniformHandle));
++
++				for (uint32_t ii = 0; ii < count; ++ii)
++				{
++					uint8_t nameSize = 0;
++					bx::read(&reader, nameSize);
++
++					char name[256];
++					bx::read(&reader, &name, nameSize);
++					name[nameSize] = '\0';
++
++					uint8_t type = 0;
++					bx::read(&reader, type);
++					type &= ~BGFX_UNIFORM_MASK;
++
++					uint8_t num;
++					bx::read(&reader, num);
++
++					uint16_t regIndex;
++					bx::read(&reader, regIndex);
++
++					uint16_t regCount;
++					bx::read(&reader, regCount);
++
++					PredefinedUniform::Enum predefined = nameToPredefinedUniformEnum(name);
++					if (PredefinedUniform::Count == predefined)
++					{
++						uniforms[sr.m_num] = createUniform(name, UniformType::Enum(type), regCount);
++						sr.m_num++;
++					}
++				}
++
++				if (0 != sr.m_num)
++				{
++					uint32_t size = sr.m_num * sizeof(UniformHandle);
++					sr.m_uniforms = (UniformHandle*)BX_ALLOC(g_allocator, size);
++					bx::memCopy(sr.m_uniforms, uniforms, size);
++				}
++				*/
++
++				CommandBuffer* cmdbuf = nullptr;
++				switch (type)
++				{
++				case ShaderType::Vertex:
++					cmdbuf = &getCommandBuffer(CommandBuffer::CreateShaderGLSL_VS);
++				case ShaderType::Fragments:
++					cmdbuf = &getCommandBuffer(CommandBuffer::CreateShaderGLSL_FS);
++
++				}
++				cmdbuf->write(handle);
++				cmdbuf->write(_mem);
++			}
++			else
++			{
++				release(_mem);
++			}
++
++			return handle;
++		}
++
+ 		BGFX_API_FUNC(uint16_t getShaderUniforms(ShaderHandle _handle, UniformHandle* _uniforms, uint16_t _max) )
+ 		{
+ 			if (!isValid(_handle) )
+@@ -3295,6 +3388,7 @@ namespace bgfx
+ 			return handle;
+ 		}
+ 
++
+ 		BGFX_API_FUNC(ProgramHandle createProgram(ShaderHandle _vsh, bool _destroyShader) )
+ 		{
+ 			if (!isValid(_vsh) )
+diff --git a/src/renderer_gl.cpp b/src/renderer_gl.cpp
+index 3579fa46..d3347bad 100644
+--- a/src/renderer_gl.cpp
++++ b/src/renderer_gl.cpp
+@@ -1791,6 +1791,11 @@ namespace bgfx { namespace gl
+ 					break;
+ 				}
+ 			}
++			GLint dims[2];
++			glGetIntegerv(GL_MAX_VIEWPORT_DIMS, &dims[0]);
++			printf("GL_MAX_VIEWPORT_DIMS: %dx%d\n", dims[0], dims[1]);
++			glGetIntegerv(GL_MAX_TEXTURE_SIZE, &dims[0]);
++			printf("GL_MAX_TEXTURE_SIZE: %dx%d\n", dims[0], dims[1]);
+ 
+ 			m_workaround.reset();
+ 
+@@ -2716,6 +2721,20 @@ namespace bgfx { namespace gl
+ 			m_shaders[_handle.idx].create(_mem);
+ 		}
+ 
++		void createShaderGLSL_VS(ShaderHandle _handle, Memory* _mem) override
++		{
++			bx::MemoryReader reader(_mem->data, _mem->size);
++
++			m_shaders[_handle.idx]._create(reader, GL_VERTEX_SHADER);
++		}
++
++		void createShaderGLSL_FS(ShaderHandle _handle, Memory* _mem) override
++		{
++			bx::MemoryReader reader(_mem->data, _mem->size);
++
++			m_shaders[_handle.idx]._create(reader, GL_FRAGMENT_SHADER);
++		}
++
+ 		void destroyShader(ShaderHandle _handle) override
+ 		{
+ 			m_shaders[_handle.idx].destroy();
+@@ -5237,7 +5256,7 @@ namespace bgfx { namespace gl
+ 		uint32_t srcpitch  = UINT16_MAX == _pitch ? rectpitch : _pitch;
+ 
+ 		GL_CHECK(glBindTexture(m_target, m_id) );
+-		GL_CHECK(glPixelStorei(GL_UNPACK_ALIGNMENT, 1) );
++		GL_CHECK(glPixelStorei(GL_UNPACK_ALIGNMENT, 4) );
+ 
+ 		GLenum target = isCubeMap()
+ 			? GL_TEXTURE_CUBE_MAP_POSITIVE_X
+@@ -5508,6 +5527,27 @@ namespace bgfx { namespace gl
+ 		bx::memCopy(_str, _insert, len);
+ 	}
+ 
++	static void PrintSource(const char* source, int startLine)
++	{
++		int j = 0;
++		int line = startLine;
++		while (true)
++		{
++			const char* start = source;
++			while (*source != '\n' && *source != '\x0')
++			{
++				++source;
++			}
++			printf("%3d:\t%.*s\n", line++, source - start, start);
++
++			if (*source != '\x0')
++			{
++				break;
++			}
++			++source;
++		}
++	}
++
+ 	void ShaderGL::create(Memory* _mem)
+ 	{
+ 		bx::MemoryReader reader(_mem->data, _mem->size);
+@@ -5536,7 +5576,7 @@ namespace bgfx { namespace gl
+ 		BX_TRACE("%s Shader consts %d"
+ 			, BGFX_CHUNK_MAGIC_FSH == magic ? "Fragment" : BGFX_CHUNK_MAGIC_VSH == magic ? "Vertex" : "Compute"
+ 			, count
+-			);
++		);
+ 
+ 		for (uint32_t ii = 0; ii < count; ++ii)
+ 		{
+@@ -5563,6 +5603,12 @@ namespace bgfx { namespace gl
+ 		uint32_t shaderSize;
+ 		bx::read(&reader, shaderSize);
+ 
++		_create(reader, m_type);
++	}
++
++	void ShaderGL::_create(bx::MemoryReader reader, GLenum type)
++	{
++		m_type = type;
+ 		m_id = glCreateShader(m_type);
+ 		BX_WARN(0 != m_id, "Failed to create %s shader."
+ 				, BGFX_CHUNK_MAGIC_FSH == magic ? "fragment" : BGFX_CHUNK_MAGIC_VSH == magic ? "vertex" : "compute"
+@@ -5779,6 +5825,8 @@ namespace bgfx { namespace gl
+ 						: 120
+ 						;
+ 
++					version = 150;
++
+ 					if (0 != version)
+ 					{
+ 						writeStringf(&writer, "#version %d\n", version);
+@@ -6038,9 +6086,24 @@ namespace bgfx { namespace gl
+ 			GL_CHECK(glCompileShader(m_id) );
+ 
+ 			GLint compiled = 0;
+-			GL_CHECK(glGetShaderiv(m_id, GL_COMPILE_STATUS, &compiled) );
++			GL_CHECK(glGetShaderiv(m_id, GL_COMPILE_STATUS, &compiled));
++
++			GLint infoLen = 0;
++			GL_CHECK(glGetShaderiv(m_id, GL_INFO_LOG_LENGTH, &infoLen));
++
++			if (infoLen > 1)
++			{
++				printf("%s during shader compilation.\n ", compiled == GL_TRUE ? "Warning" : "Error");
++
++				PrintSource(code, 0);
++
++				char* buf = new char[infoLen];
++				glGetShaderInfoLog(m_id, infoLen, NULL, buf);
++				printf("Compilation log: %s\n", buf);
++				delete[] buf;
++			}
+ 
+-			if (0 == compiled)
++			if (0 == compiled || infoLen > 1)
+ 			{
+ 				LineReader lineReader(code);
+ 				bx::Error err;
+@@ -7560,9 +7623,10 @@ namespace bgfx { namespace gl
+ 
+ 			if (0 < _render->m_num)
+ 			{
+-				if (0 != (m_resolution.m_flags & BGFX_RESET_FLUSH_AFTER_RENDER) )
++				if (0 != (m_resolution.m_flags & BGFX_RESET_FLUSH_AFTER_RENDER))
+ 				{
+-					GL_CHECK(glFlush() );
++					GL_CHECK(glFlush());
++					GL_CHECK(glFinish());
+ 				}
+ 
+ 				captureElapsed = -bx::getHPCounter();
+diff --git a/src/renderer_gl.h b/src/renderer_gl.h
+index ead415b7..f98a9ca2 100644
+--- a/src/renderer_gl.h
++++ b/src/renderer_gl.h
+@@ -1204,6 +1204,7 @@ namespace bgfx { namespace gl
+ 		}
+ 
+ 		void create(Memory* _mem);
++		void _create(bx::MemoryReader reader, GLenum type);
+ 		void destroy();
+ 
+ 		GLuint m_id;

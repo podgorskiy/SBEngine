@@ -1,0 +1,175 @@
+ include/GLFW/glfw3.h |  2 ++
+ src/context.c        |  5 +++++
+ src/win32_init.c     |  2 ++
+ src/win32_platform.h |  6 ++++++
+ src/win32_window.c   | 20 +++++++++++++++++---
+ src/window.c         |  6 ++++++
+ 6 files changed, 38 insertions(+), 3 deletions(-)
+
+diff --git a/include/GLFW/glfw3.h b/include/GLFW/glfw3.h
+index 1eb5131c..a8de0e72 100644
+--- a/include/GLFW/glfw3.h
++++ b/include/GLFW/glfw3.h
+@@ -3526,6 +3526,8 @@ GLFWAPI void glfwWaitEventsTimeout(double timeout);
+  */
+ GLFWAPI void glfwPostEmptyEvent(void);
+ 
++GLFWAPI void glfwSetCustomEventHandler(void* function);
++
+ /*! @brief Returns the value of an input option for the specified window.
+  *
+  *  This function returns the value of an input option for the specified window.
+diff --git a/src/context.c b/src/context.c
+index 1a26356e..aada159f 100644
+--- a/src/context.c
++++ b/src/context.c
+@@ -577,6 +577,7 @@ GLFWbool _glfwStringInExtensionString(const char* string, const char* extensions
+ 
+ GLFWAPI void glfwMakeContextCurrent(GLFWwindow* handle)
+ {
++	return;
+     _GLFWwindow* window = (_GLFWwindow*) handle;
+     _GLFWwindow* previous = _glfwPlatformGetTls(&_glfw.contextSlot);
+ 
+@@ -600,12 +601,14 @@ GLFWAPI void glfwMakeContextCurrent(GLFWwindow* handle)
+ 
+ GLFWAPI GLFWwindow* glfwGetCurrentContext(void)
+ {
++	return NULL;
+     _GLFW_REQUIRE_INIT_OR_RETURN(NULL);
+     return _glfwPlatformGetTls(&_glfw.contextSlot);
+ }
+ 
+ GLFWAPI void glfwSwapBuffers(GLFWwindow* handle)
+ {
++	return;
+     _GLFWwindow* window = (_GLFWwindow*) handle;
+     assert(window != NULL);
+ 
+@@ -622,6 +625,7 @@ GLFWAPI void glfwSwapBuffers(GLFWwindow* handle)
+ 
+ GLFWAPI void glfwSwapInterval(int interval)
+ {
++	return;
+     _GLFWwindow* window;
+ 
+     _GLFW_REQUIRE_INIT();
+@@ -638,6 +642,7 @@ GLFWAPI void glfwSwapInterval(int interval)
+ 
+ GLFWAPI int glfwExtensionSupported(const char* extension)
+ {
++	return 0;
+     _GLFWwindow* window;
+     assert(extension != NULL);
+ 
+diff --git a/src/win32_init.c b/src/win32_init.c
+index 231b0a28..9dd91e3a 100644
+--- a/src/win32_init.c
++++ b/src/win32_init.c
+@@ -447,6 +447,8 @@ int _glfwPlatformInit(void)
+     if (!loadLibraries())
+         return GLFW_FALSE;
+ 
++	_glfw.win32.userWindowProc = NULL;
++
+     createKeyTables();
+ 
+     if (_glfw_SetProcessDpiAwareness)
+diff --git a/src/win32_platform.h b/src/win32_platform.h
+index c21d5ce3..32424db3 100644
+--- a/src/win32_platform.h
++++ b/src/win32_platform.h
+@@ -187,6 +187,11 @@ typedef HRESULT (WINAPI * PFN_DwmFlush)(VOID);
+ typedef HRESULT (WINAPI * PFN_SetProcessDpiAwareness)(PROCESS_DPI_AWARENESS);
+ #define _glfw_SetProcessDpiAwareness _glfw.win32.shcore.SetProcessDpiAwareness
+ 
++// user WindowProc function pointer typedef
++typedef LRESULT (CALLBACK * PFN_WindowProc)(HWND,UINT,WPARAM,LPARAM,BOOL*);
++#define _glfw_userWindowProc _glfw.win32.userWindowProc
++
++
+ typedef VkFlags VkWin32SurfaceCreateFlagsKHR;
+ 
+ typedef struct VkWin32SurfaceCreateInfoKHR
+@@ -258,6 +263,7 @@ typedef struct _GLFWlibraryWin32
+     _GLFWwindow*        disabledCursorWindow;
+     RAWINPUT*           rawInput;
+     int                 rawInputSize;
++	PFN_WindowProc      userWindowProc;
+ 
+     struct {
+         HINSTANCE                       instance;
+diff --git a/src/win32_window.c b/src/win32_window.c
+index ef05898a..088c2352 100644
+--- a/src/win32_window.c
++++ b/src/win32_window.c
+@@ -46,7 +46,7 @@ static DWORD getWindowStyle(const _GLFWwindow* window)
+         style |= WS_POPUP;
+     else
+     {
+-        style |= WS_SYSMENU | WS_MINIMIZEBOX;
++        style |=  WS_MINIMIZEBOX;
+ 
+         if (window->decorated)
+         {
+@@ -460,6 +460,16 @@ static void releaseMonitor(_GLFWwindow* window)
+ static LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg,
+                                    WPARAM wParam, LPARAM lParam)
+ {
++	if (_glfw_userWindowProc != NULL)
++	{
++		BOOL consumed = FALSE;
++		LRESULT result = _glfw_userWindowProc(hWnd, uMsg, wParam, lParam, &consumed);
++		if (consumed)
++		{
++			return result;
++		}
++	}
++
+     _GLFWwindow* window = GetPropW(hWnd, L"GLFW");
+     if (!window)
+     {
+@@ -489,7 +499,7 @@ static LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg,
+                 break;
+             }
+         }
+-
++		
+         return DefWindowProcW(hWnd, uMsg, wParam, lParam);
+     }
+ 
+@@ -1103,7 +1113,6 @@ int _glfwPlatformCreateWindow(_GLFWwindow* window,
+         if (wndconfig->centerCursor)
+             centerCursor(window);
+     }
+-
+     return GLFW_TRUE;
+ }
+ 
+@@ -1542,6 +1551,11 @@ void _glfwPlatformPostEmptyEvent(void)
+     PostMessage(_glfw.win32.helperWindowHandle, WM_NULL, 0, 0);
+ }
+ 
++void _glfwPlatformSetCustomEventHandler(void* function)
++{
++	_glfw_userWindowProc = function;
++}
++
+ void _glfwPlatformGetCursorPos(_GLFWwindow* window, double* xpos, double* ypos)
+ {
+     POINT pos;
+diff --git a/src/window.c b/src/window.c
+index b7498e1b..83b9fd67 100644
+--- a/src/window.c
++++ b/src/window.c
+@@ -1003,3 +1003,9 @@ GLFWAPI void glfwPostEmptyEvent(void)
+     _glfwPlatformPostEmptyEvent();
+ }
+ 
++GLFWAPI void glfwSetCustomEventHandler(void* function)
++{
++	_GLFW_REQUIRE_INIT();
++
++	_glfwPlatformSetCustomEventHandler(function);
++}
+\ No newline at end of file
