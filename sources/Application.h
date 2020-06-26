@@ -40,6 +40,4 @@ private:
 	Render::Uniform u_texture;
 
 	Object m_obj;
-	Render::TexturePtr m_texture;
-	Render::TexturePtr m_texturew;
 };

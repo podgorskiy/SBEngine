@@ -25,16 +25,9 @@
 
 #include "imgui.h"
 #include "examples/imgui_impl_opengl3.h"
-#include <Tile.h>
-#include <Wall.h>
-#include <Oquonie.h>
-#include <World.h>
-#include <Keyboard.h>
-#include <Music.h>
 #include "Audio.h"
 
 
-Keyboard keyboard;
 
 Application::Application(int argc, const char* const* argv)
 {
@@ -115,11 +108,6 @@ Application::Application(int argc, const char* const* argv)
 	u_texture = m_program->GetUniform("u_texture");
 
 	m_obj.Load("LeePerrySmith.obj");
-	m_texture = Render::LoadTexture("graphics/floor/2.png");
-	m_texturew = Render::LoadTexture("graphics/wall/20.png");
-
-	Oquonie::GetInstance()->Install();
-	Oquonie::GetInstance()->Start();
 
 	bgfx::setViewName(ViewIds::Main, "Main");
 	bgfx::setViewName(ViewIds::GUI, "GUI");
@@ -171,9 +159,6 @@ void Application::Update(float time, float deltaTime)
 
 	// m_obj.Draw(ViewIds::Main, m_program);
 
-	Oquonie::GetInstance()->m_music->m_audio.Update();
-
-
 	{
 		glm::aabb2 view_box(glm::vec2(0.0), m_windowBufferSize);
 
@@ -189,46 +174,46 @@ void Application::Update(float time, float deltaTime)
 		root->AddChild(stage);
 		auto room = UI::make_block({100_wpe, 100_hpe, 5_tvh, 0_l});
 		stage->AddChild(room);
+//
+//		auto tile1a = UI::make_block({20_wpe, 40_hpe, 30_tpe, 20_lpe}, m_texture, S::Contain, P::leftCenter);
+//		auto tile2a = UI::make_block({20_wpe, 40_hpe, 25_tpe, 30_lpe}, m_texture, S::Contain, P::leftCenter);
+//		auto tile3a = UI::make_block({20_wpe, 40_hpe, 20_tpe, 40_lpe}, m_texture, S::Contain, P::leftCenter);
+//
+//		auto tile1b = UI::make_block({20_wpe, 40_hpe, 35_tpe, 30_lpe}, m_texture, S::Contain, P::leftCenter);
+//		auto tile2b = UI::make_block({20_wpe, 40_hpe, 30_tpe, 40_lpe}, m_texture, S::Contain, P::leftCenter);
+//		auto tile3b = UI::make_block({20_wpe, 40_hpe, 25_tpe, 50_lpe}, m_texture, S::Contain, P::leftCenter);
+//
+//		auto tile1c = UI::make_block({20_wpe, 40_hpe, 40_tpe, 40_lpe}, m_texture, S::Contain, P::leftCenter);
+//		auto tile2c = UI::make_block({20_wpe, 40_hpe, 35_tpe, 50_lpe}, m_texture, S::Contain, P::leftCenter);
+//		auto tile3c = UI::make_block({20_wpe, 40_hpe, 30_tpe, 60_lpe}, m_texture, S::Contain, P::leftCenter);
+//
+//		auto wall1a = UI::make_block({20_wpe, 40_hpe, 18_tpe, 10_lpe}, m_texturew, S::Contain, P::leftCenter, T::FlipX);
+//		auto wall2a = UI::make_block({20_wpe, 40_hpe, 13_tpe, 20_lpe}, m_texturew, S::Contain, P::leftCenter, T::FlipX);
+//		auto wall3a = UI::make_block({20_wpe, 40_hpe,  8_tpe, 30_lpe}, m_texturew, S::Contain, P::leftCenter, T::FlipX);
+//
+//		auto wall1b = UI::make_block({20_wpe, 40_hpe,  8_tpe, 50_lpe}, m_texturew, S::Contain, P::leftCenter);
+//		auto wall2b = UI::make_block({20_wpe, 40_hpe, 13_tpe, 60_lpe}, m_texturew, S::Contain, P::leftCenter);
+//		auto wall3b = UI::make_block({20_wpe, 40_hpe, 18_tpe, 70_lpe}, m_texturew, S::Contain, P::leftCenter);
 
-		auto tile1a = UI::make_block({20_wpe, 40_hpe, 30_tpe, 20_lpe}, m_texture, S::Contain, P::leftCenter);
-		auto tile2a = UI::make_block({20_wpe, 40_hpe, 25_tpe, 30_lpe}, m_texture, S::Contain, P::leftCenter);
-		auto tile3a = UI::make_block({20_wpe, 40_hpe, 20_tpe, 40_lpe}, m_texture, S::Contain, P::leftCenter);
-
-		auto tile1b = UI::make_block({20_wpe, 40_hpe, 35_tpe, 30_lpe}, m_texture, S::Contain, P::leftCenter);
-		auto tile2b = UI::make_block({20_wpe, 40_hpe, 30_tpe, 40_lpe}, m_texture, S::Contain, P::leftCenter);
-		auto tile3b = UI::make_block({20_wpe, 40_hpe, 25_tpe, 50_lpe}, m_texture, S::Contain, P::leftCenter);
-
-		auto tile1c = UI::make_block({20_wpe, 40_hpe, 40_tpe, 40_lpe}, m_texture, S::Contain, P::leftCenter);
-		auto tile2c = UI::make_block({20_wpe, 40_hpe, 35_tpe, 50_lpe}, m_texture, S::Contain, P::leftCenter);
-		auto tile3c = UI::make_block({20_wpe, 40_hpe, 30_tpe, 60_lpe}, m_texture, S::Contain, P::leftCenter);
-
-		auto wall1a = UI::make_block({20_wpe, 40_hpe, 18_tpe, 10_lpe}, m_texturew, S::Contain, P::leftCenter, T::FlipX);
-		auto wall2a = UI::make_block({20_wpe, 40_hpe, 13_tpe, 20_lpe}, m_texturew, S::Contain, P::leftCenter, T::FlipX);
-		auto wall3a = UI::make_block({20_wpe, 40_hpe,  8_tpe, 30_lpe}, m_texturew, S::Contain, P::leftCenter, T::FlipX);
-
-		auto wall1b = UI::make_block({20_wpe, 40_hpe,  8_tpe, 50_lpe}, m_texturew, S::Contain, P::leftCenter);
-		auto wall2b = UI::make_block({20_wpe, 40_hpe, 13_tpe, 60_lpe}, m_texturew, S::Contain, P::leftCenter);
-		auto wall3b = UI::make_block({20_wpe, 40_hpe, 18_tpe, 70_lpe}, m_texturew, S::Contain, P::leftCenter);
-
-		room->AddChild(wall3a);
-		room->AddChild(wall2a);
-		room->AddChild(wall1a);
-
-		room->AddChild(wall1b);
-		room->AddChild(wall2b);
-		room->AddChild(wall3b);
-
-		room->AddChild(tile3a);
-		room->AddChild(tile2a);
-		room->AddChild(tile1a);
-
-		room->AddChild(tile3b);
-		room->AddChild(tile2b);
-		room->AddChild(tile1b);
-
-		room->AddChild(tile3c);
-		room->AddChild(tile2c);
-		room->AddChild(tile1c);
+//		room->AddChild(wall3a);
+//		room->AddChild(wall2a);
+//		room->AddChild(wall1a);
+//
+//		room->AddChild(wall1b);
+//		room->AddChild(wall2b);
+//		room->AddChild(wall3b);
+//
+//		room->AddChild(tile3a);
+//		room->AddChild(tile2a);
+//		room->AddChild(tile1a);
+//
+//		room->AddChild(tile3b);
+//		room->AddChild(tile2b);
+//		room->AddChild(tile1b);
+//
+//		room->AddChild(tile3c);
+//		room->AddChild(tile2c);
+//		room->AddChild(tile1c);
 
 		UI::DoLayout(root, view);
 
@@ -236,8 +221,6 @@ void Application::Update(float time, float deltaTime)
 		bgfx::setViewTransform(ViewIds::GUI, nullptr, &prj[0]);
 
 		UI::Render(&m_uir, root);
-
-		//m_uir.Text(box, "ПОМОГИТЕ ПОЖАЛУЙСТАHello!!!\n\nauto shadowPaint = nvgBoxGradient(vg, glm::aabb2(box.minp + glm::vec2(0.0f, 2.0f), box.maxp + glm::vec2(0.0f, 2.0f)), cornerRadius*2, 10, nvgRGBA(0,0,0,128), nvgRGBA(0,0,0,0));");
 	}
 
 	bgfx::frame();
@@ -248,11 +231,11 @@ void Application::OnKeyAction(int key, char asci, int action, int mods)
 {
 	if (action == 0)
 	{
-		keyboard.ListenOnKeyDown(asci);
+		// keyboard.ListenOnKeyDown(asci);
 	}
 	else if (action == 1)
 	{
-		keyboard.ListenOnKeyUp(asci);
+		// keyboard.ListenOnKeyUp(asci);
 	}
 }
 
