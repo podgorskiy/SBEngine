@@ -160,11 +160,7 @@ void Application::Update(float time, float deltaTime)
 	// m_obj.Draw(ViewIds::Main, m_program);
 
 	{
-		glm::aabb2 view_box(glm::vec2(0.0), m_windowBufferSize);
-
-		UI::View view;
-		view.size_in_dots = view_box.size();
-		view.dpi = 72;
+		UI::View view_box(m_windowBufferSize, 72);
 
 		using namespace UI::lit;
 		using UI::operator""_c;
@@ -172,9 +168,9 @@ void Application::Update(float time, float deltaTime)
 		auto root = UI::make_block({0_l, 100_wpe, 0_t, 100_hpe}, 0xFFFFFFFF_c);
 		auto stage = UI::make_block({130_wvh, 130_hvh, 50_clpe, 60_ctpe});
 		root->AddChild(stage);
-		auto room = UI::make_block({100_wpe, 100_hpe, 5_tvh, 0_l});
+		auto room = UI::make_block({100_wpe, 100_hpe, 5_tvh, 0_l}, 0xFF0000FF_c);
 		stage->AddChild(room);
-//
+
 //		auto tile1a = UI::make_block({20_wpe, 40_hpe, 30_tpe, 20_lpe}, m_texture, S::Contain, P::leftCenter);
 //		auto tile2a = UI::make_block({20_wpe, 40_hpe, 25_tpe, 30_lpe}, m_texture, S::Contain, P::leftCenter);
 //		auto tile3a = UI::make_block({20_wpe, 40_hpe, 20_tpe, 40_lpe}, m_texture, S::Contain, P::leftCenter);
@@ -215,12 +211,8 @@ void Application::Update(float time, float deltaTime)
 //		room->AddChild(tile2c);
 //		room->AddChild(tile1c);
 
-		UI::DoLayout(root, view);
-
-		auto prj = glm::ortho(view_box.minp.x, view_box.maxp.x, view_box.maxp.y, view_box.minp.y);
-		bgfx::setViewTransform(ViewIds::GUI, nullptr, &prj[0]);
-
-		UI::Render(&m_uir, root);
+		UI::DoLayout(root, view_box);
+		UI::Render(&m_uir, root, view_box);
 	}
 
 	bgfx::frame();

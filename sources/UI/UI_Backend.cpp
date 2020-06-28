@@ -1,4 +1,5 @@
 #include "UI_Backend.h"
+#include "View.h"
 #include "Render/Shader.h"
 #include <tuple>
 #include <MemRefFile.h>
@@ -209,6 +210,12 @@ int Renderer::GetGlyphTexture() const
 {
 	auto r = std::static_pointer_cast<TextBackend>(m_text_backend);
 	return 0;// r->m_textureHandle;
+}
+
+void Renderer::SetUp(UI::View view_box)
+{
+	auto prj = glm::ortho(view_box.view_box.minp.x, view_box.view_box.maxp.x, view_box.view_box.maxp.y, view_box.view_box.minp.y);
+	bgfx::setViewTransform(ViewIds::GUI, nullptr, &prj[0]);
 }
 
 void Renderer::Draw()

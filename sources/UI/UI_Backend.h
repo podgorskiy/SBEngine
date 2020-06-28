@@ -1,4 +1,5 @@
 #pragma once
+#include "View.h"
 #include "Render/Texture.h"
 #include "Render/color.h"
 #include <glm/glm.hpp>
@@ -61,6 +62,7 @@ namespace UI
 
 	    ~Renderer();
 
+	    void SetUp(UI::View view);
 		void Init();
 		void Draw();
 
