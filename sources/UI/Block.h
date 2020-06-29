@@ -122,12 +122,13 @@ namespace UI
 		renderer->Draw();
 	}
 
-	inline glm::aabb2 SolveConstraints(const glm::aabb2& parent_box, const Constraint* cnst, int count, float ppd)
+	inline glm::aabb2 SolveConstraints(const glm::aabb2& root_box, const glm::aabb2& parent_box, const Constraint* cnst, int count, float ppd)
 	{
 		uint8_t mask[2] = {0};
 		float cst_values[2][5];
 		uint8_t id_map[16] = {0xff, 0x00, 0x01, 0xff, 0x02, 0xff, 0xff, 0xff, 0xff, 0x03, 0x04, 0xff, 0xff, 0xff, 0xff, 0xff};
 		auto p_size = parent_box.size();
+		auto r_size = root_box.size();
 		for (int i = 0; i < count; ++i)
 		{
 			int id = uint8_t(cnst[i].type & Constraint::CnstV) >> Constraint::CnstVp;
@@ -138,12 +139,15 @@ namespace UI
 			switch(cnst[i].unit)
 			{
 				case Constraint::Percentage: p *= cnst[i].value / 100.0f; break;
-				case Constraint::ValueHeight: p = p_size.y; p *= cnst[i].value / 100.0f; break;
-				case Constraint::ValueWidth: p = p_size.x; p *= cnst[i].value / 100.0f; break;
-				case Constraint::ValueMin: p = glm::min(p_size.x, p_size.y); p *= cnst[i].value / 100.0f; break;
-				case Constraint::ValueMax: p = glm::max(p_size.x, p_size.y); p *= cnst[i].value / 100.0f; break;
+				case Constraint::ValueHeight: p = r_size.y; p *= cnst[i].value / 100.0f; break;
+				case Constraint::ValueWidth: p = r_size.x; p *= cnst[i].value / 100.0f; break;
+				case Constraint::ValueMin: p = glm::min(r_size.x, r_size.y); p *= cnst[i].value / 100.0f; break;
+				case Constraint::ValueMax: p = glm::max(r_size.x, r_size.y); p *= cnst[i].value / 100.0f; break;
 				case Constraint::Pixel: p /= cnst[i].value / ppd; break;
 				case Constraint::Point: p = cnst[i].value; break;
+				case Constraint::Centimeters: p = cnst[i].value * (72.0f / 2.54f); break;
+				case Constraint::Millimeters: p = cnst[i].value * (72.0f / 25.4f); break;
+				case Constraint::Inches: p = cnst[i].value * 72.0f; break;
 			}
 			cst_values[id][sid] = p;
 		}
@@ -205,7 +209,7 @@ namespace UI
 		{
 			glm::aabb2 parent_box = parent == nullptr ? view.view_box : parent->GetBox();
 			const auto& cnst = block->GetConstraints();
-			glm::aabb2 current_box = SolveConstraints(parent_box, cnst.data(), cnst.size(), view.GetPixelPerDotScalingFactor());
+			glm::aabb2 current_box = SolveConstraints(view.view_box, parent_box, cnst.data(), cnst.size(), view.GetPixelPerDotScalingFactor());
 			block->SetBox(current_box);
 		});
 	}

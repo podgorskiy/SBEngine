@@ -21,6 +21,7 @@
 #include <bx/bx.h>
 #include <bx/math.h>
 #include "views.h"
+#include "UI/UI_Load.h"
 
 
 #include "imgui.h"
@@ -118,6 +119,8 @@ Application::Application(int argc, const char* const* argv)
 //		Render::debug_guard<> debug_lock;
 //	}
 	m_uir.Init();
+
+	auto block = UI::Load(fs().Open("menus/main.yaml"));
 }
 
 

@@ -36,7 +36,10 @@ namespace UI
 			ValueMin,
 			ValueMax,
 			Pixel,
-			Point
+			Point,
+			Centimeters,
+			Millimeters,
+			Inches,
 		};
 
 		Constraint(Type type, Unit unit, float value): type(type), unit(unit), value(value)
@@ -96,6 +99,7 @@ namespace UI
 
 #define LITERAL(Type, T)\
     _LITERAL(Type, T, Percentage, pe) _LITERAL(Type, T, Pixel, px) _LITERAL(Type, T, Point, pt) \
+    _LITERAL(Type, T, Centimeters, cm) _LITERAL(Type, T, Millimeters, mm) _LITERAL(Type, T, Inches, in) \
     _LITERAL(Type, T, ValueHeight, vh) _LITERAL(Type, T, ValueWidth, vw) \
     _LITERAL(Type, T, ValueMin, vmin) _LITERAL(Type, T, ValueMin, vmax) \
     _LITERAL(Type, T, Point, )

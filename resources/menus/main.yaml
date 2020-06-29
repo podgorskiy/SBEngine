@@ -1,0 +1,21 @@
+Doc:
+  - name: Background
+    bg_color: 0xFF00FF
+    width: 90%
+    cleft: 50%
+    height: 95%
+    top: 20pt
+
+    child:
+      - name: child1
+        bg_color: 0x00FF00
+        width: 150px
+        cleft: 50%
+        height: 150px
+        ctop: 50%
+
+  - name: el2
+    width: 150px
+    height: 150px
+    top: 100px
+    left: 100px
