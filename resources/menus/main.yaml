@@ -1,6 +1,8 @@
+bg_color: FFFFFF
+
 blocks:
   - name: Background
-    bg_color: 0xFF00FF
+    bg_color: FF00FF
     width: 90%
     cleft: 50%
     height: 95%
@@ -8,14 +10,14 @@ blocks:
 
     blocks:
       - name: child1
-        bg_color: 0x00FF00
+        bg_color: 00FF00
         width: 150px
         cleft: 50%
         height: 150px
         ctop: 50%
 
       - name: child2
-        bg_color: 0x00FF00
+        bg_color: 00FF00
         width: 150px
         cleft: 50%
         height: 150px

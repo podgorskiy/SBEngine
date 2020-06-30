@@ -1,7 +1,7 @@
 #pragma once
 #include "View.h"
 #include "Render/Texture.h"
-#include "Render/color.h"
+#include "UI/color.h"
 #include <glm/glm.hpp>
 #include "Render/Shader.h"
 #include "Render/VertexSpec.h"

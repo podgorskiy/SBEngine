@@ -43,6 +43,8 @@ namespace serialization
 
 		bool AcceptChar(char c);
 
+		bool AcceptAnyChar(char& c);
+
 		bool AcceptCharIgnoreCase(char c);
 
 		bool AcceptStr(const char* str);
@@ -50,6 +52,10 @@ namespace serialization
 		bool AcceptStrIgnoreCase(const char* str);
 
 		bool AcceptDigit(int& d);
+
+		bool AcceptHexDigit(uint8_t& d);
+
+		bool AcceptHexByte(uint8_t& d);
 
 		bool AcceptWhiteSpace();
 
@@ -81,6 +87,14 @@ namespace serialization
 	{
 		while (AcceptWhiteSpace());
 		return (v = AcceptStrIgnoreCase("true")) || AcceptStrIgnoreCase("false");
+	}
+
+	inline bool Parser::AcceptAnyChar(char& c)
+	{
+		bool accept = *m_it != '\0';
+		c = *m_it;
+		m_it += accept;
+		return accept;
 	}
 
 	inline bool Parser::AcceptChar(char c)
@@ -133,6 +147,31 @@ namespace serialization
 		d = static_cast<int>(*m_it - '0');
 		m_it += accept;
 		return accept;
+	}
+
+	inline bool Parser::AcceptHexDigit(uint8_t& d)
+	{
+		char x = tolower(*m_it);
+		bool accept = x >= '0' && x <= '9';
+		bool accept_hex = x >= 'a' && x <= 'f';
+		d = static_cast<int>(x - '0') * accept + static_cast<int>(x - 'a' + 10) * accept_hex;
+		m_it += accept | accept_hex;
+		return accept | accept_hex;
+	}
+
+	inline bool Parser::AcceptHexByte(uint8_t& d)
+	{
+		uint8_t tmp;
+		if (AcceptHexDigit(tmp))
+		{
+			d = tmp;
+			if (AcceptHexDigit(tmp))
+			{
+				d = d * 0x10 + tmp;
+				return true;
+			}
+		}
+		return false;
 	}
 
 	inline bool Parser::AcceptWhiteSpace()

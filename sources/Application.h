@@ -9,6 +9,13 @@
 #include <glm/glm.hpp>
 
 
+namespace UI
+{
+	class Block;
+
+	typedef std::shared_ptr<Block> BlockPtr;
+}
+
 class Application: public IApplication
 {
 public:
@@ -38,6 +45,8 @@ private:
 	UI::Renderer m_uir;
 
 	Render::Uniform u_texture;
+
+	UI::BlockPtr root;
 
 	Object m_obj;
 };

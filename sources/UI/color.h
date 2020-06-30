@@ -10,8 +10,9 @@ namespace UI
 
 	inline color operator "" _c(unsigned long long c)
 	{
-		uint32_t x = c;
-		return (color&) (x);
+		const uint8_t* x = (uint8_t*)&c;
+
+		return color(x[3], x[2], x[1], x[0]);
 	}
 
 	inline color operator/(const color16& c, int d)

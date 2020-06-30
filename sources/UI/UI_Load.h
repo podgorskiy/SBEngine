@@ -1,6 +1,6 @@
 #pragma once
 #include "Block.h"
-#include "Serialization/parser.h"
+#include "Parsers.h"
 #include "Render/TextureReaders/TextureLoader.h"
 #include <yaml-cpp/yaml.h>
 #include <iostream>
@@ -8,37 +8,6 @@
 
 namespace UI
 {
-	inline bool AcceptUnit(serialization::Parser& parser, Constraint::Unit& unit)
-	{
-		if (parser.AcceptStr("px")) unit = Constraint::Pixel;
-		else if (parser.AcceptStr("%")) unit = Constraint::Percentage;
-		else if (parser.AcceptStr("pt")) unit = Constraint::Point;
-		else if (parser.AcceptStr("cm")) unit = Constraint::Centimeters;
-		else if (parser.AcceptStr("mm")) unit = Constraint::Millimeters;
-		else if (parser.AcceptStr("in")) unit = Constraint::Inches;
-		else if (parser.AcceptStr("vh")) unit = Constraint::ValueHeight;
-		else if (parser.AcceptStr("vw")) unit = Constraint::ValueWidth;
-		else if (parser.AcceptStr("vmin")) unit = Constraint::ValueMin;
-		else if (parser.AcceptStr("vmax")) unit = Constraint::ValueMax;
-		else return false;
-		return true;
-	}
-
-	inline bool ParseUnitValue(const char* x, Constraint::Unit& unit, float& value)
-	{
-		serialization::Parser parser(x);
-		if (parser.AcceptFloat(value))
-		{
-			parser.AcceptWhiteSpace();
-			if (AcceptUnit(parser, unit))
-			{
-				parser.AcceptWhiteSpace();
-				return parser.EOS();
-			}
-		}
-		return false;
-	}
-
 	inline void ReadConstraint(YAML::Node node, const char* name, Constraint::Type type, const BlockPtr& blk)
 	{
 		float value = 0;
@@ -54,6 +23,18 @@ namespace UI
 	}
 
 	bool BuildList(const BlockPtr& parent, const YAML::Node& sequence);
+
+	inline void LoadEmmitters(YAML::Node node, const BlockPtr& block)
+	{
+		auto bg_color = node["bg_color"];
+		if (bg_color.IsDefined())
+		{
+			color c;
+			ParseColor(bg_color.as<std::string>().c_str(), c);
+			spdlog::info("Color: {}", c);
+    	    block->EmplaceEmitter<SFillEmitter>(c);
+		}
+	}
 
 	inline BlockPtr BuildBlock(YAML::Node node)
 	{
@@ -72,6 +53,8 @@ namespace UI
 		ReadConstraint(node, "cbottom", Constraint::CenterBottom, block);
 		ReadConstraint(node, "cleft", Constraint::CenterLeft, block);
 		ReadConstraint(node, "cright", Constraint::CenterRight, block);
+
+		LoadEmmitters(node, block);
 
 		auto blocks = node["blocks"];
 		if (blocks.IsDefined())
@@ -98,11 +81,13 @@ namespace UI
 		using UI::operator""_c;
 		spdlog::info("Loading: {}", f.GetPath().string().c_str());
 
-		YAML::Node ui = YAML::Load(std::string(f));
+		YAML::Node root_node = YAML::Load(std::string(f));
 
 		auto root = UI::make_block({0_l, 100_wpe, 0_t, 100_hpe});
 
-		auto blocks = ui["blocks"];
+		LoadEmmitters(root_node, root);
+
+		auto blocks = root_node["blocks"];
 
 		ASSERT(blocks.IsSequence(), "'blocks' must be sequence, in file %s", f.GetPath().string().c_str())
 
