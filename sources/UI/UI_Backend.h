@@ -82,5 +82,7 @@ namespace UI
 		bgfx::VertexLayout m_vertexSpec;
 		fsal::File m_command_queue;
 		Scriber::IRenderAPIPtr m_text_backend;
+
+		bool m_gamma_correction;
 	};
 }

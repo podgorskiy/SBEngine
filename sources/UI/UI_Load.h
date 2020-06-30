@@ -27,12 +27,115 @@ namespace UI
 	inline void LoadEmmitters(YAML::Node node, const BlockPtr& block)
 	{
 		auto bg_color = node["bg_color"];
+		auto bg_img = node["bg_img"];
 		if (bg_color.IsDefined())
 		{
 			color c;
 			ParseColor(bg_color.as<std::string>().c_str(), c);
 			spdlog::info("Color: {}", c);
     	    block->EmplaceEmitter<SFillEmitter>(c);
+		}
+		else if (bg_img.IsDefined())
+		{
+			auto path = bg_img.as<std::string>();
+			auto texture = Render::LoadTexture(path);
+			spdlog::info("Texture: {}", path);
+
+			ImSize::Enum size = ImSize::Auto;
+			auto bg_size = node["bg_size"];
+			if (bg_size.IsDefined())
+			{
+				auto s = bg_size.as<std::string>();
+				if (s == "auto")
+				{
+					size = ImSize::Auto;
+				}
+				else if (s == "contain")
+				{
+					size = ImSize::Contain;
+				}
+				else if (s == "cover")
+				{
+					size = ImSize::Cover;
+				}
+				else if (s == "fill")
+				{
+					size = ImSize::Fill;
+				}
+				else
+				{
+					ASSERT(false, "Wrong bg_size %s", s.c_str());
+				}
+			}
+			ImPos::Enum pos = ImPos::LeftTop;
+			auto bg_pos = node["bg_pos"];
+			if (bg_pos.IsDefined())
+			{
+				auto s = bg_pos.as<std::string>();
+				if (s == "left_top")
+				{
+					pos = ImPos::LeftTop;
+				}
+				else if (s == "left_center")
+				{
+					pos = ImPos::leftCenter;
+				}
+				else if (s == "left_bottom")
+				{
+					pos = ImPos::leftBottom;
+				}
+				else if (s == "right_top")
+				{
+					pos = ImPos::RightTop;
+				}
+				else if (s == "right_center")
+				{
+					pos = ImPos::RightCenter;
+				}
+				else if (s == "right_bottom")
+				{
+					pos = ImPos::RightBottom;
+				}
+				else if (s == "center_top")
+				{
+					pos = ImPos::CenterTop;
+				}
+				else if (s == "center_center")
+				{
+					pos = ImPos::CenterCenter;
+				}
+				else if (s == "center_bottom")
+				{
+					pos = ImPos::CenterBottom;
+				}
+				else
+				{
+					ASSERT(false, "Wrong bg_pos %s", s.c_str());
+				}
+			}
+			ImTransform::Enum t = ImTransform::None;
+			auto bg_transform = node["bg_transform"];
+			if (bg_transform.IsDefined())
+			{
+				auto s = bg_transform.as<std::string>();
+				if (s == "none")
+				{
+					t = ImTransform::None;
+				}
+				else if (s == "flip_x")
+				{
+					t = ImTransform::FlipX;
+				}
+				else if (s == "flip_y")
+				{
+					t = ImTransform::FlipY;
+				}
+				else
+				{
+					ASSERT(false, "Wrong bg_transform %s", s.c_str());
+				}
+			}
+    	    block->EmplaceEmitter<SImageEmitter>(std::move(texture), size, pos, t);
 		}
 	}
 
@@ -94,53 +197,5 @@ namespace UI
 		BuildList(root, blocks);
 
 		return root;
-
-//		auto stage = UI::make_block({130_wvh, 130_hvh, 50_clpe, 60_ctpe});
-//		root->AddChild(stage);
-//		auto room = UI::make_block({100_wpe, 100_hpe, 5_tvh, 0_l}, 0xFF0000FF_c);
-//		stage->AddChild(room);
-
-//		auto tile1a = UI::make_block({20_wpe, 40_hpe, 30_tpe, 20_lpe}, m_texture, S::Contain, P::leftCenter);
-//		auto tile2a = UI::make_block({20_wpe, 40_hpe, 25_tpe, 30_lpe}, m_texture, S::Contain, P::leftCenter);
-//		auto tile3a = UI::make_block({20_wpe, 40_hpe, 20_tpe, 40_lpe}, m_texture, S::Contain, P::leftCenter);
-//
-//		auto tile1b = UI::make_block({20_wpe, 40_hpe, 35_tpe, 30_lpe}, m_texture, S::Contain, P::leftCenter);
-//		auto tile2b = UI::make_block({20_wpe, 40_hpe, 30_tpe, 40_lpe}, m_texture, S::Contain, P::leftCenter);
-//		auto tile3b = UI::make_block({20_wpe, 40_hpe, 25_tpe, 50_lpe}, m_texture, S::Contain, P::leftCenter);
-//
-//		auto tile1c = UI::make_block({20_wpe, 40_hpe, 40_tpe, 40_lpe}, m_texture, S::Contain, P::leftCenter);
-//		auto tile2c = UI::make_block({20_wpe, 40_hpe, 35_tpe, 50_lpe}, m_texture, S::Contain, P::leftCenter);
-//		auto tile3c = UI::make_block({20_wpe, 40_hpe, 30_tpe, 60_lpe}, m_texture, S::Contain, P::leftCenter);
-//
-//		auto wall1a = UI::make_block({20_wpe, 40_hpe, 18_tpe, 10_lpe}, m_texturew, S::Contain, P::leftCenter, T::FlipX);
-//		auto wall2a = UI::make_block({20_wpe, 40_hpe, 13_tpe, 20_lpe}, m_texturew, S::Contain, P::leftCenter, T::FlipX);
-//		auto wall3a = UI::make_block({20_wpe, 40_hpe,  8_tpe, 30_lpe}, m_texturew, S::Contain, P::leftCenter, T::FlipX);
-//
-//		auto wall1b = UI::make_block({20_wpe, 40_hpe,  8_tpe, 50_lpe}, m_texturew, S::Contain, P::leftCenter);
-//		auto wall2b = UI::make_block({20_wpe, 40_hpe, 13_tpe, 60_lpe}, m_texturew, S::Contain, P::leftCenter);
-//		auto wall3b = UI::make_block({20_wpe, 40_hpe, 18_tpe, 70_lpe}, m_texturew, S::Contain, P::leftCenter);
-
-//		room->AddChild(wall3a);
-//		room->AddChild(wall2a);
-//		room->AddChild(wall1a);
-//
-//		room->AddChild(wall1b);
-//		room->AddChild(wall2b);
-//		room->AddChild(wall3b);
-//
-//		room->AddChild(tile3a);
-//		room->AddChild(tile2a);
-//		room->AddChild(tile1a);
-//
-//		room->AddChild(tile3b);
-//		room->AddChild(tile2b);
-//		room->AddChild(tile1b);
-//
-//		room->AddChild(tile3c);
-//		room->AddChild(tile2c);
-//		room->AddChild(tile1c);
-
-
-		// m_texture = Render::LoadTexture("graphics/floor/2.png");
 	}
 }

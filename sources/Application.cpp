@@ -112,6 +112,9 @@ Application::Application(int argc, const char* const* argv)
 
 	bgfx::setViewName(ViewIds::Main, "Main");
 	bgfx::setViewName(ViewIds::GUI, "GUI");
+	bgfx::setViewMode(ViewIds::GUI, bgfx::ViewMode::Sequential);
+
+
 
 //	m_dr.Init();
 //
@@ -119,6 +122,7 @@ Application::Application(int argc, const char* const* argv)
 //		Render::debug_guard<> debug_lock;
 //	}
 	m_uir.Init();
+	m_uir.m_gamma_correction = config["srgb"].as<bool>();
 
 	root = UI::Load(fs().Open("menus/main.yaml"));
 }
@@ -231,6 +235,11 @@ void Application::OnKeyAction(int key, char asci, int action, int mods)
 	else if (action == 1)
 	{
 		// keyboard.ListenOnKeyUp(asci);
+		if (asci == 'R')
+		{
+            using fs = fsal::FileSystem;
+			root = UI::Load(fs().Open("menus/main.yaml"));
+		}
 	}
 }
 

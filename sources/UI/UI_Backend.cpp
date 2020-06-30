@@ -91,7 +91,7 @@ public:
 };
 
 
-Renderer::Renderer()
+Renderer::Renderer(): m_gamma_correction(false)
 {
 }
 
@@ -239,6 +239,12 @@ void Renderer::Draw()
 				color col;
 				m_command_queue.Read(rect);
 				m_command_queue.Read(col);
+
+				if (m_gamma_correction)
+				{
+					col = glm::pow(glm::vec4(col) / 255.0f, glm::vec4(2.2f)) * 255.0f;
+				}
+
 				uint16_t vertexIt = m_vertexArray.size();
 				m_vertexArray.emplace_back(rect.minp, glm::vec2(0.0, 0.0), col);
 				m_vertexArray.emplace_back(glm::vec2({rect.maxp.x, rect.minp.y}), glm::vec2(0.0, 0.0), col);

@@ -13,6 +13,13 @@ Render::TexturePtr Render::LoadTexture(fsal::Location path, fsal::FileSystem* fs
 	}
 
 	auto file = fs->Open(path);
+
+	if (!file)
+	{
+		spdlog::error("Could not load texture, no such file: {}", path.GetFullPath().string());
+		return nullptr;
+	}
+
 	auto p = file.Tell();
 	uint32_t w;
 	file.Read(w);
