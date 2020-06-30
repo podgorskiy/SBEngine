@@ -1,4 +1,4 @@
-Doc:
+blocks:
   - name: Background
     bg_color: 0xFF00FF
     width: 90%
@@ -6,8 +6,15 @@ Doc:
     height: 95%
     top: 20pt
 
-    child:
+    blocks:
       - name: child1
+        bg_color: 0x00FF00
+        width: 150px
+        cleft: 50%
+        height: 150px
+        ctop: 50%
+
+      - name: child2
         bg_color: 0x00FF00
         width: 150px
         cleft: 50%

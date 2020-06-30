@@ -8,7 +8,7 @@
 
 namespace UI
 {
-	bool AcceptUnit(serialization::Parser& parser, Constraint::Unit& unit)
+	inline bool AcceptUnit(serialization::Parser& parser, Constraint::Unit& unit)
 	{
 		if (parser.AcceptStr("px")) unit = Constraint::Pixel;
 		else if (parser.AcceptStr("%")) unit = Constraint::Percentage;
@@ -24,7 +24,7 @@ namespace UI
 		return true;
 	}
 
-	bool ParseUnitValue(const char* x, Constraint::Unit& unit, float& value)
+	inline bool ParseUnitValue(const char* x, Constraint::Unit& unit, float& value)
 	{
 		serialization::Parser parser(x);
 		if (parser.AcceptFloat(value))
@@ -39,7 +39,7 @@ namespace UI
 		return false;
 	}
 
-	void ReadConstraint(YAML::Node node, const char* name, Constraint::Type type, const BlockPtr& blk)
+	inline void ReadConstraint(YAML::Node node, const char* name, Constraint::Type type, const BlockPtr& blk)
 	{
 		float value = 0;
 		Constraint::Unit unit = Constraint::Pixel;
@@ -47,43 +47,67 @@ namespace UI
 		if (cnstr.IsDefined())
 		{
 			std::string x = cnstr.as<std::string>();
-			spdlog::info("{}: {}", name, x);
+			// spdlog::info("{}: {}", name, x);
 			ParseUnitValue(x.c_str(), unit, value);
 			blk->PushConstraint(Constraint(type, unit, value));
 		}
 	}
 
-	BlockPtr Load(const fsal::File& f)
+	bool BuildList(const BlockPtr& parent, const YAML::Node& sequence);
+
+	inline BlockPtr BuildBlock(YAML::Node node)
+	{
+		auto block = UI::make_block({});
+
+		spdlog::info("Node name: {}", node["name"].as<std::string>());
+		ReadConstraint(node, "width", Constraint::Width, block);
+		ReadConstraint(node, "height", Constraint::Height, block);
+
+		ReadConstraint(node, "top", Constraint::Top, block);
+		ReadConstraint(node, "bottom", Constraint::Bottom, block);
+		ReadConstraint(node, "left", Constraint::Left, block);
+		ReadConstraint(node, "right", Constraint::Right, block);
+
+		ReadConstraint(node, "ctop", Constraint::CenterTop, block);
+		ReadConstraint(node, "cbottom", Constraint::CenterBottom, block);
+		ReadConstraint(node, "cleft", Constraint::CenterLeft, block);
+		ReadConstraint(node, "cright", Constraint::CenterRight, block);
+
+		auto blocks = node["blocks"];
+		if (blocks.IsDefined())
+		{
+			BuildList(block, blocks);
+		}
+
+		return block;
+	}
+
+	inline bool BuildList(const BlockPtr& parent, const YAML::Node& sequence)
+	{
+		ASSERT(sequence.IsSequence(), "'blocks' must be sequence")
+		for (YAML::Node node: sequence)
+		{
+			parent->AddChild(BuildBlock(node));
+		}
+		return true;
+	}
+
+	inline BlockPtr Load(const fsal::File& f)
 	{
 		using namespace UI::lit;
 		using UI::operator""_c;
+		spdlog::info("Loading: {}", f.GetPath().string().c_str());
 
 		YAML::Node ui = YAML::Load(std::string(f));
 
 		auto root = UI::make_block({0_l, 100_wpe, 0_t, 100_hpe});
 
-		auto doc = ui["Doc"];
+		auto blocks = ui["blocks"];
 
-		ASSERT(doc.IsSequence(), "Doc must be sequence, in file %s", f.GetPath().string().c_str())
+		ASSERT(blocks.IsSequence(), "'blocks' must be sequence, in file %s", f.GetPath().string().c_str())
 
-		for (YAML::Node node: doc)
-		{
-			auto block = UI::make_block({});
+		BuildList(root, blocks);
 
-            spdlog::info("Node name: {}", node["name"].as<std::string>());
-			ReadConstraint(node, "width", Constraint::Width, block);
-			ReadConstraint(node, "height", Constraint::Height, block);
-
-			ReadConstraint(node, "top", Constraint::Top, block);
-			ReadConstraint(node, "bottom", Constraint::Bottom, block);
-			ReadConstraint(node, "left", Constraint::Left, block);
-			ReadConstraint(node, "right", Constraint::Right, block);
-
-			ReadConstraint(node, "ctop", Constraint::CenterTop, block);
-			ReadConstraint(node, "cbottom", Constraint::CenterBottom, block);
-			ReadConstraint(node, "cleft", Constraint::CenterLeft, block);
-			ReadConstraint(node, "cright", Constraint::CenterRight, block);
-		}
 		return root;
 
 //		auto stage = UI::make_block({130_wvh, 130_hvh, 50_clpe, 60_ctpe});
@@ -134,5 +158,4 @@ namespace UI
 
 		// m_texture = Render::LoadTexture("graphics/floor/2.png");
 	}
-
 }
