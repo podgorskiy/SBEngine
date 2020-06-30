@@ -141,8 +141,12 @@ namespace UI
 				case Constraint::Percentage: p *= cnst[i].value / 100.0f; break;
 				case Constraint::ValueHeight: p = r_size.y; p *= cnst[i].value / 100.0f; break;
 				case Constraint::ValueWidth: p = r_size.x; p *= cnst[i].value / 100.0f; break;
+				case Constraint::RValueHeight: p = p_size.y; p *= cnst[i].value / 100.0f; break;
+				case Constraint::RValueWidth: p = p_size.x; p *= cnst[i].value / 100.0f; break;
 				case Constraint::ValueMin: p = glm::min(r_size.x, r_size.y); p *= cnst[i].value / 100.0f; break;
 				case Constraint::ValueMax: p = glm::max(r_size.x, r_size.y); p *= cnst[i].value / 100.0f; break;
+				case Constraint::RValueMin: p = glm::min(p_size.x, p_size.y); p *= cnst[i].value / 100.0f; break;
+				case Constraint::RValueMax: p = glm::max(p_size.x, p_size.y); p *= cnst[i].value / 100.0f; break;
 				case Constraint::Pixel: p /= cnst[i].value / ppd; break;
 				case Constraint::Point: p = cnst[i].value; break;
 				case Constraint::Centimeters: p = cnst[i].value * (72.0f / 2.54f); break;
@@ -162,6 +166,12 @@ namespace UI
 			float w = 0.0f;
 			switch (mask[id])
 			{
+				case Constraint::Right:
+					l = r = pr - cst_values[id][id_map[Constraint::Right]];
+					break;
+				case Constraint::Left:
+					l = r = pl + cst_values[id][id_map[Constraint::Left]];
+					break;
 				case Constraint::Left | Constraint::Right:
 					l = pl + cst_values[id][id_map[Constraint::Left]];
 					r = pr - cst_values[id][id_map[Constraint::Right]];
@@ -176,6 +186,12 @@ namespace UI
 					break;
 				case Constraint::CenterLeft | Constraint::Width:
 					l = r = pl + cst_values[id][id_map[Constraint::CenterLeft]];
+					w = cst_values[id][id_map[Constraint::Width]];
+					r += w / 2.0f;
+					l -= w / 2.0f;
+					break;
+				case Constraint::Width:
+					l = r = (pr + pl) / 2.0f;
 					w = cst_values[id][id_map[Constraint::Width]];
 					r += w / 2.0f;
 					l -= w / 2.0f;

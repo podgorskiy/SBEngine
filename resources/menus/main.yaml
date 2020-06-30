@@ -1,6 +1,6 @@
 # Example menu
 
-bg_img: graphics/bg.png
+bg_img: graphics/bubble/bg.png
 bg_size: cover
 bg_pos: center_center
 
@@ -8,18 +8,37 @@ blocks:
   - name: Background
     bg_color: d5e6d5
     width: 90%
-    cleft: 50%
     bottom: 30pt
     top: 20pt
 
     blocks:
-      - name: child1
-        bg_img: graphics/up.png
+      - bg_img: graphics/bubble/up.png
         bg_size: contain
         width: 100%
         left: 0pt
-        height: 20vw
+        height: 12vw
         top: 0pt
+        blocks:
+          - left: 8%
+            top: 25%
+            width: 15%
+            height: 15vw%
+            blocks:
+              - bg_img: graphics/bubble/table.png
+                bg_size: contain
+                width: 100%
+                height: 31.7%
+                top: 0pt
+
+                blocks:
+                  - text: "01:48"
+                    left: 130vh%
+                    top: 65%
+                  - bg_img: graphics/bubble/clock.png
+                    bg_size: contain
+                    width: 120vh%
+                    height: 31.7%
+                    top: 0pt
 
       - name: child1
         bg_color: f7f6e9
@@ -38,10 +57,8 @@ blocks:
         blocks:
           - name: child1
             text: "Some text"
-            width: 100%
             left: 0pt
-            height: 20vw
-            top: 0pt
+            bottom: 100pt
 
   - name: el2
     width: 150px

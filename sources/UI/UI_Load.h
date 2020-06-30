@@ -149,8 +149,11 @@ namespace UI
 	inline BlockPtr BuildBlock(YAML::Node node)
 	{
 		auto block = UI::make_block({});
-
-		spdlog::info("Node name: {}", node["name"].as<std::string>());
+		auto name = node["name"];
+		if (name.IsDefined())
+		{
+			spdlog::info("Node name: {}", name.as<std::string>());
+		}
 		ReadConstraint(node, "width", Constraint::Width, block);
 		ReadConstraint(node, "height", Constraint::Height, block);
 

@@ -14,8 +14,12 @@ namespace UI
 		else if (parser.AcceptStr("cm")) unit = Constraint::Centimeters;
 		else if (parser.AcceptStr("mm")) unit = Constraint::Millimeters;
 		else if (parser.AcceptStr("in")) unit = Constraint::Inches;
+		else if (parser.AcceptStr("vh%")) unit = Constraint::RValueHeight;
+		else if (parser.AcceptStr("vw%")) unit = Constraint::RValueWidth;
 		else if (parser.AcceptStr("vh")) unit = Constraint::ValueHeight;
 		else if (parser.AcceptStr("vw")) unit = Constraint::ValueWidth;
+		else if (parser.AcceptStr("vmin%")) unit = Constraint::RValueMin;
+		else if (parser.AcceptStr("vmax%")) unit = Constraint::RValueMax;
 		else if (parser.AcceptStr("vmin")) unit = Constraint::ValueMin;
 		else if (parser.AcceptStr("vmax")) unit = Constraint::ValueMax;
 		else return false;
