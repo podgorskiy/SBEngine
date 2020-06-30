@@ -63,3 +63,14 @@ UI::SImageEmitter::SImageEmitter(Render::TexturePtr tex, ImSize::Enum size,  ImP
 	image_size(tex->GetSize()), tex(std::move(tex)), size(size), pos(pos), t(t)
 {
 }
+
+
+UI::STextEmitter::STextEmitter(std::string text): text(std::move(text))
+{
+}
+
+void UI::STextEmitter::operator()(UI::Renderer* r, const Block* block, float time, int flags)
+{
+	auto box = block->GetBox();
+	r->Text(box, text.c_str(), text.size());
+}

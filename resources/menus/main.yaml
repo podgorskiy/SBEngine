@@ -35,6 +35,14 @@ blocks:
         bottom: 10pt
         top: 23vw
 
+        blocks:
+          - name: child1
+            text: "Some text"
+            width: 100%
+            left: 0pt
+            height: 20vw
+            top: 0pt
+
   - name: el2
     width: 150px
     height: 150px

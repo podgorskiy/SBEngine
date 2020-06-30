@@ -28,6 +28,7 @@ namespace UI
 	{
 		auto bg_color = node["bg_color"];
 		auto bg_img = node["bg_img"];
+		auto text_node = node["text"];
 		if (bg_color.IsDefined())
 		{
 			color c;
@@ -136,6 +137,12 @@ namespace UI
 				}
 			}
     	    block->EmplaceEmitter<SImageEmitter>(std::move(texture), size, pos, t);
+		}
+		else if (text_node.IsDefined())
+		{
+			auto text = text_node.as<std::string>();
+			spdlog::info("Text: {}", text);
+    	    block->EmplaceEmitter<STextEmitter>(text);
 		}
 	}
 

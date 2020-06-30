@@ -41,6 +41,17 @@ namespace UI
 		ImTransform::Enum t;
 	};
 
+	class STextEmitter : public IEmitter
+	{
+	public:
+		STextEmitter(std::string text);
+
+		virtual void operator()(UI::Renderer*, const Block*, float time, int flags);
+
+	private:
+		std::string text;
+	};
+
 	struct EmitterSizeCheck
 	{
 		enum
