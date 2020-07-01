@@ -27,12 +27,13 @@ blocks:
         blocks:
           - bg_img: graphics/bubble/table.png
             bg_size: contain
+            clip_overflow: True
             left: 8%
             ctop: 40%
             width: 150pt
             height: 31.7sw%
             blocks:
-              - text: "01:48"
+              - text: "01:48DDD"
                 left: 125vh%
                 top: 74%
               - bg_img: graphics/bubble/clock.png

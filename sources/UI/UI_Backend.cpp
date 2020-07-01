@@ -218,6 +218,17 @@ void Renderer::SetUp(UI::View view_box)
 	bgfx::setViewTransform(ViewIds::GUI, nullptr, &prj[0]);
 }
 
+void Renderer::PushScissors(glm::iaabb2 box)
+{
+	m_command_queue.Write(C_PushScissors);
+	m_command_queue.Write(box);
+}
+
+void Renderer::PopScissors()
+{
+	m_command_queue.Write(C_PopScissors);
+}
+
 void Renderer::Draw()
 {
 	m_command_queue.Write(C_End);
@@ -290,8 +301,27 @@ void Renderer::Draw()
 			}
 			need_flush = true;
 			break;
+			case C_PushScissors:
+			{
+				glm::iaabb2 rect;
+				m_command_queue.Read(rect);
+				scissors_stack.push_back(rect);
+			}
+			need_flush = true;
+			break;
+			case C_PopScissors:
+			{
+				scissors_stack.pop_back();
+			}
+			need_flush = true;
+			break;
 		}
 
+		if (!scissors_stack.empty())
+		{
+			auto rect = scissors_stack.back();
+			bgfx::setScissor(rect.minp.x, rect.minp.y, rect.size().x, rect.size().y);
+		}
 
 		switch(cmd)
 		{

@@ -21,6 +21,7 @@ namespace UI
 	class Block
 	{
 		friend void Traverse(const BlockPtr& block, const BlockPtr& parent, const std::function<void(Block* block, Block* parent)>& lambda);
+		friend void Traverse(const BlockPtr& block, const BlockPtr& parent, const std::function<void(Block* block, Block* parent)>& lambda_pre, const std::function<void(Block* block, Block* parent)>& lambda_post);
 	public:
 		Block() = default;
 		~Block()
@@ -66,6 +67,8 @@ namespace UI
 		    new (userdata) R(std::forward<Ts>(args)...);
 		    has_emitter = true;
 		}
+		void EnableClipping(bool flag) { clip_overflow = flag; }
+		bool IsClipping() const { return clip_overflow; }
 	private:
 		IEmitter* GetEmitter() { return (IEmitter*)userdata; }
 
@@ -75,6 +78,7 @@ namespace UI
 		glm::vec2 m_rotation = glm::vec2(1.0f, 0.0f);
 		uint8_t userdata[EmitterSizeCheck::DataSize] = {0};
 		bool has_emitter = false;
+		bool clip_overflow = false;
 	};
 
     BlockPtr make_block(std::initializer_list<Constraint> constraints);

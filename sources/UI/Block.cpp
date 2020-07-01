@@ -191,12 +191,28 @@ namespace UI
 		}
 	}
 
+	inline void Traverse(const BlockPtr& block, const BlockPtr& parent, const std::function<void(Block* block, Block* parent)>& lambda_pre, const std::function<void(Block* block, Block* parent)>& lambda_post)
+	{
+		lambda_pre(block.get(), parent.get());
+		for (auto& child: block->m_childs)
+		{
+			Traverse(child, block, lambda_pre, lambda_post);
+		}
+		lambda_post(block.get(), parent.get());
+	}
+
 	void Render(UI::Renderer* renderer, const BlockPtr& root, View view, float time, int flags)
 	{
     	renderer->SetUp(view);
 		Traverse(root, nullptr, [renderer, time, flags](UI::Block* block, UI::Block* parent)
 		{
+			if (block->IsClipping())
+				renderer->PushScissors(glm::iaabb2(block->GetBox().minp, block->GetBox().maxp));
 			block->Emit(renderer, time, flags);
+		}, [renderer](UI::Block* block, UI::Block* parent)
+		{
+			if (block->IsClipping())
+				renderer->PopScissors();
 		});
 		renderer->Draw();
 	}

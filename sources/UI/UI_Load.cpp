@@ -212,6 +212,11 @@ namespace UI
 		{
 			BuildList(block, blocks, ctx, color_map);
 		}
+		auto clip_overflow = node["clip_overflow"];
+		if (clip_overflow.IsDefined())
+		{
+			block->EnableClipping(clip_overflow.as<bool>());
+		}
 
 		return block;
 	}
