@@ -1,6 +1,7 @@
 #pragma once
 #include "Block.h"
 #include "Parsers.h"
+#include "ExpressionEvaluator/ExpressionEvaluator.h"
 #include "Render/TextureReaders/TextureLoader.h"
 #include <yaml-cpp/yaml.h>
 #include <iostream>
@@ -8,7 +9,7 @@
 
 namespace UI
 {
-	inline void ReadConstraint(YAML::Node node, const char* name, Constraint::Type type, const BlockPtr& blk)
+	inline void ReadConstraint(YAML::Node node, const char* name, Constraint::Type type, const BlockPtr& blk, ExpessionEvaluator::INTContext& ctx)
 	{
 		float value = 0;
 		Constraint::Unit unit = Constraint::Pixel;
@@ -17,14 +18,40 @@ namespace UI
 		{
 			std::string x = cnstr.as<std::string>();
 			// spdlog::info("{}: {}", name, x);
-			ParseUnitValue(x.c_str(), unit, value);
-			blk->PushConstraint(Constraint(type, unit, value));
+			if (ParseUnitValue(x.c_str(), unit, value))
+			{
+				blk->PushConstraint(Constraint(type, unit, value));
+				return;
+			}
+			else
+			{
+				auto pos = x.find(':');
+				if (pos != std::string::npos)
+				{
+					x[pos] = '\0';
+					ctx.func("anonymus", x.c_str());
+					ctx.Link();
+					value = ctx.get_func("anonymus").Eval();
+					serialization::Parser parser(x.c_str() + pos + 1);
+					parser.AcceptWhiteSpace();
+					if (AcceptUnit(parser, unit))
+					{
+						parser.AcceptWhiteSpace();
+						if (parser.EOS())
+						{
+							blk->PushConstraint(Constraint(type, unit, value));
+							return;
+						}
+					}
+				}
+			}
+			spdlog::error("Error parsing {}: {}", name, x);
 		}
 	}
 
-	bool BuildList(const BlockPtr& parent, const YAML::Node& sequence);
+	bool BuildList(const BlockPtr& parent, const YAML::Node& sequence, ExpessionEvaluator::INTContext& ctx, const std::map<std::string, color>& color_map);
 
-	inline void LoadEmmitters(YAML::Node node, const BlockPtr& block)
+	inline void LoadEmmitters(YAML::Node node, const BlockPtr& block, const std::map<std::string, color>& color_map)
 	{
 		auto bg_color = node["bg_color"];
 		auto bg_img = node["bg_img"];
@@ -32,7 +59,18 @@ namespace UI
 		if (bg_color.IsDefined())
 		{
 			color c;
-			ParseColor(bg_color.as<std::string>().c_str(), c);
+			auto str = bg_color.as<std::string>();
+			str.erase(std::remove (str.begin(), str.end(), ' '), str.end());
+
+			if (ParseColor(str.c_str(), c))
+			{
+			}
+			else
+			{
+				auto it = color_map.find(str);
+				if (it != color_map.end())
+					c = it->second;
+			}
 			spdlog::info("Color: {}", c);
     	    block->EmplaceEmitter<SFillEmitter>(c);
 		}
@@ -146,7 +184,7 @@ namespace UI
 		}
 	}
 
-	inline BlockPtr BuildBlock(YAML::Node node)
+	inline BlockPtr BuildBlock(YAML::Node node, ExpessionEvaluator::INTContext& ctx, const std::map<std::string, color>& color_map)
 	{
 		auto block = UI::make_block({});
 		auto name = node["name"];
@@ -154,36 +192,36 @@ namespace UI
 		{
 			spdlog::info("Node name: {}", name.as<std::string>());
 		}
-		ReadConstraint(node, "width", Constraint::Width, block);
-		ReadConstraint(node, "height", Constraint::Height, block);
+		ReadConstraint(node, "width", Constraint::Width, block, ctx);
+		ReadConstraint(node, "height", Constraint::Height, block, ctx);
 
-		ReadConstraint(node, "top", Constraint::Top, block);
-		ReadConstraint(node, "bottom", Constraint::Bottom, block);
-		ReadConstraint(node, "left", Constraint::Left, block);
-		ReadConstraint(node, "right", Constraint::Right, block);
+		ReadConstraint(node, "top", Constraint::Top, block, ctx);
+		ReadConstraint(node, "bottom", Constraint::Bottom, block, ctx);
+		ReadConstraint(node, "left", Constraint::Left, block, ctx);
+		ReadConstraint(node, "right", Constraint::Right, block, ctx);
 
-		ReadConstraint(node, "ctop", Constraint::CenterTop, block);
-		ReadConstraint(node, "cbottom", Constraint::CenterBottom, block);
-		ReadConstraint(node, "cleft", Constraint::CenterLeft, block);
-		ReadConstraint(node, "cright", Constraint::CenterRight, block);
+		ReadConstraint(node, "ctop", Constraint::CenterTop, block, ctx);
+		ReadConstraint(node, "cbottom", Constraint::CenterBottom, block, ctx);
+		ReadConstraint(node, "cleft", Constraint::CenterLeft, block, ctx);
+		ReadConstraint(node, "cright", Constraint::CenterRight, block, ctx);
 
-		LoadEmmitters(node, block);
+		LoadEmmitters(node, block, color_map);
 
 		auto blocks = node["blocks"];
 		if (blocks.IsDefined())
 		{
-			BuildList(block, blocks);
+			BuildList(block, blocks, ctx, color_map);
 		}
 
 		return block;
 	}
 
-	inline bool BuildList(const BlockPtr& parent, const YAML::Node& sequence)
+	inline bool BuildList(const BlockPtr& parent, const YAML::Node& sequence, ExpessionEvaluator::INTContext& ctx, const std::map<std::string, color>& color_map)
 	{
 		ASSERT(sequence.IsSequence(), "'blocks' must be sequence")
 		for (YAML::Node node: sequence)
 		{
-			parent->AddChild(BuildBlock(node));
+			parent->AddChild(BuildBlock(node, ctx, color_map));
 		}
 		return true;
 	}
@@ -193,18 +231,50 @@ namespace UI
 		using namespace UI::lit;
 		using UI::operator""_c;
 		spdlog::info("Loading: {}", f.GetPath().string().c_str());
-
 		YAML::Node root_node = YAML::Load(std::string(f));
+
+		ExpessionEvaluator::INTContext ctx;
+		//ExpessionEvaluator::JITContext ctx;
+
+		auto vars = root_node["vars"];
+		auto colors = root_node["colors"];
+
+		std::vector<double> data;
+		if (vars.IsDefined())
+		{
+			data.resize(vars.size());
+			int i = 0;
+			for (auto var: vars)
+			{
+				std::string key = var.first.as<std::string>();
+				auto value = var.second.as<double>();
+				data[i] = value;
+				ctx.var(key, &data[i]);
+				++i;
+			}
+		}
+		std::map<std::string, color> color_map;
+		if (colors.IsDefined())
+		{
+			for (auto c: colors)
+			{
+				std::string key = c.first.as<std::string>();
+				auto value = c.second.as<std::string>();
+				color col;
+				if (ParseColor(value.c_str(), col))
+					color_map[key] = col;
+			}
+		}
 
 		auto root = UI::make_block({0_l, 100_wpe, 0_t, 100_hpe});
 
-		LoadEmmitters(root_node, root);
+		LoadEmmitters(root_node, root, color_map);
 
 		auto blocks = root_node["blocks"];
 
 		ASSERT(blocks.IsSequence(), "'blocks' must be sequence, in file %s", f.GetPath().string().c_str())
 
-		BuildList(root, blocks);
+		BuildList(root, blocks, ctx, color_map);
 
 		return root;
 	}

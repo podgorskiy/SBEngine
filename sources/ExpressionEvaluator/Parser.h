@@ -263,38 +263,47 @@ namespace ExpessionEvaluator
 			auto factor = Factor();
 			if (factor)
 			{
-				if (Accept(Lexer::MUL))
+				while (true)
 				{
-					auto term = Term();
-					if (term)
+					if (Accept(Lexer::MUL))
 					{
-						return new AST::MulNode(token, std::unique_ptr<AST::INode>(factor),
-						                        std::unique_ptr<AST::INode>(term)); // Term -> Factor * Factor
+				        auto factor2 = Factor();
+						if (factor2)
+						{
+							factor = new AST::MulNode(token, std::unique_ptr<AST::INode>(factor),
+													  std::unique_ptr<AST::INode>(factor2)); // Term -> Factor * Factor
+						}
+						else
+						{
+							std::string result = GetLastTokenUnderscore();
+							SetError("Error, expected term, but \"%s\" was found at position %d.\n%s",
+							         GetLastToken().GetSymbolSequence().ToString().c_str(),
+							         GetLastToken().GetPosition(),
+							         result.c_str());
+							return nullptr;
+						}
+					}
+					else if (Accept(Lexer::DIV))
+					{
+				        auto factor2 = Factor();
+						if (factor2)
+						{
+							factor = new AST::DivNode(token, std::unique_ptr<AST::INode>(factor),
+							                        std::unique_ptr<AST::INode>(factor2)); // Block -> Term / Block
+						}
+						else
+						{
+							std::string result = GetLastTokenUnderscore();
+							SetError("Error, expected term, but \"%s\" was found at position %d.\n%s",
+							         GetLastToken().GetSymbolSequence().ToString().c_str(),
+							         GetLastToken().GetPosition(),
+							         result.c_str());
+							return nullptr;
+						}
 					}
 					else
 					{
-						std::string result = GetLastTokenUnderscore();
-						SetError("Error, expected term, but \"%s\" was found at position %d.\n%s",
-						         GetLastToken().GetSymbolSequence().ToString().c_str(), GetLastToken().GetPosition(),
-						         result.c_str());
-						return nullptr;
-					}
-				}
-				else if (Accept(Lexer::DIV))
-				{
-					auto term = Term();
-					if (term)
-					{
-						return new AST::DivNode(token, std::unique_ptr<AST::INode>(factor),
-						                        std::unique_ptr<AST::INode>(term)); // Block -> Term / Block
-					}
-					else
-					{
-						std::string result = GetLastTokenUnderscore();
-						SetError("Error, expected term, but \"%s\" was found at position %d.\n%s",
-						         GetLastToken().GetSymbolSequence().ToString().c_str(), GetLastToken().GetPosition(),
-						         result.c_str());
-						return nullptr;
+						break;
 					}
 				}
 				return factor; // Term -> factor

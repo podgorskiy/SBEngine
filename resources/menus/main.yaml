@@ -1,13 +1,19 @@
 # Example menu
 
+vars:
+  container_width: 95
+
+colors:
+  window_bg: d5e6d5
+  panel_bg: f7f6e9
+
 bg_img: graphics/bubble/bg.png
 bg_size: cover
 bg_pos: center_center
 
 blocks:
-  - name: Background
-    bg_color: d5e6d5
-    width: 90%
+  - bg_color: window_bg
+    width: container_width:%
     bottom: 30pt
     top: 20pt
 
@@ -16,35 +22,35 @@ blocks:
         bg_size: contain
         width: 100%
         left: 0pt
-        height: 12vw
+        height: 199 / 1536 * 100 :vw%
         top: 0pt
         blocks:
           - bg_img: graphics/bubble/table.png
             bg_size: contain
             left: 8%
             ctop: 40%
-            width: 200pt
+            width: 150pt
             height: 31.7sw%
             blocks:
               - text: "01:48"
-                left: 130vh%
-                top: 65%
+                left: 125vh%
+                top: 74%
               - bg_img: graphics/bubble/clock.png
                 bg_size: contain
                 width: 120vh%
                 left: -10vh%
-                height: 115.85sw%
+                height: 95 / 82 * 100 :sw%
                 top: -10vh%
 
       - name: child1
-        bg_color: f7f6e9
+        bg_color: panel_bg
         width: 150pt
         left: 10pt
         bottom: 10pt
         top: 23vw
 
       - name: child2
-        bg_color: f7f6e9
+        bg_color: panel_bg
         left: 170pt
         right: 10pt
         bottom: 10pt
