@@ -51,17 +51,6 @@ namespace UI
 		const stack::vector<Constraint, 4>& GetConstraints() const { return m_constraints; };
 		void Emit(UI::Renderer* r, float time = 0.0f, int flags = 0) {	if (has_emitter) (*GetEmitter())(r, this, time, flags); }
 
-//		virtual inline void Event(EventTouch* event)
-//		{
-//			for(int i=0,l=m_childs.size();i<l;i++)
-//			{
-//				if( m_childs[i] != NULL )
-//					m_childs[i]->Event( event );
-//				if(event->IsConsumed())
-//					break;
-//				l=m_childs.size();
-//			}
-//		}
 		template <typename R, typename... Ts>
 		void EmplaceEmitter(Ts&&... args) {
 		    new (userdata) R(std::forward<Ts>(args)...);
