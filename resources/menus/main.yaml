@@ -19,26 +19,22 @@ blocks:
         height: 12vw
         top: 0pt
         blocks:
-          - left: 8%
-            top: 25%
-            width: 15%
-            height: 15vw%
+          - bg_img: graphics/bubble/table.png
+            bg_size: contain
+            left: 8%
+            ctop: 40%
+            width: 200pt
+            height: 31.7sw%
             blocks:
-              - bg_img: graphics/bubble/table.png
+              - text: "01:48"
+                left: 130vh%
+                top: 65%
+              - bg_img: graphics/bubble/clock.png
                 bg_size: contain
-                width: 100%
-                height: 31.7%
-                top: 0pt
-
-                blocks:
-                  - text: "01:48"
-                    left: 130vh%
-                    top: 65%
-                  - bg_img: graphics/bubble/clock.png
-                    bg_size: contain
-                    width: 120vh%
-                    height: 31.7%
-                    top: 0pt
+                width: 120vh%
+                left: -10vh%
+                height: 115.85sw%
+                top: -10vh%
 
       - name: child1
         bg_color: f7f6e9

@@ -16,6 +16,8 @@ namespace UI
 		else if (parser.AcceptStr("in")) unit = Constraint::Inches;
 		else if (parser.AcceptStr("vh%")) unit = Constraint::RValueHeight;
 		else if (parser.AcceptStr("vw%")) unit = Constraint::RValueWidth;
+		else if (parser.AcceptStr("sh%")) unit = Constraint::SValueHeight;
+		else if (parser.AcceptStr("sw%")) unit = Constraint::SValueWidth;
 		else if (parser.AcceptStr("vh")) unit = Constraint::ValueHeight;
 		else if (parser.AcceptStr("vw")) unit = Constraint::ValueWidth;
 		else if (parser.AcceptStr("vmin%")) unit = Constraint::RValueMin;

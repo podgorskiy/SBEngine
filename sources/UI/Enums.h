@@ -8,12 +8,12 @@ namespace UI
 	{
 		enum Type : uint8_t
 		{
-			CnstL = 1u << 0u,
-			CnstR = 1u << 1u,
-			CnstS = 1u << 2u,
-			CnstC = 1u << 3u,
+			CnstL = 1u << 0u, // Left
+			CnstR = 1u << 1u, // Right
+			CnstS = 1u << 2u, // Width
+			CnstC = 1u << 3u, // Size
 			CnstVp = 4u,
-			CnstV = 1u << CnstVp,
+			CnstV = 1u << CnstVp, // Vertical flag
 
 			Invalid = 0x0,
 			Left = CnstL,
@@ -35,6 +35,8 @@ namespace UI
 			ValueWidth,
 			RValueHeight,
 			RValueWidth,
+			SValueHeight,
+			SValueWidth,
 			ValueMin,
 			ValueMax,
 			RValueMin,

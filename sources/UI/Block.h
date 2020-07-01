@@ -126,15 +126,18 @@ namespace UI
 	{
 		uint8_t mask[2] = {0};
 		float cst_values[2][5];
-		uint8_t id_map[16] = {0xff, 0x00, 0x01, 0xff, 0x02, 0xff, 0xff, 0xff, 0xff, 0x03, 0x04, 0xff, 0xff, 0xff, 0xff, 0xff};
+		constexpr uint8_t id_map[16] = {
+				0xff, 0x00, 0x01, 0xff, // 0000 .. 0011, NA,    Left,   Right,  NA
+				0x02, 0xff, 0xff, 0xff, // 0100 .. 0111, Width, NA,     NA,     NA
+				0xff, 0x03,	0x04, 0xff, // 1000 .. 1011, NA,    CLeft,  CRight, NA
+				0xff, 0xff, 0xff, 0xff  // 1100 .. 1111, NA,    NA,     NA,     NA
+		};
+
 		auto p_size = parent_box.size();
 		auto r_size = root_box.size();
 		for (int i = 0; i < count; ++i)
 		{
 			int id = uint8_t(cnst[i].type & Constraint::CnstV) >> Constraint::CnstVp;
-			mask[id] |= uint8_t(cnst[i].type & uint8_t(Constraint::CnstV - 1));
-			int sid = id_map[cnst[i].type & uint8_t(Constraint::CnstV - 1)];
-			assert(sid != 0xff);
 			float p = p_size[id];
 			switch(cnst[i].unit)
 			{
@@ -152,12 +155,17 @@ namespace UI
 				case Constraint::Centimeters: p = cnst[i].value * (72.0f / 2.54f); break;
 				case Constraint::Millimeters: p = cnst[i].value * (72.0f / 25.4f); break;
 				case Constraint::Inches: p = cnst[i].value * 72.0f; break;
+				default:
+					continue;
 			}
+			mask[id] |= uint8_t(cnst[i].type & uint8_t(Constraint::CnstV - 1));
+			int sid = id_map[cnst[i].type & uint8_t(Constraint::CnstV - 1)];
+			assert(sid != 0xff);
 			cst_values[id][sid] = p;
 		}
 
 		glm::aabb2 box = parent_box;
-		for (int id = 0; id < 2; ++id)
+		for (uint8_t id = 0; id < 2; ++id)
 		{
 			float pl = parent_box.minp[id];
 			float pr = parent_box.maxp[id];
@@ -169,8 +177,14 @@ namespace UI
 				case Constraint::Right:
 					l = r = pr - cst_values[id][id_map[Constraint::Right]];
 					break;
+				case Constraint::CenterRight:
+					l = r = pr - cst_values[id][id_map[Constraint::CenterRight]];
+					break;
 				case Constraint::Left:
 					l = r = pl + cst_values[id][id_map[Constraint::Left]];
+					break;
+				case Constraint::CenterLeft:
+					l = r = pl + cst_values[id][id_map[Constraint::CenterLeft]];
 					break;
 				case Constraint::Left | Constraint::Right:
 					l = pl + cst_values[id][id_map[Constraint::Left]];
@@ -215,6 +229,48 @@ namespace UI
 			}
 			box.minp[id] = l;
 			box.maxp[id] = r;
+		}
+		auto s_size = box.size();
+		for (int i = 0; i < count; ++i)
+		{
+			int id = uint8_t(cnst[i].type & Constraint::CnstV) >> Constraint::CnstVp;
+			float p;
+			switch(cnst[i].unit)
+			{
+				case Constraint::SValueHeight: p = s_size.y; p *= cnst[i].value / 100.0f;
+				switch (mask[id])
+				{
+					case Constraint::Right:
+						box.minp[id] = box.maxp[id] - p;
+						break;
+					case Constraint::Left:
+						box.maxp[id] = box.minp[id] + p;
+						break;
+					case Constraint::CenterLeft:
+					case Constraint::CenterRight:
+						box.minp[id] -= p / 2;
+						box.maxp[id] += p / 2;
+						break;
+				}
+				break;
+				case Constraint::SValueWidth: p = s_size.x; p *= cnst[i].value / 100.0f;
+				switch (mask[id])
+				{
+					case Constraint::Right:
+						box.minp[id] = box.maxp[id] - p;
+						break;
+					case Constraint::Left:
+						box.maxp[id] = box.minp[id] + p;
+						break;
+					case Constraint::CenterLeft:
+					case Constraint::CenterRight:
+						box.minp[id] -= p / 2;
+						box.maxp[id] += p / 2;
+				}
+				break;
+				default:
+					continue;
+			}
 		}
 		return box;
 	}

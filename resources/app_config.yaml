@@ -5,5 +5,5 @@ flush_after_render: True
 vsync: False
 flip_after_render: False
 srgb: True
-debug_text: True
-debug_stats: True
+debug_text: False
+debug_stats: False
