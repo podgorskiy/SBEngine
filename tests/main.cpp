@@ -137,7 +137,7 @@ TEST_CASE("[fsal] Filepath normalization")
 TEST_CASE("[fsal] ReadWriteToFile")
 {
 	fsal::FileSystem fs;
-	fs.ClearSearchPaths().PushSearchPath("../");
+	fs.PushSearchPath("../");
 
 	{
 		fsal::File f = fs.Open(fsal::Location("test.txt", fsal::Location::kCurrentDirectory), fsal::kWrite);
@@ -150,12 +150,13 @@ TEST_CASE("[fsal] ReadWriteToFile")
 		std::string str = f;
 				CHECK(str == std::string("asdasdasd"));
 	}
+	fs.PopSearchPath();
 }
 
 TEST_CASE("[fsal] CreateZIP")
 {
 	fsal::FileSystem fs;
-	fs.ClearSearchPaths().PushSearchPath("../");
+	fs.PushSearchPath("../");
 	{
 		auto zipfile = fs.Open("out_archive.zip", fsal::kWrite);
 		fsal::ZipWriter zip(zipfile);
@@ -166,12 +167,13 @@ TEST_CASE("[fsal] CreateZIP")
 		zip.AddFile("tests/main.cpp", fs.Open("tests/main.cpp"));
 		zip.CreateDirectory("tests2");
 	}
+	fs.PopSearchPath();
 }
 
 TEST_CASE("[fsal] MountZIP")
 {
 	fsal::FileSystem fs;
-	fs.ClearSearchPaths().PushSearchPath("../");
+	fs.PushSearchPath("../");
 	{
 		auto zipfile = fs.Open("out_archive.zip", fsal::kRead, true);
 		CHECK(zipfile);
@@ -191,6 +193,7 @@ TEST_CASE("[fsal] MountZIP")
 			spdlog::info("\t{}", s.c_str());
 		}
 	}
+	fs.PopSearchPath();
 }
 
 TEST_CASE("[stack] vector")

@@ -28,12 +28,18 @@ public:
 	void OnKeyAction(int key, char asci, int action, int mods);
 	void OnKey(int key, int scancode, int action, int mods) override {};
 	void OnSetChar(unsigned int c) override  {};
-	void OnMouseButton(int button, int action, int mods) override {};
-	void OnMouseMove(glm::vec2 pos) override {};
+	void OnMouseButton(int button, int action, int mods) override;
+	void OnMouseMove(glm::vec2 pos) override;
 	void OnScroll(glm::vec2 offset) override {};
 	void OnIconification(int iconified) override {};
 	void OnWindowClose() override {};
-	void SetMouse(float x, float y, bool mouseDown) override {};
+	void SetMouse(float x, float y, bool mouseDown) override
+	{
+		mouse_pos = glm::vec2(x, y);
+		mouse_left_click_prev = mouse_left_click;
+		mouse_left_click = mouseDown;
+	};
+
 
 private:
 	uint32_t m_reset_flags = 0;
@@ -48,5 +54,8 @@ private:
 
 	UI::BlockPtr root;
 
+	glm::vec2 mouse_pos;
+	bool mouse_left_click = false;
+	bool mouse_left_click_prev = false;
 	Object m_obj;
 };

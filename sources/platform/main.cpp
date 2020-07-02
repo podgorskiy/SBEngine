@@ -239,14 +239,23 @@ int main(int argc, const char* const* argv)
 //			io.AddInputCharacter((unsigned short)c);
 		});
 
-		glfwSetScrollCallback(window, [](GLFWwindow*, double /*xoffset*/, double yoffset)
+		glfwSetScrollCallback(window, [](GLFWwindow* window, double /*xoffset*/, double yoffset)
 		{
+			auto app = static_cast<Application*>(glfwGetWindowUserPointer(window));
 //			ImGuiIO& io = ImGui::GetIO();
 //			io.MouseWheel += (float)yoffset * 2.0f;
 		});
 
-		glfwSetMouseButtonCallback(window, [](GLFWwindow*, int button, int action, int /*mods*/)
+		glfwSetCursorPosCallback(window, [](GLFWwindow* window, double x, double y)
 		{
+			auto app = static_cast<Application*>(glfwGetWindowUserPointer(window));
+			app->OnMouseMove(glm::vec2(x, y));
+		});
+
+		glfwSetMouseButtonCallback(window, [](GLFWwindow* window, int button, int action, int mods)
+		{
+			auto app = static_cast<Application*>(glfwGetWindowUserPointer(window));
+			app->OnMouseButton(button, action, mods);
 //			ImGuiIO& io = ImGui::GetIO();
 //
 //			if (button >= 0 && button < 3)

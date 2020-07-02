@@ -207,7 +207,7 @@ namespace UI
 		Traverse(root, nullptr, [renderer, time, flags](UI::Block* block, UI::Block* parent)
 		{
 			if (block->IsClipping())
-				renderer->PushScissors(glm::iaabb2(block->GetBox().minp, block->GetBox().maxp));
+				renderer->PushScissors(block->GetBox());
 			block->Emit(renderer, time, flags);
 		}, [renderer](UI::Block* block, UI::Block* parent)
 		{
@@ -225,6 +225,18 @@ namespace UI
 			const auto& cnst = block->GetConstraints();
 			glm::aabb2 current_box = SolveConstraints(view.view_box, parent_box, cnst.data(), cnst.size(), view.GetPixelPerDotScalingFactor());
 			block->SetBox(current_box);
+		});
+	}
+
+	void Action(const BlockPtr& block, const View& view, glm::vec2 mouse_pos, bool trigger, bool mouse_left_click)
+	{
+		Traverse(block, nullptr, [view, mouse_pos, trigger, mouse_left_click](Block* block, Block* parent)
+		{
+			glm::aabb2 box = block->GetBox();
+			if (glm::is_inside(box, mouse_pos))
+			{
+				block->SetBox(glm::aabb2(box.minp - 10.0f , box.maxp + 10.0f));
+			}
 		});
 	}
 }

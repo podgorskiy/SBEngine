@@ -1,5 +1,5 @@
 backend: "OpenGL"
-run_tests: False
+run_tests: True
 msaa16: False
 flush_after_render: True
 vsync: False

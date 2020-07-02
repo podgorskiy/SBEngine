@@ -115,7 +115,6 @@ Application::Application(int argc, const char* const* argv)
 	bgfx::setViewMode(ViewIds::GUI, bgfx::ViewMode::Sequential);
 
 
-
 //	m_dr.Init();
 //
 //	{
@@ -218,7 +217,9 @@ void Application::Update(float time, float deltaTime)
 //		room->AddChild(tile2c);
 //		room->AddChild(tile1c);
 
+		bool trigger = !mouse_left_click && mouse_left_click_prev;
 		UI::DoLayout(root, view_box);
+		UI::Action(root, view_box, mouse_pos, trigger, mouse_left_click);
 		UI::Render(&m_uir, root, view_box);
 	}
 
@@ -241,6 +242,16 @@ void Application::OnKeyAction(int key, char asci, int action, int mods)
 			root = UI::Load(fs().Open("menus/main.yaml"));
 		}
 	}
+}
+
+void Application::OnMouseButton(int button, int action, int mods)
+{
+
+}
+
+void Application::OnMouseMove(glm::vec2 pos)
+{
+
 }
 
 void Application::OnWindowResize(glm::ivec2 size)

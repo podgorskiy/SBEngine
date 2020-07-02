@@ -83,4 +83,6 @@ namespace UI
 	void Render(UI::Renderer* renderer, const BlockPtr& root, View view, float time = 0.0f, int flags = 0);
 
 	void DoLayout(const BlockPtr& block, const View& view);
+
+	void Action(const BlockPtr& root, const View& view, glm::vec2 mouse_pos, bool trigger, bool mouse_left_click);
 }

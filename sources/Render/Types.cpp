@@ -141,15 +141,35 @@ bool VarType::IsSampler(Render::VarType::Type t)
 
 TEST_CASE("GL_TYPES")
 {
-	for (int i = 0; i < Render::VarType::COUNT; ++i)
+	VarType::Type supported_types[] = {
+			VarType::SAMPLER_1D,
+			VarType::SAMPLER_2D,
+			VarType::SAMPLER_3D,
+			VarType::SAMPLER_1D_SHADOW,
+			VarType::SAMPLER_2D_SHADOW,
+			VarType::SAMPLER_CUBE,
+			VarType::FLOAT_VEC4,
+			VarType::FLOAT_MAT3,
+			VarType::FLOAT_MAT4,
+	};
+
+	for (int i = 1; i < sizeof(supported_types) / sizeof(supported_types[0]); ++i)
 	{
-		auto type = (Render::VarType::Type)i;
+		auto type = supported_types[i];
 
 		auto gltype = Render::VarType::GetBGFXMapping(type);
 		auto enumtype = Render::VarType::FromBGFXMapping(gltype);
 
 		spdlog::info("{:<25}{:#x}", Render::VarType::GetTypeName(type), gltype);
-		CHECK_EQ(enumtype, i);
+		bool check = (enumtype == type || (enumtype == VarType::SAMPLER_2D && (
+				type == VarType::SAMPLER_1D ||
+				type == VarType::SAMPLER_2D ||
+				type == VarType::SAMPLER_3D ||
+				type == VarType::SAMPLER_1D_SHADOW ||
+				type == VarType::SAMPLER_2D_SHADOW ||
+				type == VarType::SAMPLER_CUBE
+				)));
+		CHECK(check);
 	}
 
 	CHECK(Render::VarType::IsInteger(Render::VarType::BYTE));

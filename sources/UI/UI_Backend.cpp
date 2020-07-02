@@ -93,6 +93,8 @@ public:
 
 Renderer::Renderer(): m_gamma_correction(false)
 {
+	encode_sciscors.set_any();
+	scissoring_enabled = false;
 }
 
 Renderer::~Renderer()
@@ -182,10 +184,13 @@ void Renderer::Rect(glm::aabb2 rect, color col)
 
 void Renderer::Rect(glm::aabb2 rect, bgfx::TextureHandle texture, glm::aabb2 uv, int8_t rounding)
 {
-	m_command_queue.Write(C_RectTex);
-	m_command_queue.Write(rect);
-	m_command_queue.Write(uv);
-	m_command_queue.Write(texture);
+	if (glm::is_overlapping(encode_sciscors, rect))
+	{
+		m_command_queue.Write(C_RectTex);
+		m_command_queue.Write(rect);
+		m_command_queue.Write(uv);
+		m_command_queue.Write(texture);
+	}
 }
 
 void Renderer::Text(glm::aabb2 rect, const char* text, size_t len)
@@ -218,15 +223,35 @@ void Renderer::SetUp(UI::View view_box)
 	bgfx::setViewTransform(ViewIds::GUI, nullptr, &prj[0]);
 }
 
-void Renderer::PushScissors(glm::iaabb2 box)
+void Renderer::PushScissors(glm::aabb2 box)
 {
-	m_command_queue.Write(C_PushScissors);
+	m_command_queue.Write(C_SetScissors);
+
+	if (!scissors_stack.empty())
+	{
+		auto rect = scissors_stack.back();
+		box &= rect;
+	}
+	encode_sciscors = box;
+	scissors_stack.push_back(box);
 	m_command_queue.Write(box);
 }
 
 void Renderer::PopScissors()
 {
-	m_command_queue.Write(C_PopScissors);
+	scissors_stack.pop_back();
+	if (!scissors_stack.empty())
+	{
+		auto box = scissors_stack.back();
+		m_command_queue.Write(C_SetScissors);
+		m_command_queue.Write(box);
+		encode_sciscors = box;
+	}
+	else
+	{
+		m_command_queue.Write(C_ResetScissors);
+		encode_sciscors.set_any();
+	}
 }
 
 void Renderer::Draw()
@@ -301,26 +326,29 @@ void Renderer::Draw()
 			}
 			need_flush = true;
 			break;
-			case C_PushScissors:
+			case C_SetScissors:
 			{
-				glm::iaabb2 rect;
-				m_command_queue.Read(rect);
-				scissors_stack.push_back(rect);
+				m_command_queue.Read(current_sciscors);
+				scissoring_enabled = true;
 			}
 			need_flush = true;
 			break;
-			case C_PopScissors:
+			case C_ResetScissors:
 			{
-				scissors_stack.pop_back();
+				current_sciscors.reset();
+				scissoring_enabled = false;
 			}
 			need_flush = true;
 			break;
 		}
 
-		if (!scissors_stack.empty())
+		if (scissoring_enabled)
 		{
-			auto rect = scissors_stack.back();
-			bgfx::setScissor(rect.minp.x, rect.minp.y, rect.size().x, rect.size().y);
+			bgfx::setScissor(
+					(int)current_sciscors.minp.x,
+					(int)current_sciscors.minp.y,
+					(int)current_sciscors.size().x,
+					(int)current_sciscors.size().y);
 		}
 
 		switch(cmd)

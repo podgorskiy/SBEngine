@@ -19,8 +19,8 @@ namespace UI
 		C_RectCol,
 		C_RectTex,
 		C_Text,
-		C_PushScissors,
-		C_PopScissors,
+		C_SetScissors,
+		C_ResetScissors,
 		C_End
 	};
 
@@ -72,13 +72,17 @@ namespace UI
 
 		int GetGlyphTexture() const;
 
-		void PushScissors(glm::iaabb2 box);
+		void PushScissors(glm::aabb2 box);
 		void PopScissors();
 
 		Scriber::Driver m_text_driver;
 		fsal::FileSystem m_fs;
 
-		std::vector<glm::iaabb2> scissors_stack;
+		std::vector<glm::aabb2> scissors_stack;
+		glm::aabb2 current_sciscors;
+		glm::aabb2 encode_sciscors;
+		bool scissoring_enabled = false;
+
 		std::vector<glm::vec2> m_path;
 		std::vector<uint16_t> m_indexArray;
 		std::vector<Vertex> m_vertexArray;
