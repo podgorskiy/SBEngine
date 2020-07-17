@@ -6,7 +6,7 @@
 #include <memory>
 #include <chrono>
 #include <yaml-cpp/yaml.h>
-#include "imgui.h"
+#include "imgui/imgui.h"
 
 #define NOMINMAX
 #ifdef _WIN32
@@ -40,6 +40,34 @@ static void InstallCallbacks(GLFWwindow* window)
 	glfwSetCharCallback(window, io::CharCallback);
 	glfwSetScrollCallback(window, io::ScrollCallback);
 	glfwSetMouseButtonCallback(window, io::MouseButtonCallback);
+
+	ImGuiIO& io = ImGui::GetIO();
+	io.KeyMap[ImGuiKey_Tab] = GLFW_KEY_TAB;
+	io.KeyMap[ImGuiKey_LeftArrow] = GLFW_KEY_LEFT;
+	io.KeyMap[ImGuiKey_RightArrow] = GLFW_KEY_RIGHT;
+	io.KeyMap[ImGuiKey_UpArrow] = GLFW_KEY_UP;
+	io.KeyMap[ImGuiKey_DownArrow] = GLFW_KEY_DOWN;
+	io.KeyMap[ImGuiKey_PageUp] = GLFW_KEY_PAGE_UP;
+	io.KeyMap[ImGuiKey_PageDown] = GLFW_KEY_PAGE_DOWN;
+	io.KeyMap[ImGuiKey_Home] = GLFW_KEY_HOME;
+	io.KeyMap[ImGuiKey_End] = GLFW_KEY_END;
+	io.KeyMap[ImGuiKey_Insert] = GLFW_KEY_INSERT;
+	io.KeyMap[ImGuiKey_Delete] = GLFW_KEY_DELETE;
+	io.KeyMap[ImGuiKey_Backspace] = GLFW_KEY_BACKSPACE;
+	io.KeyMap[ImGuiKey_Space] = GLFW_KEY_SPACE;
+	io.KeyMap[ImGuiKey_Enter] = GLFW_KEY_ENTER;
+	io.KeyMap[ImGuiKey_Escape] = GLFW_KEY_ESCAPE;
+	io.KeyMap[ImGuiKey_A] = GLFW_KEY_A;
+	io.KeyMap[ImGuiKey_C] = GLFW_KEY_C;
+	io.KeyMap[ImGuiKey_V] = GLFW_KEY_V;
+	io.KeyMap[ImGuiKey_X] = GLFW_KEY_X;
+	io.KeyMap[ImGuiKey_Y] = GLFW_KEY_Y;
+	io.KeyMap[ImGuiKey_Z] = GLFW_KEY_Z;
+
+		io.ConfigFlags |= 0
+			| ImGuiConfigFlags_NavEnableGamepad
+			| ImGuiConfigFlags_NavEnableKeyboard
+			;
 }
 
 
@@ -76,7 +104,10 @@ EM_BOOL mouseCb(int eventType, const EmscriptenMouseEvent* event, void* userData
 // static CustomPrinters cp;
 
 
-void Update(void* window);
+void Update(void* window, glm::ivec2 m_windowBufferSize);
+
+
+double scroll = 0.0f;
 
 
 int main(int argc, const char* const* argv)
@@ -166,110 +197,22 @@ int main(int argc, const char* const* argv)
 	bgfx::setPlatformData(pd);
 
 	{
-		std::shared_ptr<Application> app = std::make_shared<Application>(argc, argv);
+		std::shared_ptr<IApplication> app = ApplicationFactory::NewApplication(argc, argv);
+
+		imguiCreate();
+
 		glfwGetWindowSize(window, &m_windowBufferSize[0], &m_windowBufferSize[1]);
 		app->OnWindowResize(m_windowBufferSize);
 
 		glfwSetWindowUserPointer(window, app.get());
-		//InstallCallbacks(window);
-
-		glfwSetWindowSizeCallback(window, [](GLFWwindow* window, int width, int height)
-		{
-			auto app = static_cast<Application*>(glfwGetWindowUserPointer(window));
-			app->OnWindowResize(glm::ivec2(width, height));
-		});
-
-		glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int, int action, int mods)
-		{
-			auto app = static_cast<Application*>(glfwGetWindowUserPointer(window));
-//			if (ImGui::IsAnyItemHovered())
-//			{
-//				ImGuiIO& io = ImGui::GetIO();
-//				if (action == GLFW_PRESS)
-//					io.KeysDown[key] = true;
-//				if (action == GLFW_RELEASE)
-//					io.KeysDown[key] = false;
-//
-//				io.KeyCtrl = io.KeysDown[GLFW_KEY_LEFT_CONTROL] || io.KeysDown[GLFW_KEY_RIGHT_CONTROL];
-//				io.KeyShift = io.KeysDown[GLFW_KEY_LEFT_SHIFT] || io.KeysDown[GLFW_KEY_RIGHT_SHIFT];
-//				io.KeyAlt = io.KeysDown[GLFW_KEY_LEFT_ALT] || io.KeysDown[GLFW_KEY_RIGHT_ALT];
-//				io.KeySuper = io.KeysDown[GLFW_KEY_LEFT_SUPER] || io.KeysDown[GLFW_KEY_RIGHT_SUPER];
-//			}
-//			else
-			{
-				char asci = 0;
-				switch(key)
-				{
-					case GLFW_KEY_UP:
-						asci = 38;
-						break;
-					case GLFW_KEY_DOWN:
-						asci = 40;
-						break;
-					case GLFW_KEY_LEFT:
-						asci = 37;
-						break;
-					case GLFW_KEY_RIGHT:
-						asci = 39;
-					default:
-						break;
-				}
-				if (key == 32
-					|| key == 39
-					|| (key >= 44 && key <= 57)
-					|| key == 59
-					|| key == 61
-					|| (key >= 65 && key <= 93)
-					|| key == 96)
-				{
-					asci = key;
-				}
-				if (key == GLFW_KEY_ESCAPE)
-				{
-					asci = 27;
-				}
-
-				app->OnKeyAction(key, asci, action, mods);
-			}
-		});
-
-		glfwSetCharCallback(window, [](GLFWwindow*, unsigned int c)
-		{
-//			ImGuiIO& io = ImGui::GetIO();
-//			io.AddInputCharacter((unsigned short)c);
-		});
-
-		glfwSetScrollCallback(window, [](GLFWwindow* window, double /*xoffset*/, double yoffset)
-		{
-			auto app = static_cast<Application*>(glfwGetWindowUserPointer(window));
-//			ImGuiIO& io = ImGui::GetIO();
-//			io.MouseWheel += (float)yoffset * 2.0f;
-		});
-
-		glfwSetCursorPosCallback(window, [](GLFWwindow* window, double x, double y)
-		{
-			auto app = static_cast<Application*>(glfwGetWindowUserPointer(window));
-			app->OnMouseMove(glm::vec2(x, y));
-		});
-
-		glfwSetMouseButtonCallback(window, [](GLFWwindow* window, int button, int action, int mods)
-		{
-			auto app = static_cast<Application*>(glfwGetWindowUserPointer(window));
-			app->OnMouseButton(button, action, mods);
-//			ImGuiIO& io = ImGui::GetIO();
-//
-//			if (button >= 0 && button < 3)
-//			{
-//				io.MouseDown[button] = action == GLFW_PRESS;
-//			}
-		});
+		InstallCallbacks(window);
 
 		start = std::chrono::steady_clock::now();
 
 #ifndef __EMSCRIPTEN__
 		while (!glfwWindowShouldClose(window))
 		{
-			Update(window);
+			Update(window, m_windowBufferSize);
 		}
 #else
 		g_app = app;
@@ -282,6 +225,7 @@ int main(int argc, const char* const* argv)
 
 #ifndef __EMSCRIPTEN__
 		glfwSetWindowSizeCallback(window, nullptr);
+		imguiDestroy();
 		glfwTerminate();
 #endif
 	}
@@ -290,7 +234,7 @@ int main(int argc, const char* const* argv)
 }
 
 
-void Update(void* window)
+void Update(void* window, glm::ivec2 m_windowBufferSize)
 {
 	auto current_timestamp = std::chrono::steady_clock::now();
 	std::chrono::duration<float> elapsed_time = (current_timestamp - start);
@@ -302,9 +246,20 @@ void Update(void* window)
 	double x, y;
 	glfwGetCursorPos((GLFWwindow*)window, &x, &y);
 
-	app->SetMouse(x, y, glfwGetMouseButton((GLFWwindow*)window, 0) == GLFW_PRESS);
+	app->SetMouse(x, y, glfwGetMouseButton((GLFWwindow*) window, 0) == GLFW_PRESS);
+
+	imguiBeginFrame(x, y,
+	                (glfwGetMouseButton((GLFWwindow*)window, 0) == GLFW_PRESS ? IMGUI_MBUT_LEFT : 0)
+	                | (glfwGetMouseButton((GLFWwindow*)window, 1) == GLFW_PRESS ? IMGUI_MBUT_RIGHT : 0)
+	                | (glfwGetMouseButton((GLFWwindow*)window, 2) == GLFW_PRESS ? IMGUI_MBUT_MIDDLE : 0), 0,
+	                uint16_t(m_windowBufferSize.x), uint16_t(m_windowBufferSize.y)
+	);
+
+	ImGui::ShowDemoWindow();
 
 	app->Update(elapsed_time.count(), delta_time.count());
+
+	imguiEndFrame();
 
 	last_timestep = current_timestamp;
 }

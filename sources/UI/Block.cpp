@@ -235,7 +235,7 @@ namespace UI
 			glm::aabb2 box = block->GetBox();
 			if (glm::is_inside(box, mouse_pos))
 			{
-				block->SetBox(glm::aabb2(box.minp - 10.0f , box.maxp + 10.0f));
+				// block->SetBox(glm::aabb2(box.minp - 10.0f , box.maxp + 10.0f));
 			}
 		});
 	}

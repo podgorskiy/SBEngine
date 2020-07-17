@@ -2,6 +2,7 @@
 #include "IApplication.h"
 #include "utils/common.h"
 //#include "core/EventDispatcher.h"
+#include "imgui/imgui.h"
 
 #include <spdlog/spdlog.h>
 #include <GLFW/glfw3.h>
@@ -30,13 +31,73 @@ void io::WindowSizeCallback(GLFWwindow* window, int width, int height)
 void io::KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
 	auto* app = GetApp(window);
-	app->OnKey(key, scancode, action, mods);
+	if (ImGui::IsWindowFocused(ImGuiFocusedFlags_AnyWindow))
+	{
+		ImGuiIO& io = ImGui::GetIO();
+		if (action == GLFW_PRESS)
+		{
+			io.KeysDown[key] = true;
+		}
+		if (action == GLFW_RELEASE)
+		{
+			io.KeysDown[key] = false;
+		}
+
+		io.KeyCtrl = io.KeysDown[GLFW_KEY_LEFT_CONTROL] || io.KeysDown[GLFW_KEY_RIGHT_CONTROL];
+		io.KeyShift = io.KeysDown[GLFW_KEY_LEFT_SHIFT] || io.KeysDown[GLFW_KEY_RIGHT_SHIFT];
+		io.KeyAlt = io.KeysDown[GLFW_KEY_LEFT_ALT] || io.KeysDown[GLFW_KEY_RIGHT_ALT];
+		io.KeySuper = io.KeysDown[GLFW_KEY_LEFT_SUPER] || io.KeysDown[GLFW_KEY_RIGHT_SUPER];
+	}
+	else
+	{
+		char asci = 0;
+		switch (key)
+		{
+			case GLFW_KEY_UP:
+				asci = 38;
+				break;
+			case GLFW_KEY_DOWN:
+				asci = 40;
+				break;
+			case GLFW_KEY_LEFT:
+				asci = 37;
+				break;
+			case GLFW_KEY_RIGHT:
+				asci = 39;
+			default:
+				break;
+		}
+		if (key == 32
+		    || key == 39
+		    || (key >= 44 && key <= 57)
+		    || key == 59
+		    || key == 61
+		    || (key >= 65 && key <= 93)
+		    || key == 96)
+		{
+			asci = key;
+		}
+		if (key == GLFW_KEY_ESCAPE)
+		{
+			asci = 27;
+		}
+
+		app->OnKey(key, asci, action, mods);
+	}
 }
 
 void io::CharCallback(GLFWwindow* window, unsigned int c)
 {
-	auto* app = GetApp(window);
-	app->OnSetChar(c);
+	if (ImGui::IsWindowFocused(ImGuiFocusedFlags_AnyWindow))
+	{
+		ImGuiIO& io = ImGui::GetIO();
+		io.AddInputCharacter((unsigned short) c);
+	}
+	else
+	{
+		auto* app = GetApp(window);
+		app->OnSetChar(c);
+	}
 }
 
 void io::MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
@@ -47,20 +108,19 @@ void io::MouseButtonCallback(GLFWwindow* window, int button, int action, int mod
 void io::ScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 {
 	auto* app = GetApp(window);
-
-//	if (!ImGui::IsAnyWindowHovered())
-//	{
+	if (!ImGui::IsWindowFocused(ImGuiFocusedFlags_AnyWindow))
+	{
 //		app->m_camera.Scroll(float(-yoffset));
 //		glm::mat3 c2w = app->m_camera.GetCanvasToWorld();
 //		glm::vec2 size(100);
 //		glm::vec3 sizeW = c2w * glm::vec3(size, 0.0);
 //		sizeW.y = -sizeW.y;
-//	}
-//	else
-//	{
-//		ImGuiIO& io = ImGui::GetIO();
-//		io.MouseWheel += (float)yoffset * 2.0f;
-//	}
+	}
+	else
+	{
+		ImGuiIO& io = ImGui::GetIO();
+		io.MouseWheel += (float) yoffset * 2.0f;
+	}
 }
 
 

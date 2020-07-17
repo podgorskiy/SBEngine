@@ -253,9 +253,12 @@ endif()
 #####################################################################
 # imgui
 #####################################################################
-set(IMGUI_DIR libs/imgui)
-file(GLOB IMGUI_SOURCES ${IMGUI_DIR}/*.cpp ${IMGUI_DIR}/*.h )
+set(IMGUI_DIR ${BGFX_DIR}/3rdparty/dear-imgui)
+file(GLOB IMGUI_SOURCES ${IMGUI_DIR}/*.cpp ${IMGUI_DIR}/*.h ${BGFX_DIR}/examples/common/imgui/*.h ${BGFX_DIR}/examples/common/imgui/*.cpp)
 add_library(imgui ${IMGUI_SOURCES})
+target_include_directories(imgui PUBLIC ${IMGUI_DIR} ${BGFX_DIR}/examples/common)
+target_include_directories(imgui PUBLIC ${BGFX_DIR}/3rdparty)
+target_link_libraries(imgui PRIVATE bgfx bimg bx)
 #####################################################################
 
 #####################################################################
@@ -329,7 +332,7 @@ target_link_libraries(Oquonie PRIVATE spdlog::spdlog)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/glfw/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/gl3w/include)
 include_directories(${CMAKE_BINARY_DIR}/libs/gl3w/include)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/imgui)
+# include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/imgui)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/glm)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/stb)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/fsal/sources)
@@ -343,6 +346,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/sources/Game)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/sources)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/doctest/doctest)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/scriberlib/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/scriberlib/3rdparty/utf8)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/yaml-cpp/include)
 
 

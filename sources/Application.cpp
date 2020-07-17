@@ -26,7 +26,8 @@
 
 #include "imgui.h"
 #include "examples/imgui_impl_opengl3.h"
-#include "Audio.h"
+#include "Audio/Audio.h"
+#include "TTS/TTS.h"
 
 
 
@@ -124,6 +125,15 @@ Application::Application(int argc, const char* const* argv)
 	m_uir.m_gamma_correction = config["srgb"].as<bool>();
 
 	root = UI::Load(fs().Open("menus/main.yaml"));
+
+//	TTS tts;
+//	tts.LoadDict();
+//	tts.SetText("")
+//	tts.TextToPhonems();
+////	tts.TestPhonems();
+//	tts.PhonemsToPCM();
+//	tts.SaveToWav("");
+//	fflush(stdout);
 }
 
 
@@ -219,7 +229,14 @@ void Application::Update(float time, float deltaTime)
 
 		bool trigger = !mouse_left_click && mouse_left_click_prev;
 		UI::DoLayout(root, view_box);
-		UI::Action(root, view_box, mouse_pos, trigger, mouse_left_click);
+
+//		UI::Editor(root, view_box);
+
+//		std::vector<UI::Events> event_stack;
+//		UI::Action(root, view_box, mouse_pos, trigger, mouse_left_click);
+
+
+
 		UI::Render(&m_uir, root, view_box);
 	}
 
@@ -262,7 +279,7 @@ void Application::OnWindowResize(glm::ivec2 size)
 
 namespace ApplicationFactory
 {
-	std::shared_ptr<IApplication> NewApplication(int argc, char **argv)
+	std::shared_ptr<IApplication> NewApplication(int argc, const char* const*  argv)
 	{
 		return std::shared_ptr<IApplication>(new Application(argc, argv));
 	}

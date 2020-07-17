@@ -4,5 +4,5 @@
 
 namespace ApplicationFactory
 {
-	std::shared_ptr<IApplication> NewApplication(int argc, char **argv);
+	std::shared_ptr<IApplication> NewApplication(int argc, const char* const* argv);
 }
