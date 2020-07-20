@@ -115,6 +115,9 @@ Application::Application(int argc, const char* const* argv)
 	bgfx::setViewName(ViewIds::GUI, "GUI");
 	bgfx::setViewMode(ViewIds::GUI, bgfx::ViewMode::Sequential);
 
+	m_menu_manager.reset(new MenuStateManager);
+	m_menu_manager->Push(config["startup_state"].as<std::string>());
+
 
 //	m_dr.Init();
 //
@@ -123,8 +126,6 @@ Application::Application(int argc, const char* const* argv)
 //	}
 	m_uir.Init();
 	m_uir.m_gamma_correction = config["srgb"].as<bool>();
-
-	root = UI::Load(fs().Open("menus/main.yaml"));
 
 //	TTS tts;
 //	tts.LoadDict();
@@ -166,6 +167,7 @@ void Application::Update(float time, float deltaTime)
 	bgfx::setViewTransform(ViewIds::Main, &view[0], &projection[0]);
 	bgfx::setTransform(&model[0]);
 
+
 //	bgfx::setTexture(0, u_texture.m_handle,  m_texture->m_handle);
 //
 //	uint64_t state = 0
@@ -177,6 +179,8 @@ void Application::Update(float time, float deltaTime)
 
 	{
 		UI::View view_box(m_windowBufferSize, 72);
+		m_menu_manager->Update(view_box, time, deltaTime);
+		m_menu_manager->Draw(view_box, &m_uir, time, deltaTime);
 //
 //		using namespace UI::lit;
 //		using UI::operator""_c;
@@ -228,7 +232,7 @@ void Application::Update(float time, float deltaTime)
 //		room->AddChild(tile1c);
 
 		bool trigger = !mouse_left_click && mouse_left_click_prev;
-		UI::DoLayout(root, view_box);
+		//UI::DoLayout(root, view_box);
 
 //		UI::Editor(root, view_box);
 
@@ -237,14 +241,14 @@ void Application::Update(float time, float deltaTime)
 
 
 
-		UI::Render(&m_uir, root, view_box);
+		//UI::Render(&m_uir, root, view_box);
 	}
 
 	bgfx::frame();
 }
 
 
-void Application::OnKeyAction(int key, char asci, int action, int mods)
+void Application::OnKey(int key, char asci, int action, int mods)
 {
 	if (action == 0)
 	{
@@ -255,8 +259,7 @@ void Application::OnKeyAction(int key, char asci, int action, int mods)
 		// keyboard.ListenOnKeyUp(asci);
 		if (asci == 'R')
 		{
-            using fs = fsal::FileSystem;
-			root = UI::Load(fs().Open("menus/main.yaml"));
+            m_menu_manager->Reload();
 		}
 	}
 }

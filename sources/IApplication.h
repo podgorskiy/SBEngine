@@ -10,7 +10,7 @@ public:
 
 	virtual void Update(float time, float deltaTime) = 0;
 	virtual void OnWindowResize(glm::ivec2 size) {}
-	virtual void OnKey(int key, int scancode, int action, int mods) {}
+	virtual void OnKey(int key, char asci, int action, int mods) {}
 	virtual void OnSetChar(unsigned int c) {}
 	virtual void OnMouseButton(int button, int action, int mods) {}
 	virtual void OnMouseMove(glm::vec2 pos) {}

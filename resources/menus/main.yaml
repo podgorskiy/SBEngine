@@ -1,5 +1,9 @@
 # Example menu
 
+class: BaseMenuState
+
+menu_name: main
+
 vars:
   container_width: 95
 
@@ -16,6 +20,7 @@ blocks:
     width: container_width:%
     bottom: 30pt
     top: 20pt
+    border-radius: 50pt 50pt 50pt 50pt
 
     blocks:
       - bg_img: graphics/bubble/up.png
@@ -49,6 +54,7 @@ blocks:
         left: 10pt
         bottom: 10pt
         top: 23vw
+        border-radius: 15pt 15pt 15pt 15pt
 
       - name: child2
         bg_color: panel_bg
@@ -56,6 +62,7 @@ blocks:
         right: 10pt
         bottom: 10pt
         top: 23vw
+        border-radius: 150pt 5pt 50pt 0pt
 
         blocks:
           - name: child1

@@ -188,6 +188,15 @@ target_include_directories(shaderc PRIVATE ${BGFX_DIR}/3rdparty/fcpp)
 
 
 #####################################################################
+# lua
+#####################################################################
+set(LUA_ROOT libs/lua)
+file(GLOB LUA_SRCS ${LUA_ROOT}/*.c ${LUA_ROOT}/*.h)
+add_library(lua STATIC ${LUA_SRCS})
+target_include_directories(lua PUBLIC ${LUA_ROOT})
+
+
+#####################################################################
 # bimg
 #####################################################################
 set(BIMG_DIR libs/bimg)
@@ -322,7 +331,7 @@ if (TESTS)
 endif()
 
 add_executable(Oquonie ${SOURCES} ${TESTS})
-target_link_libraries(Oquonie PRIVATE gl3w glfw bx bgfx pthread dl  imgui pugixml fsal lz4 zlib_static vorbis ogg scribe yaml-cpp ${OPENGL_LIBRARIES} ${OPENAL_LIBRARY})
+target_link_libraries(Oquonie PRIVATE gl3w glfw bx bgfx pthread dl  imgui pugixml fsal lz4 zlib_static vorbis ogg scribe yaml-cpp lua ${OPENGL_LIBRARIES} ${OPENAL_LIBRARY})
 target_link_libraries(Oquonie PRIVATE spdlog::spdlog)
 
 
@@ -348,6 +357,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/doctest/doctest)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/scriberlib/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/scriberlib/3rdparty/utf8)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/yaml-cpp/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/LuaBridge/Source)
 
 
 

@@ -7,3 +7,5 @@ flip_after_render: False
 srgb: True
 debug_text: False
 debug_stats: False
+
+startup_state: menus/main.yaml

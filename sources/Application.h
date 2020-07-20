@@ -1,6 +1,7 @@
 #pragma once
 #include "Object.h"
 #include "IApplication.h"
+#include "MenuStateManager/MenuStateManager.h"
 #include "Render/Texture.h"
 #include "Render/Shader.h"
 #include "Render/DebugRenderer.h"
@@ -25,8 +26,7 @@ public:
 	// IApplication
 	void Update(float time, float deltaTime) final;
 	void OnWindowResize(glm::ivec2 size) final;
-	void OnKeyAction(int key, char asci, int action, int mods);
-	void OnKey(int key, int scancode, int action, int mods) override {};
+	void OnKey(int key, char asci, int action, int mods) final;
 	void OnSetChar(unsigned int c) override  {};
 	void OnMouseButton(int button, int action, int mods) override;
 	void OnMouseMove(glm::vec2 pos) override;
@@ -42,6 +42,8 @@ public:
 
 
 private:
+	MenuStateManagerPtr m_menu_manager;
+
 	uint32_t m_reset_flags = 0;
 	glm::ivec2 m_windowBufferSize;
 	CustomPrinters m_cp;
@@ -51,8 +53,6 @@ private:
 	UI::Renderer m_uir;
 
 	Render::Uniform u_texture;
-
-	UI::BlockPtr root;
 
 	glm::vec2 mouse_pos;
 	bool mouse_left_click = false;
