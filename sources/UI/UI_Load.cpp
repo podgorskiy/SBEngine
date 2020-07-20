@@ -215,6 +215,14 @@ namespace UI
 			int components;
 			if (ParseUnitValueList(x.c_str(), &unit[0], &value[0], 4, &components))
 			{
+				switch(components)
+				{
+					case 1: value[3] = value[2] = value[1] = value[0]; unit[3] = unit[2] = unit[1] = unit[0]; break;
+					case 2: value[2] = value[0]; value[3] = value[1]; unit[2] = unit[0]; unit[3] = unit[1]; break;
+					case 3: value[3] = value[1]; unit[3] = unit[1]; break;
+					default: break;
+				}
+
 				block->SetRadiusVal(value);
 				block->SetRadiusUnit(unit);
 			}
