@@ -5,7 +5,7 @@
 void UI::SFillEmitter::operator()(UI::Renderer* r, const UI::Block* block, float time, int flags)
 {
 	auto box = block->GetBox();
-	r->Rect(box, col);
+	r->Rect(box, col, block->GetRadius());
 }
 
 UI::SFillEmitter::SFillEmitter(color c): col(c)

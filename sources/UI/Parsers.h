@@ -43,6 +43,37 @@ namespace UI
 		return false;
 	}
 
+	inline bool ParseUnitValueList(const char* x, Constraint::Unit* unit, float* value, int max_components, int* components)
+	{
+		serialization::Parser parser(x);
+
+		int k = 0;
+		while (k < max_components)
+		{
+			parser.AcceptWhiteSpace();
+			if (parser.AcceptFloat(value[k]))
+			{
+				parser.AcceptWhiteSpace();
+				if (AcceptUnit(parser, unit[k]))
+				{
+					++k;
+					continue;
+				}
+				else
+				{
+					break;
+				}
+			}
+			else
+			{
+				break;
+			}
+		}
+		*components = k;
+		parser.AcceptWhiteSpace();
+		return parser.EOS();
+	}
+
 	inline bool ParseSharpColor(const char* x, color& c)
 	{
 		serialization::Parser parser(x);

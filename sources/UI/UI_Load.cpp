@@ -205,6 +205,25 @@ namespace UI
 		ReadConstraint(node, "cleft", Constraint::CenterLeft, block, ctx);
 		ReadConstraint(node, "cright", Constraint::CenterRight, block, ctx);
 
+		auto cnstr = node["border-radius"];
+		if (cnstr.IsDefined())
+		{
+			std::string x = cnstr.as<std::string>();
+			// spdlog::info("{}: {}", name, x);
+			glm::vec4 value;
+			Constraint::Unit unit[4];
+			int components;
+			if (ParseUnitValueList(x.c_str(), &unit[0], &value[0], 4, &components))
+			{
+				block->SetRadiusVal(value);
+				block->SetRadiusUnit(unit);
+			}
+			else
+			{
+				spdlog::error("Error parsing radius {}: {}", name.as<std::string>("noname"), x);
+			}
+		}
+
 		LoadEmmitters(node, block, color_map);
 
 		auto blocks = node["blocks"];

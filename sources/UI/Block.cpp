@@ -57,7 +57,7 @@ namespace UI
 				case Constraint::ValueMax: p = glm::max(r_size.x, r_size.y); p *= cnst[i].value / 100.0f; break;
 				case Constraint::RValueMin: p = glm::min(p_size.x, p_size.y); p *= cnst[i].value / 100.0f; break;
 				case Constraint::RValueMax: p = glm::max(p_size.x, p_size.y); p *= cnst[i].value / 100.0f; break;
-				case Constraint::Pixel: p /= cnst[i].value / ppd; break;
+				case Constraint::Pixel: p = cnst[i].value / ppd; break;
 				case Constraint::Point: p = cnst[i].value; break;
 				case Constraint::Centimeters: p = cnst[i].value * (72.0f / 2.54f); break;
 				case Constraint::Millimeters: p = cnst[i].value * (72.0f / 25.4f); break;
@@ -182,6 +182,29 @@ namespace UI
 		return box;
 	}
 
+	glm::vec4 ResolveRadius(const glm::aabb2& this_box, const glm::vec4& values, const Constraint::Unit* units,  float ppd)
+	{
+    	glm::vec4 output = glm::vec4(0);
+		for (int i = 0; i < 4; ++i)
+		{
+			float p = 0;
+			float v = values[i];
+			switch(units[i])
+			{
+				case Constraint::Percentage: p = glm::mean(this_box.size()) * v / 100.0f; break;
+				case Constraint::Pixel: p = v / ppd; break;
+				case Constraint::Point: p = v; break;
+				case Constraint::Centimeters: p = v * (72.0f / 2.54f); break;
+				case Constraint::Millimeters: p = v * (72.0f / 25.4f); break;
+				case Constraint::Inches: p = v * 72.0f; break;
+				default:
+					continue;
+			}
+			output[i] = p;
+		}
+		return output;
+	}
+
 	inline void Traverse(const BlockPtr& block, const BlockPtr& parent, const std::function<void(Block* block, Block* parent)>& lambda)
 	{
 		lambda(block.get(), parent.get());
@@ -225,6 +248,7 @@ namespace UI
 			const auto& cnst = block->GetConstraints();
 			glm::aabb2 current_box = SolveConstraints(view.view_box, parent_box, cnst.data(), cnst.size(), view.GetPixelPerDotScalingFactor());
 			block->SetBox(current_box);
+			block->SetRadius(ResolveRadius(current_box, block->GetRadiusVal(), block->GetRadiusUnits(), view.GetPixelPerDotScalingFactor()));
 		});
 	}
 

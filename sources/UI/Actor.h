@@ -21,10 +21,10 @@ namespace UI
 	class Actor
 	{
 	public:
-		Actor(BlockPtr) = default;
+		Actor() = default;
 
 		virtual ~Actor(){}
 	private:
 		BlockPtr m_block;
-	}
+	};
 }

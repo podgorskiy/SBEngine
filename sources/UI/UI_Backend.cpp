@@ -174,20 +174,22 @@ void Renderer::Init()
 	m_text_driver.AndFontToTypeface(id, "fonts/NotoSans-Regular.ttf", Scriber::FontStyle::Regular);
 }
 
-void Renderer::Rect(glm::aabb2 rect, color col)
+void Renderer::Rect(glm::aabb2 rect, color col, glm::vec4 radius)
 {
 	m_command_queue.Write(C_RectCol);
 	m_command_queue.Write(rect);
+	m_command_queue.Write(radius);
 	m_command_queue.Write(col);
 }
 
 
-void Renderer::Rect(glm::aabb2 rect, bgfx::TextureHandle texture, glm::aabb2 uv, int8_t rounding)
+void Renderer::Rect(glm::aabb2 rect, bgfx::TextureHandle texture, glm::aabb2 uv, glm::vec4 radius)
 {
 	if (glm::is_overlapping(encode_sciscors, rect))
 	{
 		m_command_queue.Write(C_RectTex);
 		m_command_queue.Write(rect);
+		m_command_queue.Write(radius);
 		m_command_queue.Write(uv);
 		m_command_queue.Write(texture);
 	}
@@ -204,11 +206,6 @@ void Renderer::Text(glm::aabb2 rect, const char* text, size_t len)
 	m_command_queue.Write(len + 1);
 	m_command_queue.Write((const uint8_t*)text, len);
 	m_command_queue.Write(char(0));
-}
-
-void Renderer::PushVertex(glm::vec2 p, glm::vec2 uv, color color)
-{
-	m_vertexArray.emplace_back(p, uv, color);
 }
 
 int Renderer::GetGlyphTexture() const
@@ -254,12 +251,172 @@ void Renderer::PopScissors()
 	}
 }
 
+
+void Renderer::PathArcTo(const glm::vec2& center, float radius, float a_min, float a_max, int num_segments)
+{
+	if (radius == 0.0f)
+	{
+		m_path.push_back(center);
+		return;
+	}
+
+	m_path.reserve(m_path.size() + (num_segments + 1));
+	for (int i = 0; i <= num_segments; i++)
+	{
+		const float a = a_min + ((float) i / (float) num_segments) * (a_max - a_min);
+		m_path.push_back(center + glm::vec2(glm::cos(a), glm::cos(a)) * radius);
+	}
+}
+
+void Renderer::Path90Arc(const glm::vec2& center, float radius, ArcType type)
+{
+	if (radius == 0.0f)
+	{
+		m_path.push_back(center);
+		return;
+	}
+
+	int num_segments = int(0.5f + 5.2f / 4.0f * (float)powf(radius - 0.8f, 0.53f));
+	num_segments = std::min(num_segments, 180);
+
+
+	m_path.reserve(m_path.size() + (num_segments + 1));
+	for (int i = 0; i <= num_segments; i++)
+	{
+		const float a = ((float) i / (float) num_segments) * glm::pi<float>() / 2.0f;
+		switch(type)
+		{
+			case Arc_TL:
+				m_path.push_back(center + glm::vec2(-glm::cos(a),-glm::sin(a)) * radius);
+				break;
+			case Arc_TR:
+				m_path.push_back(center + glm::vec2( glm::sin(a),-glm::cos(a)) * radius);
+				break;
+			case Arc_BR:
+				m_path.push_back(center + glm::vec2( glm::cos(a), glm::sin(a)) * radius);
+				break;
+			case Arc_BL:
+				m_path.push_back(center + glm::vec2(-glm::sin(a), glm::cos(a)) * radius);
+				break;
+		}
+	}
+}
+
+void Renderer::PathRect(const glm::vec2& a, const glm::vec2& c, const glm::vec4& radius)
+{
+    glm::vec2 b(c.x, a.y), d(a.x, c.y);
+	Path90Arc(a + glm::vec2( radius.x, radius.x), radius.x, Arc_TL);
+	Path90Arc(b + glm::vec2(-radius.y, radius.y), radius.y, Arc_TR);
+	Path90Arc(c + glm::vec2(-radius.z,-radius.z), radius.z, Arc_BR);
+	Path90Arc(d + glm::vec2( radius.w,-radius.w), radius.w, Arc_BL);
+}
+
+void Renderer::PrimReserve(int idx_count, int vtx_count)
+{
+	m_vertexArray.resize(m_vertexArray.size() + vtx_count);
+	m_indexArray.resize(m_indexArray.size() + idx_count);
+	_index_write_ptr = &m_indexArray[m_indexArray.size() - idx_count];
+	_vertex_write_ptr = &m_vertexArray[m_vertexArray.size() - vtx_count];
+}
+
+
+void Renderer::PrimReset()
+{
+	m_vertexArray.resize(0);
+	m_indexArray.resize(0);
+	_current_index = 0;
+	_index_write_ptr = &m_indexArray[0];
+	_vertex_write_ptr = &m_vertexArray[0];
+}
+
+
+void Renderer::PrimRect(const glm::vec2& a, const glm::vec2& c, const glm::vec2& uv_a, const glm::vec2& uv_c, color col)
+{
+	PrimReserve(6, 4);
+    glm::vec2 b(c.x, a.y), d(a.x, c.y), uv_b(uv_c.x, uv_a.y), uv_d(uv_a.x, uv_c.y);
+    auto idx = _current_index;
+    _index_write_ptr[0] = idx; _index_write_ptr[1] = idx+1; _index_write_ptr[2] = idx+2;
+    _index_write_ptr[3] = idx; _index_write_ptr[4] = idx+2; _index_write_ptr[5] = idx+3;
+    _vertex_write_ptr[0].pos = a; _vertex_write_ptr[0].uv = uv_a; _vertex_write_ptr[0].col = col;
+    _vertex_write_ptr[1].pos = b; _vertex_write_ptr[1].uv = uv_b; _vertex_write_ptr[1].col = col;
+    _vertex_write_ptr[2].pos = c; _vertex_write_ptr[2].uv = uv_c; _vertex_write_ptr[2].col = col;
+    _vertex_write_ptr[3].pos = d; _vertex_write_ptr[3].uv = uv_d; _vertex_write_ptr[3].col = col;
+    _vertex_write_ptr += 4;
+    _current_index += 4;
+    _index_write_ptr += 6;
+}
+
+void Renderer::PrimRectRounded(const glm::vec2& a, const glm::vec2& c, const glm::vec4& radius, color col)
+{
+	PathClear();
+	PathRect(a, c, radius);
+	PrimConvexPolyFilled(&m_path[0], m_path.size(), col);
+}
+
+void Renderer::PrimConvexPolyFilled(glm::vec2* points, int count, color col)
+{
+    if (count < 3)
+        return;
+
+	const float anti_aliasing = 1.0f;
+	const color col_trans = color(glm::vec<3, uint8_t>(col), 0);
+	const int idx_count = glm::max(0, (count - 2) * 3) + count * 6;
+	const int vtx_count = count * 2;
+	PrimReserve(idx_count, vtx_count);
+
+	for (int i = 2; i < count; i++)
+	{
+		_index_write_ptr[0] = _current_index;
+		_index_write_ptr[1] = _current_index + 2 * i - 2;
+		_index_write_ptr[2] = _current_index + 2 * i - 0;
+		_index_write_ptr += 3;
+	}
+
+	glm::vec2 p1 = points[count - 2];
+	glm::vec2 p2 = points[count - 1];
+	glm::vec2 n1 = glm::normalize(p2 - p1);
+	n1 = glm::vec2(n1.y, -n1.x);
+	for (int i0 = count - 2, i1 = count - 1, i2 = 0; i2 < count; i0 = i1, i1 = i2++)
+	{
+		p1 = p2;
+		p2 = points[i2];
+
+		glm::vec2 n0 = n1;
+		n1 = glm::normalize(p2 - p1);
+		n1 = glm::vec2(n1.y, -n1.x);
+		float dm_x = (n0.x + n1.x) * 0.5f;
+		float dm_y = (n0.y + n1.y) * 0.5f;
+		float k = 0.5f * anti_aliasing / std::max(dm_x * dm_x + dm_y * dm_y, 0.5f);
+		dm_x *= k;
+		dm_y *= k;
+
+		_vertex_write_ptr[0].pos.x = (p1.x - dm_x);
+		_vertex_write_ptr[0].pos.y = (p1.y - dm_y);
+		_vertex_write_ptr[0].uv = glm::vec2(0.0, 0.0);
+		_vertex_write_ptr[0].col = col;
+		_vertex_write_ptr[1].pos.x = (p1.x + dm_x);
+		_vertex_write_ptr[1].pos.y = (p1.y + dm_y);
+		_vertex_write_ptr[1].uv = glm::vec2(0.0, 0.0);
+		_vertex_write_ptr[1].col = col_trans;
+		_vertex_write_ptr += 2;
+
+		_index_write_ptr[0] = _current_index + 2 * i1 + 0;
+		_index_write_ptr[1] = _current_index + 2 * i0 + 0;
+		_index_write_ptr[2] = _current_index + 2 * i0 + 1;
+		_index_write_ptr[3] = _current_index + 2 * i0 + 1;
+		_index_write_ptr[4] = _current_index + 2 * i1 + 1;
+		_index_write_ptr[5] = _current_index + 2 * i1 + 0;
+		_index_write_ptr += 6;
+	}
+	_current_index += vtx_count;
+}
+
+
 void Renderer::Draw()
 {
 	m_command_queue.Write(C_End);
 	m_command_queue.Seek(0);
-	m_vertexArray.resize(0);
-	m_indexArray.resize(0);
+	PrimReset();
 
 	bgfx::TextureHandle tex;
 
@@ -273,7 +430,9 @@ void Renderer::Draw()
 			{
 				glm::aabb2 rect;
 				color col;
+				glm::vec4 radius;
 				m_command_queue.Read(rect);
+				m_command_queue.Read(radius);
 				m_command_queue.Read(col);
 
 				if (m_gamma_correction)
@@ -281,15 +440,14 @@ void Renderer::Draw()
 					col = glm::pow(glm::vec4(col) / 255.0f, glm::vec4(2.2f)) * 255.0f;
 				}
 
-				uint16_t vertexIt = m_vertexArray.size();
-				m_vertexArray.emplace_back(rect.minp, glm::vec2(0.0, 0.0), col);
-				m_vertexArray.emplace_back(glm::vec2({rect.maxp.x, rect.minp.y}), glm::vec2(0.0, 0.0), col);
-				m_vertexArray.emplace_back(rect.maxp, glm::vec2(0.0, 0.0), col);
-				m_vertexArray.emplace_back(glm::vec2({rect.minp.x, rect.maxp.y}), glm::vec2(0.0, 0.0), col);
-				uint16_t indices[] = { vertexIt, uint16_t(vertexIt + 2), uint16_t(vertexIt + 1), vertexIt, uint16_t(vertexIt + 3), uint16_t(vertexIt + 2)};
-				m_indexArray.resize(m_indexArray.size() + 6);
-				uint16_t* ptr = &*(m_indexArray.end() - 6);
-				memcpy(ptr, indices, 6 * sizeof(uint16_t));
+				if (radius == glm::vec4(0))
+				{
+					PrimRect(rect.minp, rect.maxp, glm::vec2(0.0, 0.0), glm::vec2(0.0, 0.0), col);
+				}
+				else
+				{
+					PrimRectRounded(rect.minp, rect.maxp, radius, col);
+				}
 			}
 			need_flush = true;
 			break;
@@ -298,18 +456,20 @@ void Renderer::Draw()
 			{
 				glm::aabb2 rect;
 				glm::aabb2 uv;
+				glm::vec4  radius;
 				m_command_queue.Read(rect);
+				m_command_queue.Read(radius);
 				m_command_queue.Read(uv);
 				m_command_queue.Read(tex);
-				uint16_t vertexIt = m_vertexArray.size();
-				m_vertexArray.emplace_back(rect.minp, uv.minp, 0xFFFFFFFF_c);
-				m_vertexArray.emplace_back(glm::vec2({rect.maxp.x, rect.minp.y}), glm::vec2({uv.maxp.x, uv.minp.y}), 0xFFFFFFFF_c);
-				m_vertexArray.emplace_back(rect.maxp, uv.maxp, 0xFFFFFFFF_c);
-				m_vertexArray.emplace_back(glm::vec2({rect.minp.x, rect.maxp.y}), glm::vec2({uv.minp.x, uv.maxp.y}), 0xFFFFFFFF_c);
-				uint16_t indices[] = { vertexIt, uint16_t(vertexIt + 2), uint16_t(vertexIt + 1), vertexIt, uint16_t(vertexIt + 3), uint16_t(vertexIt + 2)};
-				m_indexArray.resize(m_indexArray.size() + 6);
-				uint16_t* ptr = &*(m_indexArray.end() - 6);
-				memcpy(ptr, indices, 6 * sizeof(uint16_t));
+
+				if (radius == glm::vec4(0))
+				{
+					PrimRect(rect.minp, rect.maxp, uv.minp, uv.maxp, color(0));
+				}
+				else
+				{
+
+				}
 			}
 			need_flush = true;
 			break;
@@ -366,8 +526,7 @@ void Renderer::Draw()
 				memcpy(tvb.data, m_vertexArray.data(), num_vertex * sizeof(Vertex));
 				memcpy(tib.data, m_indexArray.data(), num_index * sizeof(uint16_t));
 
-				m_vertexArray.resize(0);
-				m_indexArray.resize(0);
+				PrimReset();
 
 				bgfx::setVertexBuffer(0, &tvb, 0, num_vertex);
 				bgfx::setIndexBuffer(&tib, 0, num_index);
@@ -393,8 +552,7 @@ void Renderer::Draw()
 				memcpy(tvb.data, m_vertexArray.data(), num_vertex * sizeof(Vertex));
 				memcpy(tib.data, m_indexArray.data(), num_index * sizeof(uint16_t));
 
-				m_vertexArray.resize(0);
-				m_indexArray.resize(0);
+				PrimReset();
 
 				bgfx::setVertexBuffer(0, &tvb, 0, num_vertex);
 				bgfx::setIndexBuffer(&tib, 0, num_index);

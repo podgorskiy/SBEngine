@@ -1,7 +1,7 @@
 #pragma once
 #include "utils/stack_vector.h"
 #include "UI/color.h"
-#include "utils/aabb.h"
+#include "utils/glm_ext.h"
 #include "UI/View.h"
 #include "UI/Enums.h"
 #include "UI/Emitters.h"
@@ -47,6 +47,12 @@ namespace UI
 		}
 		glm::aabb2 GetBox() const { return m_box; }
 		void SetBox(const glm::aabb2& box) { m_box = box; }
+		glm::vec4 GetRadius() const { return m_radius; }
+		glm::vec4 GetRadiusVal() const { return m_radius_val; }
+		const Constraint::Unit* GetRadiusUnits() const { return &m_radius_unit[0]; }
+		void SetRadius(const glm::vec4& r) { m_radius = r; }
+		void SetRadiusVal(const glm::vec4& r) { m_radius_val = r; }
+		void SetRadiusUnit(const Constraint::Unit* u) { memcpy(m_radius_unit, u, 4 * sizeof(Constraint::Unit)); }
 		void PushConstraint(const Constraint& cnst) { m_constraints.push_back(cnst); };
 		const stack::vector<Constraint, 4>& GetConstraints() const { return m_constraints; };
 		void Emit(UI::Renderer* r, float time = 0.0f, int flags = 0) {	if (has_emitter) (*GetEmitter())(r, this, time, flags); }
@@ -58,10 +64,15 @@ namespace UI
 		}
 		void EnableClipping(bool flag) { clip_overflow = flag; }
 		bool IsClipping() const { return clip_overflow; }
+
+
 	private:
 		IEmitter* GetEmitter() { return (IEmitter*)userdata; }
 
 		glm::aabb2 m_box;
+		glm::vec4 m_radius;
+		glm::vec4 m_radius_val = glm::vec4(0);
+		Constraint::Unit m_radius_unit[4] = { Constraint::Point };
 		stack::vector<Constraint, 4> m_constraints;
 		stack::vector<BlockPtr, 4> m_childs;
 		glm::vec2 m_rotation = glm::vec2(1.0f, 0.0f);

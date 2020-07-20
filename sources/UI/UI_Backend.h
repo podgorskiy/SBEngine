@@ -52,23 +52,39 @@ namespace UI
 
 	struct Renderer
 	{
+		enum ArcType
+		{
+			Arc_TL,
+			Arc_TR,
+			Arc_BR,
+			Arc_BL,
+		};
+
 		Renderer();
 
-		void Rect(glm::aabb2 rect, color c);
+		void Rect(glm::aabb2 rect, color c, glm::vec4 radius = glm::vec4(0));
 		// void Rect(glm::aabb2 rect, int8_t rounding);
-		void Rect(glm::aabb2 rect, bgfx::TextureHandle texture, glm::aabb2 uv = glm::aabb2(glm::vec2(1.0), glm::vec2(0.0)), int8_t rounding=0);
+		void Rect(glm::aabb2 rect, bgfx::TextureHandle texture, glm::aabb2 uv = glm::aabb2(glm::vec2(1.0), glm::vec2(0.0)), glm::vec4 radius = glm::vec4(0));
 		void Text(glm::aabb2 rect, const char* text, size_t len=0);
 
-	    void  PathClear()   { m_path.clear(); }
-	    void  PathLineTo(const glm::vec2& pos)  { m_path.push_back(pos); }
+	    void PathClear()   { m_path.clear(); }
+	    void PathLineTo(const glm::vec2& pos)  { m_path.push_back(pos); }
+		void PathArcTo(const glm::vec2& center, float radius, float a_min, float a_max, int num_segments);
+		void Path90Arc(const glm::vec2& center, float radius, ArcType type);
+		void PathRect(const glm::vec2& a, const glm::vec2& b, const glm::vec4& radius);
 
 	    ~Renderer();
 
 	    void SetUp(UI::View view);
 		void Init();
 		void Draw();
+		void PrimReserve(int idx_count, int vtx_count);
+		void PrimReset();
 
-		void PushVertex(glm::vec2 p, glm::vec2 uv, color color);
+		void PrimRect(const glm::vec2& a, const glm::vec2& c, const glm::vec2& uv_a, const glm::vec2& uv_c, color col);
+		void PrimRectRounded(const glm::vec2& a, const glm::vec2& c, const glm::vec4& radius, color col);
+
+		void PrimConvexPolyFilled(glm::vec2* points, int count, color col);
 
 		int GetGlyphTexture() const;
 
@@ -86,6 +102,11 @@ namespace UI
 		std::vector<glm::vec2> m_path;
 		std::vector<uint16_t> m_indexArray;
 		std::vector<Vertex> m_vertexArray;
+
+		uint16_t _current_index;
+		uint16_t* _index_write_ptr;
+		Vertex* _vertex_write_ptr;
+
 		Render::ProgramPtr m_programCol;
 		Render::ProgramPtr m_programTex;
 		Render::Uniform u_texture;
