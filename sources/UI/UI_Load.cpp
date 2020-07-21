@@ -11,41 +11,66 @@ namespace UI
 {
 	void ReadConstraint(YAML::Node node, const char* name, Constraint::Type type, const BlockPtr& blk, ExpessionEvaluator::INTContext& ctx)
 	{
-		float value = 0;
-		Constraint::Unit unit = Constraint::Pixel;
-		auto cnstr = node[name];
-		if (cnstr.IsDefined())
+		auto read_cst = +[](const BlockPtr& blk, std::string str, Constraint::Type type, ExpessionEvaluator::INTContext& ctx)
 		{
-			std::string x = cnstr.as<std::string>();
+			Constraint::Unit unit;
+			float value;
 			// spdlog::info("{}: {}", name, x);
-			if (ParseUnitValue(x.c_str(), unit, value))
+			if (ParseUnitValue(str.c_str(), unit, value))
 			{
-				blk->PushConstraint(Constraint(type, unit, value));
-				return;
+				return Constraint(type, unit, value);
 			}
 			else
 			{
-				auto pos = x.find(':');
+				auto pos = str.find(':');
 				if (pos != std::string::npos)
 				{
-					x[pos] = '\0';
-					ctx.func("anonymus", x.c_str());
+					str[pos] = '\0';
+					ctx.func("anonymus", str.c_str());
 					ctx.Link();
 					value = ctx.get_func("anonymus").Eval();
-					serialization::Parser parser(x.c_str() + pos + 1);
+					serialization::Parser parser(str.c_str() + pos + 1);
 					parser.AcceptWhiteSpace();
 					if (AcceptUnit(parser, unit))
 					{
 						parser.AcceptWhiteSpace();
 						if (parser.EOS())
 						{
-							blk->PushConstraint(Constraint(type, unit, value));
-							return;
+							return Constraint(type, unit, value);
 						}
 					}
 				}
 			}
-			spdlog::error("Error parsing {}: {}", name, x);
+		};
+
+		auto cnstr = node[name];
+		if (cnstr.IsDefined())
+		{
+			if (cnstr.IsMap())
+			{
+				auto duration = cnstr["duration"];
+				auto d_s = duration.as<std::string>("0");
+				float duration_v = 0.0f;
+				ParseTime(d_s.c_str(), duration_v);
+				auto vcnstr = cnstr["value"];
+				auto tcnstr = cnstr["target"];
+				std::string x = vcnstr.as<std::string>("0");
+				auto ctsr = read_cst(blk, x, type, ctx);
+				blk->PushConstraint(ctsr);
+				if (tcnstr.IsDefined())
+				{
+					std::string t = tcnstr.as<std::string>("0");
+					blk->PushTargetTransitionConstraints(read_cst(blk, t, type, ctx));
+				}
+
+				blk->SetTransitionProperty(type, duration_v);
+			}
+			else
+			{
+				std::string x = cnstr.as<std::string>();
+				auto ctsr = read_cst(blk, x, type, ctx);
+				blk->PushConstraint(ctsr);
+			}
 		}
 	}
 

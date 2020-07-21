@@ -6,6 +6,13 @@
 
 namespace UI
 {
+	const static constexpr uint8_t id_map[16] = {
+			0xff, 0x00, 0x01, 0xff, // 0000 .. 0011, NA,    Left,   Right,  NA
+			0x02, 0xff, 0xff, 0xff, // 0100 .. 0111, Width, NA,     NA,     NA
+			0xff, 0x03, 0x04, 0xff, // 1000 .. 1011, NA,    CLeft,  CRight, NA
+			0xff, 0xff, 0xff, 0xff  // 1100 .. 1111, NA,    NA,     NA,     NA
+	};
+
     BlockPtr make_block(std::initializer_list<Constraint> constraints)
     {
     	return std::make_shared<Block>(std::initializer_list<Constraint>(constraints));
@@ -29,17 +36,8 @@ namespace UI
     	return block;
     }
 
-	glm::aabb2 SolveConstraints(const glm::aabb2& root_box, const glm::aabb2& parent_box, const Constraint* cnst, int count, float ppd)
+	void ComputeValues(const glm::aabb2& root_box, const glm::aabb2& parent_box, const Constraint* cnst, int count, float ppd, float (&cst_values)[2][5], uint8_t (&mask)[2])
 	{
-		uint8_t mask[2] = {0};
-		float cst_values[2][5];
-		constexpr uint8_t id_map[16] = {
-				0xff, 0x00, 0x01, 0xff, // 0000 .. 0011, NA,    Left,   Right,  NA
-				0x02, 0xff, 0xff, 0xff, // 0100 .. 0111, Width, NA,     NA,     NA
-				0xff, 0x03,	0x04, 0xff, // 1000 .. 1011, NA,    CLeft,  CRight, NA
-				0xff, 0xff, 0xff, 0xff  // 1100 .. 1111, NA,    NA,     NA,     NA
-		};
-
 		auto p_size = parent_box.size();
 		auto r_size = root_box.size();
 		for (int i = 0; i < count; ++i)
@@ -70,7 +68,10 @@ namespace UI
 			assert(sid != 0xff);
 			cst_values[id][sid] = p;
 		}
+	}
 
+	glm::aabb2 SolveConstraints(const glm::aabb2& root_box, const glm::aabb2& parent_box, const Constraint* cnst, int count, const float (&cst_values)[2][5], const uint8_t (&mask)[2])
+	{
 		glm::aabb2 box = parent_box;
 		for (uint8_t id = 0; id < 2; ++id)
 		{
@@ -240,13 +241,57 @@ namespace UI
 		renderer->Draw();
 	}
 
-	void DoLayout(const BlockPtr& block, const View& view)
+	void InterpolateTransitionValues(const Constraint* tcnst, MController<float>* ctrl, int count, float (&alt_cst_values)[2][5],  float (&dst_cst_values)[2][5], float time)
 	{
-		Traverse(block, nullptr, [view](Block* block, Block* parent)
+		for (int i = 0; i < count; ++i)
+		{
+			int id = uint8_t(tcnst[i].type & Constraint::CnstV) >> Constraint::CnstVp;
+			int sid = id_map[tcnst[i].type & uint8_t(Constraint::CnstV - 1)];
+
+			auto v_end = alt_cst_values[id][sid];
+
+			ctrl[i].SetEnd(v_end);
+			auto v = ctrl[i].GetValue(time);
+
+			dst_cst_values[id][sid] = v;
+		}
+	}
+
+	void DoLayout(const BlockPtr& block, const View& view, float time)
+	{
+		Traverse(block, nullptr, [view, time](Block* block, Block* parent)
 		{
 			glm::aabb2 parent_box = parent == nullptr ? view.view_box : parent->GetBox();
 			const auto& cnst = block->GetConstraints();
-			glm::aabb2 current_box = SolveConstraints(view.view_box, parent_box, cnst.data(), cnst.size(), view.GetPixelPerDotScalingFactor());
+
+			uint8_t mask[2] = {0};
+			float cst_values[2][5];
+			ComputeValues(view.view_box, parent_box, cnst.data(), cnst.size(), view.GetPixelPerDotScalingFactor(), cst_values, mask);
+			glm::aabb2 current_box;
+
+			if (block->GetTransitionMask() != 0)
+			{
+				auto& ctrl = block->GetControllers();
+				const auto& tcnst = block->GetTransitionConstraints();
+				auto& ttcnst = block->GetTransitionConstraintsTarget();
+
+				float alt_cst_values[2][5];
+				ComputeValues(view.view_box, parent_box, tcnst.data(), tcnst.size(), view.GetPixelPerDotScalingFactor(), alt_cst_values, mask);
+
+				InterpolateTransitionValues(&tcnst[0], &ctrl[0], ctrl.size(), alt_cst_values, cst_values, time);
+
+				if (!ttcnst.empty())
+				{
+					for (auto& c: ttcnst)
+					{
+						block->UpdateProp(c.type, c.unit, c.value, time);
+					}
+					ttcnst.clear();
+				}
+			}
+
+			current_box = SolveConstraints(view.view_box, parent_box, cnst.data(), cnst.size(), cst_values, mask);
+
 			block->SetBox(current_box);
 			block->SetRadius(ResolveRadius(current_box, block->GetRadiusVal(), block->GetRadiusUnits(), view.GetPixelPerDotScalingFactor()));
 		});

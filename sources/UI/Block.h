@@ -5,6 +5,7 @@
 #include "UI/View.h"
 #include "UI/Enums.h"
 #include "UI/Emitters.h"
+#include "Controller/mcontroller.h"
 
 #include <glm/matrix.hpp>
 
@@ -23,6 +24,9 @@ namespace UI
 		friend void Traverse(const BlockPtr& block, const BlockPtr& parent, const std::function<void(Block* block, Block* parent)>& lambda);
 		friend void Traverse(const BlockPtr& block, const BlockPtr& parent, const std::function<void(Block* block, Block* parent)>& lambda_pre, const std::function<void(Block* block, Block* parent)>& lambda_post);
 	public:
+		typedef stack::vector<MController<float>, 1> PropControllers;
+		typedef stack::vector<Constraint, 1> TransitionConstraints;
+
 		Block() = default;
 		~Block()
 		{
@@ -55,7 +59,11 @@ namespace UI
 		void SetRadiusUnit(const Constraint::Unit* u) { memcpy(m_radius_unit, u, 4 * sizeof(Constraint::Unit)); }
 		void PushConstraint(const Constraint& cnst) { m_constraints.push_back(cnst); };
 		const stack::vector<Constraint, 4>& GetConstraints() const { return m_constraints; };
+		PropControllers& GetControllers() { return m_controllers; };
+		const TransitionConstraints& GetTransitionConstraints() const { return m_transition_constraints; };
+		TransitionConstraints& GetTransitionConstraintsTarget() { return m_transition_target_constraints; };
 		void Emit(UI::Renderer* r, float time = 0.0f, int flags = 0) {	if (has_emitter) (*GetEmitter())(r, this, time, flags); }
+		void PushTargetTransitionConstraints(const Constraint& cnst) { m_transition_target_constraints.push_back(cnst); };
 
 		template <typename R, typename... Ts>
 		void EmplaceEmitter(Ts&&... args) {
@@ -65,6 +73,53 @@ namespace UI
 		void EnableClipping(bool flag) { clip_overflow = flag; }
 		bool IsClipping() const { return clip_overflow; }
 
+		uint8_t GetTransitionMask() { return m_transition_mask; }
+
+		void UpdateProp(Constraint::Type type, Constraint::Unit new_unit, float new_value, float time)
+		{
+			for (int i = 0, l = m_constraints.size(); i < l; ++i )
+			{
+				if (m_constraints[i].type == type)
+				{
+					if (Constraint::to_mask(type) & m_transition_mask)
+					{
+						for (int j = 0, jl = m_transition_constraints.size(); j < jl; ++j)
+						{
+							if (m_transition_constraints[j].type == type)
+							{
+								m_transition_constraints[j].unit = new_unit;
+								m_transition_constraints[j].value = new_value;
+								m_controllers[j].SetStartTime(time);
+								return;
+							}
+						}
+						m_constraints[i].unit = new_unit;
+						m_constraints[i].value = new_value;
+					}
+					else
+					{
+						m_constraints[i].unit = new_unit;
+						m_constraints[i].value = new_value;
+						return;
+					}
+				}
+			}
+		}
+
+		void SetTransitionProperty(Constraint::Type type, float duration)
+		{
+			for (int i = 0, l = m_constraints.size(); i < l; ++i)
+			{
+				if (m_constraints[i].type == type)
+				{
+					m_transition_mask |= Constraint::to_mask(type);
+					m_controllers.push_back(MController<float>(duration));
+					m_transition_constraints.push_back(m_constraints[i]);
+					return;
+				}
+			}
+			spdlog::error("SetTransitionProperty {}, but it does not exist", int(type));
+		}
 
 	private:
 		IEmitter* GetEmitter() { return (IEmitter*)userdata; }
@@ -74,6 +129,11 @@ namespace UI
 		glm::vec4 m_radius_val = glm::vec4(0);
 		Constraint::Unit m_radius_unit[4] = { Constraint::Point };
 		stack::vector<Constraint, 4> m_constraints;
+		TransitionConstraints m_transition_constraints;
+		TransitionConstraints m_transition_target_constraints;
+		PropControllers m_controllers;
+		uint8_t m_transition_mask;
+
 		stack::vector<BlockPtr, 4> m_childs;
 		glm::vec2 m_rotation = glm::vec2(1.0f, 0.0f);
 		uint8_t userdata[EmitterSizeCheck::DataSize] = {0};
@@ -93,7 +153,7 @@ namespace UI
 
 	void Render(UI::Renderer* renderer, const BlockPtr& root, View view, float time = 0.0f, int flags = 0);
 
-	void DoLayout(const BlockPtr& block, const View& view);
+	void DoLayout(const BlockPtr& block, const View& view, float time);
 
 	void Action(const BlockPtr& root, const View& view, glm::vec2 mouse_pos, bool trigger, bool mouse_left_click);
 }

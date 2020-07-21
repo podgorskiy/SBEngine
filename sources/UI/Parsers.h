@@ -43,6 +43,26 @@ namespace UI
 		return false;
 	}
 
+	inline bool ParseTime(const char* x, float& value)
+	{
+		serialization::Parser parser(x);
+		parser.AcceptWhiteSpace();
+		if (parser.AcceptFloat(value))
+		{
+			parser.AcceptWhiteSpace();
+			if (parser.AcceptStr("s"))
+			{
+			}
+			else if (parser.AcceptStr("ms"))
+			{
+				value /= 1000.0f;
+			}
+			parser.AcceptWhiteSpace();
+			return parser.EOS();
+		}
+		return false;
+	}
+
 	inline bool ParseUnitValueList(const char* x, Constraint::Unit* unit, float* value, int max_components, int* components)
 	{
 		serialization::Parser parser(x);

@@ -28,6 +28,12 @@ namespace UI
 			CenterBottom = CnstV | CnstC | CnstR,
 		};
 
+		static uint8_t to_mask(Type t)
+		{
+			if (t & CnstV) return (uint8_t(t) << 4);
+			return t;
+		}
+
 		enum Unit : uint8_t
 		{
 			Percentage,
