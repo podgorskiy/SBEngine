@@ -1,98 +1,20 @@
 #include "Renderer2D.h"
-#include "View.h"
+#include "ScriberTextBackend.h"
+#include "Commands.h"
 #include "Render/Shader.h"
-#include <tuple>
-#include <MemRefFile.h>
-#include <spdlog/spdlog.h>
-
-#include <bgfx/bgfx.h>
 #include "views.h"
+#include <spdlog/spdlog.h>
+#include <fsal.h>
+#include <FileInterface.h>
+#include <bgfx/bgfx.h>
 
 
 using namespace Render;
 
 
 
-class TextBackend: public Scriber::IRenderAPI
-{
-public:
-	TextBackend()
-	{
-		int size = 1024;
-
-		m_textureHandle = bgfx::createTexture2D(
-			(uint16_t)size
-			, (uint16_t)size
-			, false
-			, 1
-			, bgfx::TextureFormat::RG8
-			, BGFX_SAMPLER_POINT | BGFX_SAMPLER_UVW_CLAMP
-			, nullptr
-		);
-
-		m_program = Render::MakeProgram("vs_text.bin", "fs_text.bin");
-
-		m_vertexSpec
-			.begin()
-			.add(bgfx::Attrib::Position,  2, bgfx::AttribType::Int16, true)
-			.add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Int16, true)
-			.add(bgfx::Attrib::Color0,    4, bgfx::AttribType::Uint8, true)
-			.end();
-
-		u_texture = m_program->GetUniform("u_texture");
-		u_stroke = m_program->GetUniform("u_stroke");
-	}
-
-	void SaveTextureToFile() override {};
-
-	void UpdateTexture(Scriber::Image glyph, Scriber::u16vec2 pos) override
-	{
-		const bgfx::Memory* memory = bgfx::copy(glyph.ptr<const uint8_t*>(0), (int)glyph.GetRowSizeAligned() * glyph.GetSize().y);
-		Scriber::ivec2 p(pos);
-		bgfx::updateTexture2D(m_textureHandle, 0, 0, p.x, p.y, glyph.GetSize().x, glyph.GetSize().y, memory, glyph.GetRowSizeAligned());
-	}
-
-	void ClearTexture() override
-	{
-	}
-
-	void Render(Scriber::Vertex* vertexBuffer, uint16_t* indexBuffer, uint16_t vertex_count, uint16_t primitiveCount) override
-	{
-		bgfx::TransientVertexBuffer tvb;
-		bgfx::TransientIndexBuffer tib;
-
-		bgfx::allocTransientVertexBuffer(&tvb, vertex_count, m_vertexSpec);
-		bgfx::allocTransientIndexBuffer(&tib, primitiveCount * 3);
-
-		memcpy(tvb.data, vertexBuffer, vertex_count * sizeof(Scriber::Vertex));
-		memcpy(tib.data, indexBuffer, primitiveCount * 3 * sizeof(uint16_t));
-
-		bgfx::setVertexBuffer(0, &tvb, 0, vertex_count);
-		bgfx::setIndexBuffer(&tib, 0, primitiveCount * 3);
-
-		bgfx::setTexture(0, u_texture.m_handle,  m_textureHandle);
-
-		u_stroke.ApplyValue(glm::vec4(0.0, 0.0, 0.0, 1.0));
-
-		uint64_t state = 0
-					| BGFX_STATE_WRITE_RGB
-					| BGFX_STATE_BLEND_FUNC(BGFX_STATE_BLEND_ONE, BGFX_STATE_BLEND_INV_SRC_ALPHA);
-		bgfx::setState(state);
-
-		bgfx::submit(ViewIds::GUI, m_program->GetHandle(), 0);
-	}
-
-	bgfx::TextureHandle m_textureHandle;
-	Render::ProgramPtr m_program;
-	bgfx::VertexLayout m_vertexSpec;
-	Render::Uniform u_texture;
-	Render::Uniform u_stroke;
-};
-
-
 Renderer2D::Renderer2D(): m_gamma_correction(false)
 {
-	encode_sciscors.set_any();
 	scissoring_enabled = false;
 }
 
@@ -115,8 +37,6 @@ void Renderer2D::Init()
 		.add(bgfx::Attrib::Color0,    4, bgfx::AttribType::Uint8, true)
 		.end();
 
-	m_command_queue = fsal::File(new fsal::MemRefFile());
-
 	Scriber::Driver::SetCustomIOFunctions(
 			[this](const char* filename, const char* mode)
 			{
@@ -129,7 +49,7 @@ void Renderer2D::Init()
 				{
 					m = fsal::kWrite;
 				}
-				auto f = m_fs.Open(filename, m);
+				auto f = fsal::FileSystem().Open(filename, m);
 				if (!f)
 					return (Scriber::UserFile*)nullptr;
 				return (Scriber::UserFile*)new std::shared_ptr<fsal::FileInterface>(f.GetInterface());
@@ -173,75 +93,10 @@ void Renderer2D::Init()
 	m_text_driver.AndFontToTypeface(id, "fonts/NotoSans-Regular.ttf", Scriber::FontStyle::Regular);
 }
 
-void Renderer2D::Rect(glm::aabb2 rect, color col, glm::vec4 radius)
-{
-	m_command_queue.Write(C_RectCol);
-	m_command_queue.Write(rect);
-	m_command_queue.Write(radius);
-	m_command_queue.Write(col);
-}
-
-
-void Renderer2D::Rect(glm::aabb2 rect, bgfx::TextureHandle texture, glm::aabb2 uv, glm::vec4 radius)
-{
-	if (glm::is_overlapping(encode_sciscors, rect))
-	{
-		m_command_queue.Write(C_RectTex);
-		m_command_queue.Write(rect);
-		m_command_queue.Write(radius);
-		m_command_queue.Write(uv);
-		m_command_queue.Write(texture);
-	}
-}
-
-void Renderer2D::Text(glm::aabb2 rect, const char* text, size_t len)
-{
-	m_command_queue.Write(C_Text);
-	m_command_queue.Write(rect);
-	if (len == 0)
-	{
-		len = strlen(text);
-	}
-	m_command_queue.Write(len + 1);
-	m_command_queue.Write((const uint8_t*)text, len);
-	m_command_queue.Write(char(0));
-}
-
 void Renderer2D::SetUp(View view_box)
 {
 	auto prj = glm::ortho(view_box.view_box.minp.x, view_box.view_box.maxp.x, view_box.view_box.maxp.y, view_box.view_box.minp.y);
 	bgfx::setViewTransform(ViewIds::GUI, nullptr, &prj[0]);
-}
-
-void Renderer2D::PushScissors(glm::aabb2 box)
-{
-	m_command_queue.Write(C_SetScissors);
-
-	if (!scissors_stack.empty())
-	{
-		auto rect = scissors_stack.back();
-		box &= rect;
-	}
-	encode_sciscors = box;
-	scissors_stack.push_back(box);
-	m_command_queue.Write(box);
-}
-
-void Renderer2D::PopScissors()
-{
-	scissors_stack.pop_back();
-	if (!scissors_stack.empty())
-	{
-		auto box = scissors_stack.back();
-		m_command_queue.Write(C_SetScissors);
-		m_command_queue.Write(box);
-		encode_sciscors = box;
-	}
-	else
-	{
-		m_command_queue.Write(C_ResetScissors);
-		encode_sciscors.set_any();
-	}
 }
 
 
@@ -407,14 +262,16 @@ void Renderer2D::PrimConvexPolyFilled(glm::vec2* points, int count, color col)
 
 void Renderer2D::Draw()
 {
-	m_command_queue.Write(C_End);
-	m_command_queue.Seek(0);
+	auto command_queue =  m_encoder.GetCommandQueue();
+
+	command_queue.Write(C_End);
+	command_queue.Seek(0);
 	PrimReset();
 
 	bgfx::TextureHandle tex;
 
 	Command cmd;
-	while (m_command_queue.Read(cmd) && cmd != C_End)
+	while (command_queue.Read(cmd) && cmd != C_End)
 	{
 		bool need_flush = false;
 		switch(cmd)
@@ -424,9 +281,9 @@ void Renderer2D::Draw()
 				glm::aabb2 rect;
 				color col;
 				glm::vec4 radius;
-				m_command_queue.Read(rect);
-				m_command_queue.Read(radius);
-				m_command_queue.Read(col);
+				command_queue.Read(rect);
+				command_queue.Read(radius);
+				command_queue.Read(col);
 
 				if (m_gamma_correction)
 				{
@@ -450,10 +307,10 @@ void Renderer2D::Draw()
 				glm::aabb2 rect;
 				glm::aabb2 uv;
 				glm::vec4  radius;
-				m_command_queue.Read(rect);
-				m_command_queue.Read(radius);
-				m_command_queue.Read(uv);
-				m_command_queue.Read(tex);
+				command_queue.Read(rect);
+				command_queue.Read(radius);
+				command_queue.Read(uv);
+				command_queue.Read(tex);
 
 				if (radius == glm::vec4(0))
 				{
@@ -471,17 +328,17 @@ void Renderer2D::Draw()
 			{
 				glm::aabb2 rect;
 				size_t len;
-				m_command_queue.Read(rect);
-				m_command_queue.Read(len);
-				auto ptr = (const char*)m_command_queue.GetDataPointer() + m_command_queue.Tell();
-				m_command_queue.Seek(len, fsal::File::CurrentPosition);
+				command_queue.Read(rect);
+				command_queue.Read(len);
+				auto ptr = (const char*)command_queue.GetDataPointer() + command_queue.Tell();
+				command_queue.Seek(len, fsal::File::CurrentPosition);
 				m_text_driver.DrawLabel(ptr, rect.minp.x, rect.minp.y, Scriber::Font(0, 32, Scriber::FontStyle::Regular, 0xFFFFFFFF, 1));
 			}
 			need_flush = true;
 			break;
 			case C_SetScissors:
 			{
-				m_command_queue.Read(current_sciscors);
+				command_queue.Read(current_sciscors);
 				scissoring_enabled = true;
 			}
 			need_flush = true;
@@ -571,5 +428,5 @@ void Renderer2D::Draw()
 		{
 		}
 	}
-	m_command_queue.Seek(0);
+	command_queue.Seek(0);
 }

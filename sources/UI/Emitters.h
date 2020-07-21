@@ -1,5 +1,6 @@
 #pragma once
 #include <2DEngine/Renderer2D.h>
+#include "Render/Texture.h"
 #include "Enums.h"
 
 
@@ -10,7 +11,7 @@ namespace UI
 	class IEmitter
 	{
 	public:
-		virtual void operator()(Render::Renderer2D*, const Block*, float time, int flags) = 0;
+		virtual void operator()(Render::Encoder* encoder, const Block*, float time, int flags) = 0;
 
 		virtual ~IEmitter() = default;
 	};
@@ -20,7 +21,7 @@ namespace UI
 	public:
 		explicit SFillEmitter(Render::color c);
 
-		virtual void operator()(Render::Renderer2D*, const Block*, float time, int flags);
+		virtual void operator()(Render::Encoder* encoder, const Block*, float time, int flags);
 
 	private:
 		Render::color col;
@@ -31,7 +32,7 @@ namespace UI
 	public:
 		SImageEmitter(Render::TexturePtr tex, ImSize::Enum size, ImPos::Enum pos, ImTransform::Enum t);
 
-		virtual void operator()(Render::Renderer2D*, const Block*, float time, int flags);
+		virtual void operator()(Render::Encoder* encoder, const Block*, float time, int flags);
 
 	private:
 		glm::ivec2 image_size;
@@ -46,7 +47,7 @@ namespace UI
 	public:
 		STextEmitter(std::string text);
 
-		virtual void operator()(Render::Renderer2D*, const Block*, float time, int flags);
+		virtual void operator()(Render::Encoder* encoder, const Block*, float time, int flags);
 
 	private:
 		std::string text;

@@ -5,6 +5,7 @@
 #include "2DEngine/View.h"
 #include "UI/Enums.h"
 #include "UI/Emitters.h"
+#include "Render/Texture.h"
 #include "Controller/mcontroller.h"
 
 #include <glm/matrix.hpp>
@@ -63,7 +64,7 @@ namespace UI
 		PropControllers& GetControllers() { return m_controllers; };
 		const TransitionConstraints& GetTransitionConstraints() const { return m_transition_constraints; };
 		TransitionConstraints& GetTransitionConstraintsTarget() { return m_transition_target_constraints; };
-		void Emit(Render::Renderer2D* r, float time = 0.0f, int flags = 0) {	if (has_emitter) (*GetEmitter())(r, this, time, flags); }
+		void Emit(Render::Encoder* r, float time = 0.0f, int flags = 0) {	if (has_emitter) (*GetEmitter())(r, this, time, flags); }
 		void PushTargetTransitionConstraints(const Constraint& cnst) { m_transition_target_constraints.push_back(cnst); };
 
 		template <typename R, typename... Ts>

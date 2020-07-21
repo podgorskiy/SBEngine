@@ -50,6 +50,7 @@ namespace Render
 			m_type = other.m_type;
 			m_num = other.m_num;
 			m_owns = false;
+			return *this;
 		};
 
 		Uniform(): m_handle({bgfx::kInvalidHandle}), m_type(VarType::INVALID), m_num(0), m_owns(false) {}

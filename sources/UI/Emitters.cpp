@@ -2,7 +2,7 @@
 #include "Block.h"
 
 
-void UI::SFillEmitter::operator()(Render::Renderer2D* r, const UI::Block* block, float time, int flags)
+void UI::SFillEmitter::operator()(Render::Encoder* r, const UI::Block* block, float time, int flags)
 {
 	auto box = block->GetBox();
 	r->Rect(box, col, block->GetRadius());
@@ -11,7 +11,7 @@ void UI::SFillEmitter::operator()(Render::Renderer2D* r, const UI::Block* block,
 UI::SFillEmitter::SFillEmitter(Render::color c): col(c)
 {}
 
-void UI::SImageEmitter::operator()(Render::Renderer2D* r, const UI::Block* block, float time, int flags)
+void UI::SImageEmitter::operator()(Render::Encoder* r, const UI::Block* block, float time, int flags)
 {
 	auto box = block->GetBox();
 	glm::aabb2 uv;
@@ -69,7 +69,7 @@ UI::STextEmitter::STextEmitter(std::string text): text(std::move(text))
 {
 }
 
-void UI::STextEmitter::operator()(Render::Renderer2D* r, const Block* block, float time, int flags)
+void UI::STextEmitter::operator()(Render::Encoder* r, const Block* block, float time, int flags)
 {
 	auto box = block->GetBox();
 	r->Text(box, text.c_str(), text.size());

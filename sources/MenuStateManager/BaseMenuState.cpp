@@ -1,4 +1,3 @@
-#pragma once
 #include "BaseMenuState.h"
 #include "MenuStateManager.h"
 #include "MenuFactory.h"
@@ -10,10 +9,7 @@
 
 BaseMenuState::BaseMenuState(const fsal::File& yaml, MenuStateManager* msm): m_msm(msm)
 {
-	using fs = fsal::FileSystem;
-	using loc = fsal::Location;
 	m_root = UI::Load(yaml);
-
 	YAML::Node root_node = YAML::Load(std::string(yaml));
 	auto name = root_node["menu_name"];
 	m_name = name.as<std::string>("noname");

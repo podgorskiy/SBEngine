@@ -228,15 +228,16 @@ namespace UI
 	void Render(Render::Renderer2D* renderer, const BlockPtr& root, Render::View view, float time, int flags)
 	{
     	renderer->SetUp(view);
-		Traverse(root, nullptr, [renderer, time, flags](UI::Block* block, UI::Block* parent)
+    	Render::Encoder* encoder = renderer->GetEncoder();
+		Traverse(root, nullptr, [encoder, time, flags](UI::Block* block, UI::Block* parent)
 		{
 			if (block->IsClipping())
-				renderer->PushScissors(block->GetBox());
-			block->Emit(renderer, time, flags);
-		}, [renderer](UI::Block* block, UI::Block* parent)
+				encoder->PushScissors(block->GetBox());
+			block->Emit(encoder, time, flags);
+		}, [encoder](UI::Block* block, UI::Block* parent)
 		{
 			if (block->IsClipping())
-				renderer->PopScissors();
+				encoder->PopScissors();
 		});
 		renderer->Draw();
 	}
