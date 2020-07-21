@@ -19,12 +19,12 @@ BaseMenuState::BaseMenuState(const fsal::File& yaml, MenuStateManager* msm): m_m
 	m_name = name.as<std::string>("noname");
 }
 
-void BaseMenuState::Update(UI::View viewbox, float time, float deltaTime)
+void BaseMenuState::Update(Render::View viewbox, float time, float deltaTime)
 {
 	UI::DoLayout(m_root, viewbox, time);
 }
 
-void BaseMenuState::Draw(UI::View viewbox, UI::Renderer* rd)
+void BaseMenuState::Draw(Render::View viewbox, Render::Renderer2D* rd)
 {
 	UI::Render(rd, m_root, viewbox);
 }

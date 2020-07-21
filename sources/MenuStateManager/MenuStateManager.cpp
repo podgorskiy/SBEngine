@@ -18,7 +18,7 @@ MenuStateManager::~MenuStateManager()
 	spdlog::info("Destroying MenuStateManager");
 }
 
-void MenuStateManager::Update(UI::View viewbox, float time, float deltaTime)
+void MenuStateManager::Update(Render::View viewbox, float time, float deltaTime)
 {
 	auto state = GetFrontState();
 	if (state)
@@ -35,7 +35,7 @@ void MenuStateManager::Update(UI::View viewbox, float time, float deltaTime)
 	m_deletionQueue.clear();
 }
 
-void MenuStateManager::Draw(UI::View viewbox, UI::Renderer* rd, float time, float deltaTime)
+void MenuStateManager::Draw(Render::View viewbox, Render::Renderer2D* rd, float time, float deltaTime)
 {
 	auto state = GetFrontState();
 	if (state)

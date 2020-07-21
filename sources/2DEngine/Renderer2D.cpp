@@ -1,4 +1,4 @@
-#include "UI_Backend.h"
+#include "Renderer2D.h"
 #include "View.h"
 #include "Render/Shader.h"
 #include <tuple>
@@ -10,7 +10,6 @@
 
 
 using namespace Render;
-using namespace UI;
 
 
 
@@ -91,18 +90,18 @@ public:
 };
 
 
-Renderer::Renderer(): m_gamma_correction(false)
+Renderer2D::Renderer2D(): m_gamma_correction(false)
 {
 	encode_sciscors.set_any();
 	scissoring_enabled = false;
 }
 
-Renderer::~Renderer()
+Renderer2D::~Renderer2D()
 {
 
 }
 
-void Renderer::Init()
+void Renderer2D::Init()
 {
 	m_programCol = Render::MakeProgram("vs_gui.bin", "fs_gui.bin");
 	m_programTex = Render::MakeProgram("vs_gui.bin", "fs_gui_tex.bin");
@@ -174,7 +173,7 @@ void Renderer::Init()
 	m_text_driver.AndFontToTypeface(id, "fonts/NotoSans-Regular.ttf", Scriber::FontStyle::Regular);
 }
 
-void Renderer::Rect(glm::aabb2 rect, color col, glm::vec4 radius)
+void Renderer2D::Rect(glm::aabb2 rect, color col, glm::vec4 radius)
 {
 	m_command_queue.Write(C_RectCol);
 	m_command_queue.Write(rect);
@@ -183,7 +182,7 @@ void Renderer::Rect(glm::aabb2 rect, color col, glm::vec4 radius)
 }
 
 
-void Renderer::Rect(glm::aabb2 rect, bgfx::TextureHandle texture, glm::aabb2 uv, glm::vec4 radius)
+void Renderer2D::Rect(glm::aabb2 rect, bgfx::TextureHandle texture, glm::aabb2 uv, glm::vec4 radius)
 {
 	if (glm::is_overlapping(encode_sciscors, rect))
 	{
@@ -195,7 +194,7 @@ void Renderer::Rect(glm::aabb2 rect, bgfx::TextureHandle texture, glm::aabb2 uv,
 	}
 }
 
-void Renderer::Text(glm::aabb2 rect, const char* text, size_t len)
+void Renderer2D::Text(glm::aabb2 rect, const char* text, size_t len)
 {
 	m_command_queue.Write(C_Text);
 	m_command_queue.Write(rect);
@@ -208,19 +207,13 @@ void Renderer::Text(glm::aabb2 rect, const char* text, size_t len)
 	m_command_queue.Write(char(0));
 }
 
-int Renderer::GetGlyphTexture() const
-{
-	auto r = std::static_pointer_cast<TextBackend>(m_text_backend);
-	return 0;// r->m_textureHandle;
-}
-
-void Renderer::SetUp(UI::View view_box)
+void Renderer2D::SetUp(View view_box)
 {
 	auto prj = glm::ortho(view_box.view_box.minp.x, view_box.view_box.maxp.x, view_box.view_box.maxp.y, view_box.view_box.minp.y);
 	bgfx::setViewTransform(ViewIds::GUI, nullptr, &prj[0]);
 }
 
-void Renderer::PushScissors(glm::aabb2 box)
+void Renderer2D::PushScissors(glm::aabb2 box)
 {
 	m_command_queue.Write(C_SetScissors);
 
@@ -234,7 +227,7 @@ void Renderer::PushScissors(glm::aabb2 box)
 	m_command_queue.Write(box);
 }
 
-void Renderer::PopScissors()
+void Renderer2D::PopScissors()
 {
 	scissors_stack.pop_back();
 	if (!scissors_stack.empty())
@@ -252,7 +245,7 @@ void Renderer::PopScissors()
 }
 
 
-void Renderer::PathArcTo(const glm::vec2& center, float radius, float a_min, float a_max, int num_segments)
+void Renderer2D::PathArcTo(const glm::vec2& center, float radius, float a_min, float a_max, int num_segments)
 {
 	if (radius == 0.0f)
 	{
@@ -268,7 +261,7 @@ void Renderer::PathArcTo(const glm::vec2& center, float radius, float a_min, flo
 	}
 }
 
-void Renderer::Path90Arc(const glm::vec2& center, float radius, ArcType type)
+void Renderer2D::Path90Arc(const glm::vec2& center, float radius, ArcType type)
 {
 	if (radius == 0.0f)
 	{
@@ -302,7 +295,7 @@ void Renderer::Path90Arc(const glm::vec2& center, float radius, ArcType type)
 	}
 }
 
-void Renderer::PathRect(const glm::vec2& a, const glm::vec2& c, const glm::vec4& radius)
+void Renderer2D::PathRect(const glm::vec2& a, const glm::vec2& c, const glm::vec4& radius)
 {
     glm::vec2 b(c.x, a.y), d(a.x, c.y);
 	Path90Arc(a + glm::vec2( radius.x, radius.x), radius.x, Arc_TL);
@@ -311,7 +304,7 @@ void Renderer::PathRect(const glm::vec2& a, const glm::vec2& c, const glm::vec4&
 	Path90Arc(d + glm::vec2( radius.w,-radius.w), radius.w, Arc_BL);
 }
 
-void Renderer::PrimReserve(int idx_count, int vtx_count)
+void Renderer2D::PrimReserve(int idx_count, int vtx_count)
 {
 	m_vertexArray.resize(m_vertexArray.size() + vtx_count);
 	m_indexArray.resize(m_indexArray.size() + idx_count);
@@ -320,7 +313,7 @@ void Renderer::PrimReserve(int idx_count, int vtx_count)
 }
 
 
-void Renderer::PrimReset()
+void Renderer2D::PrimReset()
 {
 	m_vertexArray.resize(0);
 	m_indexArray.resize(0);
@@ -330,7 +323,7 @@ void Renderer::PrimReset()
 }
 
 
-void Renderer::PrimRect(const glm::vec2& a, const glm::vec2& c, const glm::vec2& uv_a, const glm::vec2& uv_c, color col)
+void Renderer2D::PrimRect(const glm::vec2& a, const glm::vec2& c, const glm::vec2& uv_a, const glm::vec2& uv_c, color col)
 {
 	PrimReserve(6, 4);
     glm::vec2 b(c.x, a.y), d(a.x, c.y), uv_b(uv_c.x, uv_a.y), uv_d(uv_a.x, uv_c.y);
@@ -346,14 +339,14 @@ void Renderer::PrimRect(const glm::vec2& a, const glm::vec2& c, const glm::vec2&
     _index_write_ptr += 6;
 }
 
-void Renderer::PrimRectRounded(const glm::vec2& a, const glm::vec2& c, const glm::vec4& radius, color col)
+void Renderer2D::PrimRectRounded(const glm::vec2& a, const glm::vec2& c, const glm::vec4& radius, color col)
 {
 	PathClear();
 	PathRect(a, c, radius);
 	PrimConvexPolyFilled(&m_path[0], m_path.size(), col);
 }
 
-void Renderer::PrimConvexPolyFilled(glm::vec2* points, int count, color col)
+void Renderer2D::PrimConvexPolyFilled(glm::vec2* points, int count, color col)
 {
     if (count < 3)
         return;
@@ -412,7 +405,7 @@ void Renderer::PrimConvexPolyFilled(glm::vec2* points, int count, color col)
 }
 
 
-void Renderer::Draw()
+void Renderer2D::Draw()
 {
 	m_command_queue.Write(C_End);
 	m_command_queue.Seek(0);

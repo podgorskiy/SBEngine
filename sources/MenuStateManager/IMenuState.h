@@ -1,6 +1,6 @@
 #pragma once
-#include "UI/View.h"
-#include "UI/UI_Backend.h"
+#include "2DEngine/View.h"
+#include "2DEngine/Renderer2D.h"
 #include <memory>
 #include <string>
 
@@ -14,8 +14,8 @@ public:
 	virtual void OnPush() {};
 	virtual void OnResume() {};
 	virtual void OnPop() {};
-	virtual void Update(UI::View viewbox, float time, float deltaTime) {};
-	virtual void Draw(UI::View viewbox, UI::Renderer* rd) {};
+	virtual void Update(Render::View viewbox, float time, float deltaTime) {};
+	virtual void Draw(Render::View viewbox, Render::Renderer2D* rd) {};
 	virtual std::string GetName() { return "noname"; };
 
 	// virtual void OnEvent(EventBase* event) {};

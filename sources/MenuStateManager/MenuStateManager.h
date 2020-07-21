@@ -1,7 +1,7 @@
 #pragma once
 #include "IMenuState.h"
-#include "UI/View.h"
-#include "UI/UI_Backend.h"
+#include "2DEngine/View.h"
+#include "2DEngine/Renderer2D.h"
 #include <memory>
 #include <vector>
 
@@ -17,9 +17,9 @@ public:
 
 	void Pop();
 
-	void Update(UI::View viewbox, float time, float deltaTime);
+	void Update(Render::View viewbox, float time, float deltaTime);
 
-	void Draw(UI::View viewbox, UI::Renderer* rd, float time, float deltaTime);
+	void Draw(Render::View viewbox, Render::Renderer2D* rd, float time, float deltaTime);
 
 	void Push(std::string filename);
 

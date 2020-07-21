@@ -19,8 +19,8 @@ class BaseMenuState: public IMenuState
 public:
 	BaseMenuState(const fsal::File& yaml, MenuStateManager* msm);
 
-	void Update(UI::View viewbox, float time, float deltaTime) override;
-	void Draw(UI::View viewbox, UI::Renderer* rd) override;
+	void Update(Render::View viewbox, float time, float deltaTime) override;
+	void Draw(Render::View viewbox, Render::Renderer2D* rd) override;
 	std::string GetName() override;
 
 protected:

@@ -1,17 +1,17 @@
-#include "UI_Backend.h"
+#include "2DEngine/Renderer2D.h"
 #include "Block.h"
 
 
-void UI::SFillEmitter::operator()(UI::Renderer* r, const UI::Block* block, float time, int flags)
+void UI::SFillEmitter::operator()(Render::Renderer2D* r, const UI::Block* block, float time, int flags)
 {
 	auto box = block->GetBox();
 	r->Rect(box, col, block->GetRadius());
 }
 
-UI::SFillEmitter::SFillEmitter(color c): col(c)
+UI::SFillEmitter::SFillEmitter(Render::color c): col(c)
 {}
 
-void UI::SImageEmitter::operator()(UI::Renderer* r, const UI::Block* block, float time, int flags)
+void UI::SImageEmitter::operator()(Render::Renderer2D* r, const UI::Block* block, float time, int flags)
 {
 	auto box = block->GetBox();
 	glm::aabb2 uv;
@@ -69,7 +69,7 @@ UI::STextEmitter::STextEmitter(std::string text): text(std::move(text))
 {
 }
 
-void UI::STextEmitter::operator()(UI::Renderer* r, const Block* block, float time, int flags)
+void UI::STextEmitter::operator()(Render::Renderer2D* r, const Block* block, float time, int flags)
 {
 	auto box = block->GetBox();
 	r->Text(box, text.c_str(), text.size());

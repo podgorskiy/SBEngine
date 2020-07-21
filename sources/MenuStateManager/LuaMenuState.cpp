@@ -96,7 +96,7 @@ LuaMenuState::~LuaMenuState()
 	lua_close(m_lua);
 }
 
-void LuaMenuState::Update(UI::View viewbox, float time, float deltaTime)
+void LuaMenuState::Update(Render::View viewbox, float time, float deltaTime)
 {
 	if (m_lua)
 	{
@@ -177,7 +177,7 @@ void LuaMenuState::Update(UI::View viewbox, float time, float deltaTime)
 	BaseMenuState::Update(viewbox, time, deltaTime);
 }
 
-void LuaMenuState::Draw(UI::View viewbox, UI::Renderer* rd)
+void LuaMenuState::Draw(Render::View viewbox, Render::Renderer2D* rd)
 {
 	if (m_lua)
 	{

@@ -18,7 +18,7 @@ namespace UI
     	return std::make_shared<Block>(std::initializer_list<Constraint>(constraints));
     }
 
-    BlockPtr make_block(std::initializer_list<Constraint> constraints, color c)
+    BlockPtr make_block(std::initializer_list<Constraint> constraints, Render::color c)
     {
     	auto block = std::make_shared<Block>(std::initializer_list<Constraint>(constraints));
     	block->EmplaceEmitter<SFillEmitter>(c);
@@ -225,7 +225,7 @@ namespace UI
 		lambda_post(block.get(), parent.get());
 	}
 
-	void Render(UI::Renderer* renderer, const BlockPtr& root, View view, float time, int flags)
+	void Render(Render::Renderer2D* renderer, const BlockPtr& root, Render::View view, float time, int flags)
 	{
     	renderer->SetUp(view);
 		Traverse(root, nullptr, [renderer, time, flags](UI::Block* block, UI::Block* parent)
@@ -257,7 +257,7 @@ namespace UI
 		}
 	}
 
-	void DoLayout(const BlockPtr& block, const View& view, float time)
+	void DoLayout(const BlockPtr& block, const Render::View& view, float time)
 	{
 		Traverse(block, nullptr, [view, time](Block* block, Block* parent)
 		{
@@ -297,7 +297,7 @@ namespace UI
 		});
 	}
 
-	void Action(const BlockPtr& block, const View& view, glm::vec2 mouse_pos, bool trigger, bool mouse_left_click)
+	void Action(const BlockPtr& block, const Render::View& view, glm::vec2 mouse_pos, bool trigger, bool mouse_left_click)
 	{
 		Traverse(block, nullptr, [view, mouse_pos, trigger, mouse_left_click](Block* block, Block* parent)
 		{

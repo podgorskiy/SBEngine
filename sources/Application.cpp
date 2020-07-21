@@ -178,7 +178,7 @@ void Application::Update(float time, float deltaTime)
 	// m_obj.Draw(ViewIds::Main, m_program);
 
 	{
-		UI::View view_box(m_windowBufferSize, 72);
+		Render::View view_box(m_windowBufferSize, 72);
 		m_menu_manager->Update(view_box, time, deltaTime);
 		m_menu_manager->Draw(view_box, &m_uir, time, deltaTime);
 //

@@ -1,7 +1,7 @@
 #pragma once
 #include "Block.h"
 #include "Serialization/parser.h"
-#include "UI/color.h"
+#include "2DEngine/color.h"
 
 
 namespace UI
@@ -94,7 +94,7 @@ namespace UI
 		return parser.EOS();
 	}
 
-	inline bool ParseSharpColor(const char* x, color& c)
+	inline bool ParseSharpColor(const char* x, Render::color& c)
 	{
 		serialization::Parser parser(x);
 		c[3] = 255;
@@ -120,7 +120,7 @@ namespace UI
 		return false;
 	}
 
-	inline bool ParseRGBColor(const char* x, color& c)
+	inline bool ParseRGBColor(const char* x, Render::color& c)
 	{
 		serialization::Parser parser(x);
 		c[3] = 255;
@@ -152,7 +152,7 @@ namespace UI
 		return false;
 	}
 
-	inline bool ParseRGBAColor(const char* x, color& c)
+	inline bool ParseRGBAColor(const char* x, Render::color& c)
 	{
 		serialization::Parser parser(x);
 		c[3] = 255;
@@ -188,7 +188,7 @@ namespace UI
 		return false;
 	}
 
-	inline bool ParseColor(const char* x, color& c)
+	inline bool ParseColor(const char* x, Render::color& c)
 	{
 		if (ParseSharpColor(x, c)) return true;
 		else if (ParseRGBColor(x, c)) return true;

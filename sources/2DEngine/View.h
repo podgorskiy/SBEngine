@@ -3,7 +3,7 @@
 #include <inttypes.h>
 
 
-namespace UI
+namespace Render
 {
 	struct View
 	{

@@ -5,7 +5,7 @@
 #include "Render/Texture.h"
 #include "Render/Shader.h"
 #include "Render/DebugRenderer.h"
-#include "UI/UI_Backend.h"
+#include "2DEngine/Renderer2D.h"
 #include "misc/bgfx_custom_printers.h"
 #include <glm/glm.hpp>
 
@@ -50,8 +50,7 @@ private:
 
 	Render::ProgramPtr m_program;
 	Render::DebugRenderer m_dr;
-	UI::Renderer m_uir;
-
+	Render::Renderer2D m_uir;
 	Render::Uniform u_texture;
 
 	glm::vec2 mouse_pos;

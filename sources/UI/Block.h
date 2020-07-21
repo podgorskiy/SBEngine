@@ -1,8 +1,8 @@
 #pragma once
 #include "utils/stack_vector.h"
-#include "UI/color.h"
+#include "2DEngine/color.h"
 #include "utils/glm_ext.h"
-#include "UI/View.h"
+#include "2DEngine/View.h"
 #include "UI/Enums.h"
 #include "UI/Emitters.h"
 #include "Controller/mcontroller.h"
@@ -12,6 +12,7 @@
 #include <memory>
 #include <initializer_list>
 #include <inttypes.h>
+#include <2DEngine/Renderer2D.h>
 
 
 namespace UI
@@ -62,7 +63,7 @@ namespace UI
 		PropControllers& GetControllers() { return m_controllers; };
 		const TransitionConstraints& GetTransitionConstraints() const { return m_transition_constraints; };
 		TransitionConstraints& GetTransitionConstraintsTarget() { return m_transition_target_constraints; };
-		void Emit(UI::Renderer* r, float time = 0.0f, int flags = 0) {	if (has_emitter) (*GetEmitter())(r, this, time, flags); }
+		void Emit(Render::Renderer2D* r, float time = 0.0f, int flags = 0) {	if (has_emitter) (*GetEmitter())(r, this, time, flags); }
 		void PushTargetTransitionConstraints(const Constraint& cnst) { m_transition_target_constraints.push_back(cnst); };
 
 		template <typename R, typename... Ts>
@@ -143,7 +144,7 @@ namespace UI
 
     BlockPtr make_block(std::initializer_list<Constraint> constraints);
 
-    BlockPtr make_block(std::initializer_list<Constraint> constraints, color c);
+    BlockPtr make_block(std::initializer_list<Constraint> constraints, Render::color c);
 
     BlockPtr make_block(std::initializer_list<Constraint> constraints,
     		Render::TexturePtr tex,
@@ -151,9 +152,9 @@ namespace UI
     		ImPos::Enum pos = ImPos::LeftTop,
     		ImTransform::Enum t = ImTransform::None);
 
-	void Render(UI::Renderer* renderer, const BlockPtr& root, View view, float time = 0.0f, int flags = 0);
+	void Render(Render::Renderer2D* renderer, const BlockPtr& root, Render::View view, float time = 0.0f, int flags = 0);
 
-	void DoLayout(const BlockPtr& block, const View& view, float time);
+	void DoLayout(const BlockPtr& block, const Render::View& view, float time);
 
-	void Action(const BlockPtr& root, const View& view, glm::vec2 mouse_pos, bool trigger, bool mouse_left_click);
+	void Action(const BlockPtr& root, const Render::View& view, glm::vec2 mouse_pos, bool trigger, bool mouse_left_click);
 }

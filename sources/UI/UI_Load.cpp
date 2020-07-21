@@ -74,16 +74,16 @@ namespace UI
 		}
 	}
 
-	bool BuildList(const BlockPtr& parent, const YAML::Node& sequence, ExpessionEvaluator::INTContext& ctx, const std::map<std::string, color>& color_map);
+	bool BuildList(const BlockPtr& parent, const YAML::Node& sequence, ExpessionEvaluator::INTContext& ctx, const std::map<std::string, Render::color>& color_map);
 
-	void LoadEmmitters(YAML::Node node, const BlockPtr& block, const std::map<std::string, color>& color_map)
+	void LoadEmmitters(YAML::Node node, const BlockPtr& block, const std::map<std::string, Render::color>& color_map)
 	{
 		auto bg_color = node["bg_color"];
 		auto bg_img = node["bg_img"];
 		auto text_node = node["text"];
 		if (bg_color.IsDefined())
 		{
-			color c;
+			Render::color c;
 			auto str = bg_color.as<std::string>();
 			str.erase(std::remove (str.begin(), str.end(), ' '), str.end());
 
@@ -209,7 +209,7 @@ namespace UI
 		}
 	}
 
-	BlockPtr BuildBlock(YAML::Node node, ExpessionEvaluator::INTContext& ctx, const std::map<std::string, color>& color_map)
+	BlockPtr BuildBlock(YAML::Node node, ExpessionEvaluator::INTContext& ctx, const std::map<std::string, Render::color>& color_map)
 	{
 		auto block = UI::make_block({});
 		auto name = node["name"];
@@ -273,7 +273,7 @@ namespace UI
 		return block;
 	}
 
-	bool BuildList(const BlockPtr& parent, const YAML::Node& sequence, ExpessionEvaluator::INTContext& ctx, const std::map<std::string, color>& color_map)
+	bool BuildList(const BlockPtr& parent, const YAML::Node& sequence, ExpessionEvaluator::INTContext& ctx, const std::map<std::string, Render::color>& color_map)
 	{
 		ASSERT(sequence.IsSequence(), "'blocks' must be sequence")
 		for (YAML::Node node: sequence)
@@ -286,7 +286,7 @@ namespace UI
 	BlockPtr Load(const fsal::File& f)
 	{
 		using namespace UI::lit;
-		using UI::operator""_c;
+		using Render::operator""_c;
 		spdlog::info("Loading: {}", f.GetPath().string().c_str());
 		YAML::Node root_node = YAML::Load(std::string(f));
 
@@ -310,14 +310,14 @@ namespace UI
 				++i;
 			}
 		}
-		std::map<std::string, color> color_map;
+		std::map<std::string, Render::color> color_map;
 		if (colors.IsDefined())
 		{
 			for (auto c: colors)
 			{
 				std::string key = c.first.as<std::string>();
 				auto value = c.second.as<std::string>();
-				color col;
+				Render::color col;
 				if (ParseColor(value.c_str(), col))
 					color_map[key] = col;
 			}

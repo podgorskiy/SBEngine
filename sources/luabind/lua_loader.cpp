@@ -11,7 +11,6 @@ extern "C"
 
 #include <MenuStateManager/MenuStateManager.h>
 #include <MenuStateManager/IMenuState.h>
-#include <UI/View.h>
 
 namespace luabridge
 {
@@ -51,11 +50,11 @@ void LoadUI_API(lua_State* L)
 
 	getGlobalNamespace (L)
 	  .beginNamespace ("ui")
-	    .beginClass<UI::View>("View")
-	      .addProperty("dpi", &UI::View::dpi)
-	      .addProperty("box", &UI::View::view_box)
-	      .addFunction("get_aspect", &UI::View::GetAspect)
-	      .addFunction("get_ppd_scale", &UI::View::GetPixelPerDotScalingFactor)
+	    .beginClass<Render::View>("View")
+	      .addProperty("dpi", &Render::View::dpi)
+	      .addProperty("box", &Render::View::view_box)
+	      .addFunction("get_aspect", &Render::View::GetAspect)
+	      .addFunction("get_ppd_scale", &Render::View::GetPixelPerDotScalingFactor)
 	    .endClass ()
 	  .endNamespace();
 

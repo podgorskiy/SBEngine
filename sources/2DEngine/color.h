@@ -1,9 +1,8 @@
 #pragma once
-
 #include <glm/glm.hpp>
 
 
-namespace UI
+namespace Render
 {
 	typedef glm::vec<4, uint8_t> color;
 	typedef glm::vec<4, uint16_t> color16;
