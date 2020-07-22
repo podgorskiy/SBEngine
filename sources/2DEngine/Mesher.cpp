@@ -38,6 +38,29 @@ void Mesher::PrimRect(const glm::vec2& a, const glm::vec2& c, const glm::vec2& u
     m_index_write_ptr += 6;
 }
 
+
+void Mesher::PrimRect(const glm::vec2& _a, const glm::vec2& _c, const glm::mat2x3& t, const glm::vec2& uv_a, const glm::vec2& uv_c, color col)
+{
+	PrimReserve(6, 4);
+    glm::vec2 b(_c.x, _a.y), d(_a.x, _c.y), uv_b(uv_c.x, uv_a.y), uv_d(uv_a.x, uv_c.y);
+
+    glm::vec2 a = t * glm::vec3(_a, 1.0f);
+    glm::vec2 c = t * glm::vec3(_c, 1.0f);
+    b = t * glm::vec3(b, 1.0f);
+    d = t * glm::vec3(d, 1.0f);
+
+    auto idx = m_current_index;
+    m_index_write_ptr[0] = idx; m_index_write_ptr[1] = idx+1; m_index_write_ptr[2] = idx+2;
+    m_index_write_ptr[3] = idx; m_index_write_ptr[4] = idx+2; m_index_write_ptr[5] = idx+3;
+    m_vertex_write_ptr[0].pos = a; m_vertex_write_ptr[0].uv = uv_a; m_vertex_write_ptr[0].col = col;
+    m_vertex_write_ptr[1].pos = b; m_vertex_write_ptr[1].uv = uv_b; m_vertex_write_ptr[1].col = col;
+    m_vertex_write_ptr[2].pos = c; m_vertex_write_ptr[2].uv = uv_c; m_vertex_write_ptr[2].col = col;
+    m_vertex_write_ptr[3].pos = d; m_vertex_write_ptr[3].uv = uv_d; m_vertex_write_ptr[3].col = col;
+    m_vertex_write_ptr += 4;
+    m_current_index += 4;
+    m_index_write_ptr += 6;
+}
+
 void Mesher::PrimRectRounded(const glm::vec2& a, const glm::vec2& c, const glm::vec4& radius, color col)
 {
 	m_path.PathClear();

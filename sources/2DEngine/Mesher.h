@@ -18,6 +18,7 @@ namespace Render
 		void PrimReserve(int idx_count, int vtx_count);
 
 		void PrimRect(const glm::vec2& a, const glm::vec2& c, const glm::vec2& uv_a, const glm::vec2& uv_c, color col);
+		void PrimRect(const glm::vec2& a, const glm::vec2& c, const glm::mat2x3& t, const glm::vec2& uv_a, const glm::vec2& uv_c, color col);
 
 		void PrimRectRounded(const glm::vec2& a, const glm::vec2& c, const glm::vec4& radius, color col);
 

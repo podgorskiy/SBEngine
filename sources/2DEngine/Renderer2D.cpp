@@ -164,6 +164,21 @@ void Renderer2D::Draw()
 			need_flush = true;
 			break;
 
+			case C_RectTexTr:
+			{
+				glm::aabb2 rect;
+				glm::aabb2 uv;
+				glm::mat2x3 transoform;
+				command_queue.Read(rect);
+				command_queue.Read(transoform);
+				command_queue.Read(uv);
+				command_queue.Read(tex);
+
+				m_mesher.PrimRect(rect.minp, rect.maxp, transoform, uv.minp, uv.maxp, color(0));
+			}
+			need_flush = true;
+			break;
+
 			case C_Text:
 			{
 				glm::aabb2 rect;

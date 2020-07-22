@@ -63,6 +63,18 @@ void Encoder::Rect(glm::aabb2 rect, bgfx::TextureHandle texture, glm::aabb2 uv, 
 	}
 }
 
+void Encoder::Rect(glm::aabb2 rect, const glm::mat3& transform, bgfx::TextureHandle texture, glm::aabb2 uv)
+{
+	if (glm::is_overlapping(m_sciscors, rect))
+	{
+		m_command_queue.Write(C_RectTex);
+		m_command_queue.Write(rect);
+		m_command_queue.Write(transform);
+		m_command_queue.Write(uv);
+		m_command_queue.Write(texture);
+	}
+}
+
 void Encoder::Text(glm::aabb2 rect, const char* text, size_t len)
 {
 	m_command_queue.Write(C_Text);
