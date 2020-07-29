@@ -111,6 +111,13 @@ namespace glm
 
 	typedef aabb<2, float> aabb2;
 	typedef aabb<3, float> aabb3;
+	typedef aabb<4, float> aabb4;
+
+	typedef aabb<2, double> daabb2;
+	typedef aabb<3, double> daabb3;
+	typedef aabb<4, double> daabb4;
+
 	typedef aabb<2, int> iaabb2;
 	typedef aabb<3, int> iaabb3;
+	typedef aabb<4, int> iaabb4;
 }
