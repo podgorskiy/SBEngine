@@ -55,3 +55,6 @@
 [submodule "libs/LuaBridge"]
 	path = libs/LuaBridge
 	url = https://github.com/vinniefalco/LuaBridge.git
+[submodule "libs/entt"]
+	path = libs/entt
+	url = https://github.com/skypjack/entt.git

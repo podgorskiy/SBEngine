@@ -21,7 +21,7 @@ set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared libraries" FORCE)
 
 add_definitions(-DIMGUI_IMPL_OPENGL_LOADER_GL3W)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 
 find_package(OpenGL)
 find_package(OpenAL)
@@ -350,6 +350,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/lz4/lib)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/zlib)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/minimp3)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/libogg/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/entt/single_include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/libvorbis/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/sources/Game)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/sources)
