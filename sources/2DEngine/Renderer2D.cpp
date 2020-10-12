@@ -7,6 +7,7 @@
 #include <fsal.h>
 #include <FileInterface.h>
 #include <bgfx/bgfx.h>
+#include <yaml-cpp/yaml.h>
 
 
 using namespace Render;
@@ -25,6 +26,7 @@ Renderer2D::~Renderer2D()
 
 void Renderer2D::Init()
 {
+    using fs = fsal::FileSystem;
 	m_programCol = Render::MakeProgram("vs_gui.bin", "fs_gui.bin");
 	m_programTex = Render::MakeProgram("vs_gui.bin", "fs_gui_tex.bin");
 
@@ -89,8 +91,40 @@ void Renderer2D::Init()
 	m_text_backend = std::make_shared<TextBackend>();
 	m_text_driver.SetBackend(m_text_backend);
 
-	auto id = m_text_driver.NewTypeface("NotoSans");
-	m_text_driver.AndFontToTypeface(id, "fonts/NotoSans-Regular.ttf", Scriber::FontStyle::Regular);
+	YAML::Node font_config = YAML::Load(std::string(fs().Open("fonts.yaml")));
+
+	auto typefaces = font_config["typefaces"];
+
+	if (typefaces.IsDefined())
+	{
+		for (auto t: typefaces)
+		{
+			auto name = t["name"].as<std::string>();
+			auto priority = t["priority"].as<int>();
+			auto id = m_text_driver.NewTypeface(name.c_str(), priority);
+
+			auto fonts = t["fonts"];
+
+			if (fonts.IsDefined())
+			{
+				for (auto f: fonts)
+				{
+					auto path = f["path"].as<std::string>();
+					auto style = f["style"].as<std::string>();
+					Scriber::FontStyle::Enum font_style = Scriber::FontStyle::Regular;
+					if (style == "Regular")
+						font_style = Scriber::FontStyle::Regular;
+					else if (style == "Italic")
+						font_style = Scriber::FontStyle::Italic;
+					else if (style == "Bold")
+						font_style = Scriber::FontStyle::Bold;
+					auto index = f["index"].as<int>();
+
+					m_text_driver.AndFontToTypeface(id, path.c_str(), font_style, index);
+				}
+			}
+		}
+	}
 }
 
 void Renderer2D::SetUp(View view_box)

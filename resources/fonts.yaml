@@ -1,0 +1,46 @@
+typefaces:
+  - name: NotoSans
+    priority: 10
+    fonts:
+      - path: "fonts/NotoSans-Regular.ttf"
+        style: Regular
+        index: 0
+      - path: "fonts/NotoSans-Bold.ttf"
+        style: Bold
+        index: 0
+      - path: "fonts/NotoSans-Italic.ttf"
+        style: Italic
+        index: 0
+      - path: "fonts/NotoSans-BoldItalic.ttf"
+        style: BoldItalic
+        index: 0
+
+  - name: Roboto
+    priority: 1
+    fonts:
+      - path: "fonts/Roboto-Regular.ttf"
+        style: Regular
+        index: 0
+      - path: "fonts/Roboto-Bold.ttf"
+        style: Bold
+        index: 0
+      - path: "fonts/Roboto-Italic.ttf"
+        style: Italic
+        index: 0
+      - path: "fonts/Roboto-BoldItalic.ttf"
+        style: BoldItalic
+        index: 0
+
+  - name: Dragon Fire
+    priority: 1
+    fonts:
+      - path: "fonts/Dragon Fire.ttf"
+        style: Regular
+        index: 0
+
+  - name: Beyond Wonderland
+    priority: 1
+    fonts:
+      - path: "fonts/Beyond Wonderland.ttf"
+        style: Regular
+        index: 0
