@@ -64,13 +64,13 @@ UI::SImageEmitter::SImageEmitter(Render::TexturePtr tex, ImSize::Enum size,  ImP
 {
 }
 
-
-UI::STextEmitter::STextEmitter(std::string text): text(std::move(text))
+UI::STextEmitter::STextEmitter(uint8_t f_id, std::string text, uint8_t f_height, Render::color f_color, uint8_t f_style, uint8_t f_stroke):
+	text(std::move(text)), f_color(f_color), f_id(f_id),  f_style(f_style), f_height(f_height), f_stroke(f_stroke)
 {
 }
 
 void UI::STextEmitter::operator()(Render::Encoder* r, const Block* block, float time, int flags)
 {
 	auto box = block->GetBox();
-	r->Text(box, text.c_str(), text.size());
+	r->Text(f_id, box, text.c_str(), f_height, f_color, f_style, f_stroke, text.size());
 }

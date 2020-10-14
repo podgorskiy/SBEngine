@@ -80,7 +80,7 @@ namespace UI
 	{
 		auto bg_color = node["bg_color"];
 		auto bg_img = node["bg_img"];
-		auto text_node = node["text"];
+		auto label_node = node["label"];
 		if (bg_color.IsDefined())
 		{
 			Render::color c;
@@ -201,11 +201,37 @@ namespace UI
 			}
     	    block->EmplaceEmitter<SImageEmitter>(std::move(texture), size, pos, t);
 		}
-		else if (text_node.IsDefined())
+		else if (label_node.IsDefined())
 		{
-			auto text = text_node.as<std::string>();
+
+			auto text = label_node["text"].as<std::string>();
 			spdlog::info("Text: {}", text);
-    	    block->EmplaceEmitter<STextEmitter>(text);
+			auto label_color = label_node["color"];
+			Render::color c(255);
+			if (label_color.IsDefined())
+			{
+				auto str = label_color.as<std::string>();
+				str.erase(std::remove (str.begin(), str.end(), ' '), str.end());
+
+				if (ParseColor(str.c_str(), c))
+				{
+				}
+				else
+				{
+					auto it = color_map.find(str);
+					if (it != color_map.end())
+						c = it->second;
+				}
+				spdlog::info("Label color: {}", c);
+			}
+
+			auto height = label_node["height"].as<int>();
+			int style = 0;
+			if (label_node["style"].IsDefined())
+				label_node["style"].as<int>();
+			auto typeface = label_node["typeface"].as<int>();
+
+    	    block->EmplaceEmitter<STextEmitter>((uint8_t)typeface, text, (uint8_t)height, c, style, 0);
 		}
 	}
 

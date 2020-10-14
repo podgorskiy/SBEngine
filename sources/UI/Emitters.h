@@ -45,24 +45,32 @@ namespace UI
 	class STextEmitter : public IEmitter
 	{
 	public:
-		STextEmitter(std::string text);
+		STextEmitter(uint8_t f_id, std::string text, uint8_t f_height, Render::color f_color, uint8_t f_style=0, uint8_t f_stroke=0);
 
 		virtual void operator()(Render::Encoder* encoder, const Block*, float time, int flags);
 
 	private:
 		std::string text;
+
+		Render::color f_color;
+		uint8_t f_id;
+		uint8_t f_style;
+		uint8_t f_height;
+		uint8_t f_stroke;
 	};
 
 	struct EmitterSizeCheck
 	{
 		enum
 		{
-			DataSize = 40,
+			DataSize = 60,
 		};
 
 		void check()
 		{
 			static_assert(DataSize >= sizeof(IEmitter), "");
+			static_assert(DataSize >= sizeof(SFillEmitter), "");
+			static_assert(DataSize >= sizeof(STextEmitter), "");
 			static_assert(DataSize >= sizeof(SImageEmitter), "");
 		}
 	};
