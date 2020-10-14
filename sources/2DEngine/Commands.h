@@ -11,6 +11,7 @@ namespace Render
 		C_Text,
 		C_SetScissors,
 		C_ResetScissors,
+		C_Shader,
 		C_End
 	};
 }

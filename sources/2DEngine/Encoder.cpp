@@ -63,6 +63,17 @@ void Encoder::Rect(glm::aabb2 rect, bgfx::TextureHandle texture, glm::aabb2 uv, 
 	}
 }
 
+void Encoder::Rect(glm::aabb2 rect, bgfx::TextureHandle texture, uint8_t shader)
+{
+	if (glm::is_overlapping(m_sciscors, rect))
+	{
+		m_command_queue.Write(C_Shader);
+		m_command_queue.Write(rect);
+		m_command_queue.Write(texture);
+		m_command_queue.Write(shader);
+	}
+}
+
 void Encoder::Rect(glm::aabb2 rect, const glm::mat3& transform, bgfx::TextureHandle texture, glm::aabb2 uv)
 {
 	if (glm::is_overlapping(m_sciscors, rect))
