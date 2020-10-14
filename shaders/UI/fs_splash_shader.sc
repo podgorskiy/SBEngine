@@ -2,6 +2,9 @@ $input v_color0, v_uv
 
 #include "bgfx_shader.sh"
 
+uniform vec4      iResolution;           // viewport resolution (in pixels)
+uniform vec4      iTime;                 // shader playback time (in seconds)
+uniform sampler2D iChannel0;
 
 #define PI 			3.1415926535
 #define MAXFLOAT	99999.99
@@ -39,7 +42,7 @@ struct Camera
     float apertureRadius;
     vec3 origin;
     mat3 cam;
-    mat3 k;
+    mat3 k_inv;
     float focusDist;
 };
 
@@ -61,7 +64,7 @@ void Camera_init(out Camera camera, vec3 lookfrom, vec3 lookat, vec3 vup, float 
     vec3 y = normalize(cross(z, x));
 
     camera.cam = mat3(x, y, z);
-    camera.k = mat3(vec3(1.0 / halfWidth, 0, 0), vec3(0, 1.0 / halfHeight, 0), vec3(0.0, 0.0, -1.));
+    camera.k_inv = mat3(vec3(halfWidth, 0, 0), vec3(0, halfHeight, 0), vec3(0.0, 0.0, -1.));
 }
 
 
@@ -79,7 +82,7 @@ Ray Camera_getRay_true(Camera camera, vec2 uv)
     Ray ray;
     uv = 2.0 * uv - 1.0;
     ray.origin = camera.origin;
-    ray.direction = camera.cam * (normalize(inverse(camera.k) * vec3(uv, 1.0)));
+    ray.direction = camera.cam * (normalize(camera.k_inv * vec3(uv, 1.0)));
 
     return ray;
 }
@@ -95,7 +98,7 @@ Ray Camera_getRay(Camera camera, vec2 uv)
 
     ray.origin = camera.origin + camera.cam * rd;
 
-    vec3 dir = inverse(camera.k) * vec3(uv, 1.0);
+    vec3 dir = camera.k_inv * vec3(uv, 1.0);
     dir -= rd / camera.focusDist;
 
     ray.direction = normalize(camera.cam * dir);
@@ -150,17 +153,27 @@ vec3 trace(Ray ray, float j, vec2 uv, float time)
               if (ray.direction.z > 0. && plane_t > 0.)
               {
                 vec2 puv = plane_p.xy + 0.5;
+                puv.x = 1.0 - puv.x;
 
                 // return vec3(0.5, 0.5, 0.5) * alpha;
                 vec4 tex = texture2D(iChannel0, puv);
+                tex.xyz = pow(tex.xyz, vec3(1.0 / 2.2));
                 if (tex.a > 0.1)
                 	return tex.xyz * alpha;
               }
           }
 
-          if (tp1 * tp2 < 0. && hash2(vec2(id) + 100.0) > 0.99)
+          tp1 = float(id.x != 1 && id.x != -2) - 1.0;
+          tp2 = float(id.y % 16) - 1.0;
+          if (tp1 < 0. && tp2 < 0. )
           {
-                //return vec3(0.8,0.8,1.0);
+                return vec3(0.8,0.8,1.0);
+          }
+
+          tp2 = float((id.y+8) % 16) - 1.0;
+          if (tp1 < 0. && tp2 < 0. )
+          {
+                return vec3(1.0,0.8,0.8);
           }
 
           float fre = pow(1.0-max(0.0, dot(normalize(n), normalize(ray.direction))), 3.0);
@@ -185,50 +198,47 @@ mat2 rot(float a) {
   return mat2(ca,sa,-sa,ca);
 }
 
-// Camera rotation
-vec3 cam(vec3 p, float t) {
-  t*=0.3;
-  p.xz *= rot(sin(t)*0.3);
-  p.xy *= rot(sin(t*0.7)*0.4);
-   return p;
-}
-
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
 {
-    int steps = 5;
+    int steps = 10;
 
-    vec2 mo = iMouse.xy/iResolution.xy;
-    vec2 uv = fragCoord / vec2(iResolution);
+    //vec2 uv = fragCoord / vec2(iResolution);
+    vec2 uv = fragCoord;
 
     vec3 col_acc = vec3(0.0, 0.0, 0.0);
 
     // Path tracing
     for(int j=0; j<steps; ++j)
     {
-        float time = -2.0 + 2.0 * iTime + 0.08 * hash2(uv + float(j));
+        float time = -4.0 + 2.0 * iTime.x + 0.1 * hash2(uv + float(j));
 
         // camera
         float d =  5. * time - 20.0;
-        vec3 ro = vec3(0.0, 0.0, mix(d, 20.0,smoothstep(0., 1.0, time - 6.0)));
+        vec3 ro = vec3(mix(3.0, 0.0,smoothstep(4., 6.0, time)),
+                       0.0,
+                       mix(d, 20.0,smoothstep(6., 7.0, time)));
         vec3 de = vec3(0.0, 0.0, 2.0) * smoothstep(1.0, 0.0, time - 3.0);
-        ro += cam(de, 5.0 * time);
+
+        vec3 d1 = vec3(-5.5, -4.5, 10.0);
+
+        d1.xz = d1.xz *rot(-0.3 * smoothstep(5.0, 0.0, time));
 
         vec3 lookat = ro + mix(
-            vec3(-1.5, -4.5, 17.0),
+            d1,
             vec3(0.0, 0.0, 10.0),
-            smoothstep(0.0, 3., time));
+            smoothstep(4.0, 6., time));
 
         vec3 up = mix(
+            vec3(-0.2f, 1.0f, 0.0f),
             vec3(0.0f, 1.0f, 0.0f),
-            vec3(0.0f, 1.0f, 0.0f),
-            smoothstep(2.0, 4., time));
+            smoothstep(4.0, 5., time));
         up = normalize(up);
 
 
         float fov = mix(
             15.,
             30.,
-            smoothstep(0.0, 2., time));
+            smoothstep(0.0, 6., time));
 
         float aperture = 0.02;
 
@@ -239,23 +249,26 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 
         Ray ray = Camera_getRay(camera, uv);
 
-    	ray.direction = mix(ray.direction, cam(ray.direction, time), smoothstep(2.0, 0.0, time - 2.0));
-
         col_acc += trace(ray, float(j), uv, time);
    }
    col_acc /= float(steps);
 
 
   col_acc=smoothstep(0.0,1.0,col_acc);
-  col_acc=pow(col_acc, vec3(0.4545));
+  // col_acc=pow(col_acc, vec3(0.4545));
+
+  col_acc = mix(
+            vec3(0.0),
+            col_acc,
+            smoothstep(0.0, 2.5, iTime.x) * smoothstep(6.5, 5.5, iTime.x));
 
 
   fragColor = vec4(col_acc, 1);
 }
 
-		void main()
-		{
-			vec4 fragColor;
-			mainImage(fragColor, gl_FragCoord.xy);
-			gl_FragColor = fragColor;
-		}
+void main()
+{
+    vec4 fragColor;
+	mainImage(fragColor, v_uv);
+	gl_FragColor = fragColor;
+}
