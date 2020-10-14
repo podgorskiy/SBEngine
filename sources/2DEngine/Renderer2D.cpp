@@ -217,11 +217,21 @@ void Renderer2D::Draw()
 			{
 				glm::aabb2 rect;
 				size_t len;
+				uint8_t f_id;
+				uint8_t f_size;
+				uint8_t f_style;
+				uint8_t f_stroke;
+				uint32_t f_color;
 				command_queue.Read(rect);
+				command_queue.Read(f_id);
+				command_queue.Read(f_size);
+				command_queue.Read(f_style);
+				command_queue.Read(f_color);
+				command_queue.Read(f_stroke);
 				command_queue.Read(len);
 				auto ptr = (const char*)command_queue.GetDataPointer() + command_queue.Tell();
 				command_queue.Seek(len, fsal::File::CurrentPosition);
-				m_text_driver.DrawLabel(ptr, rect.minp.x, rect.minp.y, Scriber::Font(0, 32, Scriber::FontStyle::Regular, 0xFFFFFFFF, 1));
+				m_text_driver.DrawLabel(ptr, rect.minp.x, rect.minp.y, Scriber::Font(f_id, f_size, (Scriber::FontStyle::Enum)f_style, f_color, f_stroke));
 			}
 			need_flush = true;
 			break;

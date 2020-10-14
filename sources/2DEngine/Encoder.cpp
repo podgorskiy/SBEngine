@@ -75,10 +75,15 @@ void Encoder::Rect(glm::aabb2 rect, const glm::mat3& transform, bgfx::TextureHan
 	}
 }
 
-void Encoder::Text(glm::aabb2 rect, const char* text, size_t len)
+void Encoder::Text(uint8_t f_id, glm::aabb2 rect, const char* text, uint8_t f_size, color f_color, uint8_t f_style, uint8_t f_stroke, size_t len)
 {
 	m_command_queue.Write(C_Text);
 	m_command_queue.Write(rect);
+	m_command_queue.Write(f_id);
+	m_command_queue.Write(f_size);
+	m_command_queue.Write(f_style);
+	m_command_queue.Write(f_color);
+	m_command_queue.Write(f_stroke);
 	if (len == 0)
 	{
 		len = strlen(text);
