@@ -2,6 +2,7 @@
 #include "utils/stack_vector.h"
 #include "utils/priority_queue.h"
 #include "utils/math.h"
+#include "utils/comp.h"
 #include "utils/glm_printers.h"
 #include "utils/vector2d_func.h"
 #include "Serialization/Property.h"
@@ -284,6 +285,36 @@ struct MyObjectComp
 
 
 TEST_CASE("[priority_queue] Indexed")
+{
+	std::vector<MyObject> example_registry;
+
+	PriorityQueue<int, MyObjectComp> q(example_registry);
+
+	example_registry.push_back({2, "2"}); q.push(example_registry.size() - 1);
+	example_registry.push_back({5, "5"}); q.push(example_registry.size() - 1);
+	example_registry.push_back({8, "8"}); q.push(example_registry.size() - 1);
+	example_registry.push_back({2, "2"}); q.push(example_registry.size() - 1);
+	example_registry.push_back({8, "8"}); q.push(example_registry.size() - 1);
+	example_registry.push_back({5, "5"}); q.push(example_registry.size() - 1);
+	example_registry.push_back({-5, "-5"}); q.push(example_registry.size() - 1);
+	example_registry.push_back({4, "4"}); q.push(example_registry.size() - 1);
+	example_registry.push_back({10, "10"}); q.push(example_registry.size() - 1);
+
+	int v[] = {-5, 2, 2, 4, 5, 5, 8, 8, 10};
+	int i = 0;
+
+	while(q.size() > 0)
+	{
+		int id = q.pop();
+		auto obj = example_registry[id];
+
+		spdlog::info("{}", obj.name);
+		CHECK_EQ(obj.val, v[i++]);
+	}
+}
+
+
+TEST_CASE("[math] Complex")
 {
 	std::vector<MyObject> example_registry;
 
