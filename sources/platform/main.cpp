@@ -8,6 +8,10 @@
 #include <yaml-cpp/yaml.h>
 #include "imgui/imgui.h"
 
+#define BACKWARD_HAS_DW 1
+
+#include "backward.hpp"
+
 #define NOMINMAX
 #ifdef _WIN32
 #define GLFW_EXPOSE_NATIVE_WIN32
@@ -112,6 +116,8 @@ double scroll = 0.0f;
 
 int main(int argc, const char* const* argv)
 {
+	backward::SignalHandling sh;
+
     spdlog::info("Command line args:");
 	for (int i = 0; i < argc; ++i)
 	{

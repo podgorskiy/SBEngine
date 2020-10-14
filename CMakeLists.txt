@@ -23,8 +23,11 @@ add_definitions(-DIMGUI_IMPL_OPENGL_LOADER_GL3W)
 
 set(CMAKE_CXX_STANDARD 17)
 
-find_package(OpenGL)
-find_package(OpenAL)
+# list(APPEND CMAKE_PREFIX_PATH libs/backward-cpp/)
+
+find_package(OpenGL REQUIRED)
+find_package(OpenAL REQUIRED)
+
 
 if (OPENGL_FOUND)
 	message("OpenGL Correctly Found")
@@ -359,6 +362,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/scriberlib/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/scriberlib/3rdparty/utf8)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/yaml-cpp/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/LuaBridge/Source)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/backward-cpp)
 
 
 
@@ -372,7 +376,6 @@ configure_file(test_pvrtc_2bpp.pvr test_pvrtc_2bpp.pvr COPYONLY)
 configure_file(test_pvrtc_4bpp.pvr test_pvrtc_4bpp.pvr COPYONLY)
 configure_file(test_colored.pvr test_colored.pvr COPYONLY)
 configure_file(test.jpg test.jpg COPYONLY)
-configure_file(test.bmp test.bmp COPYONLY)
 configure_file(test.png test.png COPYONLY)
 
 if(MSVC)
@@ -380,6 +383,7 @@ else()
 	target_link_libraries(Oquonie PRIVATE stdc++fs)
 	target_compile_options(Oquonie PRIVATE -lstdc++fs -Wno-switch)
 	target_link_options(Oquonie PRIVATE -static-libstdc++)
+	target_link_libraries(Oquonie PRIVATE dw)
 endif()
 
 
