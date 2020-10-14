@@ -194,4 +194,33 @@ namespace UI
 		else if (ParseRGBColor(x, c)) return true;
 		else return ParseRGBAColor(x, c);
 	}
+
+	inline bool ParseStyle(const char* x, Scriber::FontStyle::Enum& style)
+	{
+		serialization::Parser parser(x);
+		while (true)
+		{
+			parser.AcceptWhiteSpace();
+			if (parser.AcceptStr("regular")) style = style | Scriber::FontStyle::Regular;
+			else if (parser.AcceptStr("italic")) style = style | Scriber::FontStyle::Italic;
+			else if (parser.AcceptStr("bold")) style = style | Scriber::FontStyle::Bold;
+			else return false;
+		}
+	}
+
+	inline bool ParseAlignment(const char* x, Scriber::Align::Enum& alignment)
+	{
+		serialization::Parser parser(x);
+		while (true)
+		{
+			parser.AcceptWhiteSpace();
+			if (parser.AcceptStr("left")) alignment = alignment | Scriber::Align::Left;
+			else if (parser.AcceptStr("right")) alignment = alignment | Scriber::Align::Right;
+			else if (parser.AcceptStr("hcenter")) alignment = alignment | Scriber::Align::HCenter;
+			else if (parser.AcceptStr("top")) alignment = alignment | Scriber::Align::Top;
+			else if (parser.AcceptStr("bottom")) alignment = alignment | Scriber::Align::Bottom;
+			else if (parser.AcceptStr("vcenter")) alignment = alignment | Scriber::Align::VCenter;
+			else return false;
+		}
+	}
 }

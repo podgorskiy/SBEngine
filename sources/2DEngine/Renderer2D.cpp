@@ -231,7 +231,12 @@ void Renderer2D::Draw()
 				command_queue.Read(len);
 				auto ptr = (const char*)command_queue.GetDataPointer() + command_queue.Tell();
 				command_queue.Seek(len, fsal::File::CurrentPosition);
-				m_text_driver.DrawLabel(ptr, rect.minp.x, rect.minp.y, Scriber::Font(f_id, f_size, (Scriber::FontStyle::Enum)f_style, f_color, f_stroke));
+
+				Scriber::FontStyle::Enum style = Scriber::FontStyle::Regular;
+				Scriber::Align::Enum align = Scriber::Align::Left;
+				Scriber::Deaggregate(f_style, style, align);
+
+				m_text_driver.DrawLabel(ptr, rect.minp.x, rect.minp.y, Scriber::Font(f_id, f_size, style, f_color, f_stroke), align);
 			}
 			need_flush = true;
 			break;

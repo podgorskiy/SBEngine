@@ -226,12 +226,28 @@ namespace UI
 			}
 
 			auto height = label_node["height"].as<int>();
-			int style = 0;
+
+			Scriber::FontStyle::Enum style = Scriber::FontStyle::Regular;
+			Scriber::Align::Enum align = Scriber::Align::None;
+
 			if (label_node["style"].IsDefined())
-				label_node["style"].as<int>();
+			{
+				auto style_str = label_node["style"].as<std::string>();
+				ParseStyle(style_str.c_str(), style);
+			}
+
+			if (label_node["align"].IsDefined())
+			{
+				auto align_str = label_node["align"].as<std::string>();
+				ParseAlignment(align_str.c_str(), align);
+			}
+			if (align == Scriber::Align::None) align = Scriber::Align::Left;
+
 			auto typeface = label_node["typeface"].as<int>();
 
-    	    block->EmplaceEmitter<STextEmitter>((uint8_t)typeface, text, (uint8_t)height, c, style, 0);
+			uint8_t a = Scriber::Aggregate(style, align);
+
+    	    block->EmplaceEmitter<STextEmitter>((uint8_t)typeface, text, (uint8_t)height, c, a, 0);
 		}
 	}
 
