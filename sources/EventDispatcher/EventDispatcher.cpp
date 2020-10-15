@@ -37,6 +37,7 @@ void EventDispatcher::Dispatch(uint64_t eventID, Box box)
 		{
 			if (it_q->Dispatch(eventID, box))
 			{
+				m_queue.clear();
 				return;
 			}
 		}

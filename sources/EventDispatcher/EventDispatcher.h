@@ -11,6 +11,10 @@ namespace core
 	class EventDispatcher
 	{
 	public:
+		struct IEventAttachment;
+		template<typename Handler>
+		struct EventAttachment;
+
 		~EventDispatcher();
 
 		struct IType
@@ -53,17 +57,23 @@ namespace core
 			void* m_data;
 		};
 
+		typedef EventAttachment<std::function<bool(uint64_t eventID, Box box)> > LambdaAttachment;
+
 		template<typename Handler>
-		void AttachEventHandler(uint64_t eventID, bool (Handler::*callback)(uint64_t eventID, Box box), Handler* object,
+		const EventAttachment<Handler>* AttachEventHandler(uint64_t eventID, bool (Handler::*callback)(uint64_t eventID, Box box), Handler* object,
 		                        char priority = 50);
 
-		void AttachEventHandler(uint64_t eventID, std::function<bool(uint64_t eventID, Box box)>, char priority = 0);
+		const LambdaAttachment* AttachEventHandler(uint64_t eventID, std::function<bool(uint64_t eventID, Box box)>, char priority = 0);
 
 		template<typename Handler>
 		void DetachEventHandler(Handler* object);
 
 		template<typename Handler>
 		void DetachEventHandler(Handler* object, uint64_t eventID);
+
+		void DetachEventHandler(const IEventAttachment* attachment);
+
+		void DetachEventHandler(const IEventAttachment* attachment, uint64_t eventID);
 
 		template<typename Handler>
 		void Pause(Handler* object, bool enable);
@@ -73,7 +83,6 @@ namespace core
 		template<typename T>
 		void Dispatch(uint64_t eventID, const T& obj);
 
-	private:
 		struct IEventAttachment
 		{
 			IEventAttachment(uint64_t eventID, char priority): m_eventID(eventID), m_priority(priority), m_enabled(true)
@@ -109,6 +118,7 @@ namespace core
 			Handler* m_handler;
 		};
 
+	private:
 		typedef std::vector<IEventAttachment*> Input;
 
 		void Dispatch(uint64_t eventID, Box obj);
@@ -148,21 +158,23 @@ namespace core
 	}
 
 	template<typename Handler>
-	inline void
+	inline const EventDispatcher::EventAttachment<Handler>*
 	EventDispatcher::AttachEventHandler(uint64_t eventID, bool (Handler::*callback)(uint64_t eventID, Box box),
 	                                    Handler* object, char priority)
 	{
 		auto* attachment = new EventAttachment<Handler>(callback, object, eventID, priority);
 		Attach(eventID, attachment);
+		return attachment;
 	}
 
-	inline void
+	inline
+	const EventDispatcher::LambdaAttachment*
 	EventDispatcher::AttachEventHandler(uint64_t eventID, std::function<bool(uint64_t eventID, Box box)> lambda,
 	                                    char priority)
 	{
-		auto* attachment = new EventAttachment<std::function<bool(
-				uint64_t eventID, Box box)> >(std::move(lambda), eventID, priority);
+		auto* attachment = new LambdaAttachment(std::move(lambda), eventID, priority);
 		Attach(eventID, attachment);
+		return attachment;
 	}
 
 	inline void EventDispatcher::Dispatch(uint64_t eventID)
@@ -192,17 +204,56 @@ namespace core
 	template<typename Handler>
 	inline void EventDispatcher::DetachEventHandler(Handler* object, uint64_t eventID)
 	{
-		for (auto& it : m_mapping)
+		auto it = m_mapping.find(eventID);
+		if (it != m_mapping.end())
 		{
-			const Input& input = it.second;
-			auto deleteIt = std::remove_if(input.begin(), input.end(), [object, eventID](IEventAttachment* x)
+			Input& input = it->second;
+			auto deleteIt = std::remove_if(input.begin(), input.end(), [object, eventID](IEventAttachment* x) -> bool
 			{
 				auto* attachment = static_cast<EventAttachment<Handler>*>(x);
 				if (attachment->m_handler == object && attachment->m_eventID == eventID)
 				{
 					delete x;
+					return true;
 				}
-				return remove;
+				return false;
+			});
+			input.erase(deleteIt, input.end());
+		}
+	}
+
+	inline void EventDispatcher::DetachEventHandler(const IEventAttachment* attachment)
+	{
+		for (auto& it : m_mapping)
+		{
+			Input& input = it.second;
+			auto deleteIt = std::remove_if(input.begin(), input.end(), [attachment](IEventAttachment* x) -> bool
+			{
+				if (attachment == x)
+				{
+					delete x;
+					return true;
+				}
+				return false;
+			});
+			input.erase(deleteIt, input.end());
+		}
+	}
+
+	inline void EventDispatcher::DetachEventHandler(const IEventAttachment* attachment, uint64_t eventID)
+	{
+		auto it = m_mapping.find(eventID);
+		if (it != m_mapping.end())
+		{
+			Input& input = it->second;
+			auto deleteIt = std::remove_if(input.begin(), input.end(), [attachment](IEventAttachment* x) -> bool
+			{
+				if (attachment == x)
+				{
+					delete x;
+					return true;
+				}
+				return false;
 			});
 			input.erase(deleteIt, input.end());
 		}
