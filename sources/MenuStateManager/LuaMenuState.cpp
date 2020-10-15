@@ -4,6 +4,8 @@
 #include <spdlog/spdlog.h>
 #include <dear-imgui/imgui.h>
 #include <yaml-cpp/yaml.h>
+#include "EventIds.h"
+#include "EventDispatcher/EventDispatcher.h"
 #define lua_c
 extern "C"
 {
@@ -89,10 +91,52 @@ LuaMenuState::LuaMenuState(const fsal::File& yaml, MenuStateManager* msm): BaseM
 		lua_close(m_lua);
 		m_lua = nullptr;
 	}
+
+	auto event_node = root_node["events"];
+	if (event_node.IsDefined())
+	{
+		for (auto event: event_node)
+		{
+			std::string key = event["name"].as<std::string>();
+			std::string func = event["call"].as<std::string>();
+
+			if (key == "KeyDown")
+			{
+				const auto* attachment = m_eventDispatcher->AttachEventHandler(Events::KeyDown, [this, func](int64_t event, core::EventDispatcher::Box box) -> bool
+				{
+					int key;
+					char asci;
+					std::tie(key, asci) = box.Unbox<std::pair<int, char> >();
+					lua_getglobal(m_lua, func.c_str());
+					lua_pushnumber(m_lua, key);
+					lua_pushnumber(m_lua, asci);
+					lua_call(m_lua, 2, 0);
+				});
+				m_attachments.push_back(std::make_pair((const void*)attachment, Events::KeyDown));
+			}
+			else if (key == "MouseButtonDown")
+			{
+				const auto* attachment = m_eventDispatcher->AttachEventHandler(Events::MouseButtonDown, [this, func](int64_t event, core::EventDispatcher::Box box) -> bool
+				{
+					int key = box.Unbox<int>();
+					lua_getglobal(m_lua, func.c_str());
+					lua_pushnumber(m_lua, key);
+					lua_call(m_lua, 1, 0);
+				});
+				m_attachments.push_back(std::make_pair((const void*)attachment, Events::MouseButtonDown));
+			}
+
+		}
+	}
 }
 
 LuaMenuState::~LuaMenuState()
 {
+	for (auto a: m_attachments)
+	{
+		m_eventDispatcher->DetachEventHandler((const core::EventDispatcher::IEventAttachment*)a.first, a.second);
+	}
+
 	lua_close(m_lua);
 }
 

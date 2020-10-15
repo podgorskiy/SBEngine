@@ -102,7 +102,8 @@ void io::CharCallback(GLFWwindow* window, unsigned int c)
 
 void io::MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 {
-	//GetEventDispatcher().Dispatch("mouse_but#2"_hash, action == GLFW_PRESS);
+	auto* app = GetApp(window);
+	app->OnMouseButton(button, action, mods);
 }
 
 void io::ScrollCallback(GLFWwindow* window, double xoffset, double yoffset)

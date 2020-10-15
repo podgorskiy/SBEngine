@@ -11,6 +11,11 @@ namespace UI
 	typedef std::shared_ptr<Block> BlockPtr;
 }
 
+namespace core
+{
+	class EventDispatcher;
+}
+
 class MenuStateManager;
 
 
@@ -28,5 +33,6 @@ protected:
 	MenuStateManager* m_msm;
 	std::string m_name;
 	float m_time;
+	core::EventDispatcher* m_eventDispatcher;
 	// virtual void OnEvent(EventBase* event) {};
 };

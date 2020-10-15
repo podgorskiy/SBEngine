@@ -24,6 +24,7 @@ public:
 protected:
 	lua_State* m_lua;
 	std::vector<char*> m_history;
+	std::vector<std::pair<const void*, int> > m_attachments;
 	std::function<void(const char*)> m_printer;
 	// virtual void OnEvent(EventBase* event) {};
 };

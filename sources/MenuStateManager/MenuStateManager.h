@@ -1,15 +1,17 @@
 #pragma once
+#include "InputEventReciever.h"
 #include "IMenuState.h"
 #include "2DEngine/View.h"
 #include "2DEngine/Renderer2D.h"
 #include "UI/UI_Load.h"
+#include "EventDispatcher/EventDispatcher.h"
 #include <memory>
 #include <vector>
 
 
 typedef std::vector<std::pair<IMenuStatePtr, std::string> > StateStack;
 
-class MenuStateManager // : public EventReceiver
+class MenuStateManager
 {
 	enum Command
 	{
@@ -40,6 +42,10 @@ public:
 		m_shader_map = shader_map;
 	}
 
+	void InjectEventDispatcher(core::EventDispatcher* eventDispatcher) { m_eventDispatcher = eventDispatcher; }
+
+	core::EventDispatcher* GetEventDispatcher() const { return m_eventDispatcher; }
+
 	UI::BlockPtr Load(const fsal::File& yaml);
 
 	// void EventReceiver_OnEvent( EventBase* event );
@@ -56,6 +62,7 @@ private:
 
 	std::map<std::string, int> m_tf_map;
 	std::map<std::string, int> m_shader_map;
+	core::EventDispatcher* m_eventDispatcher;
 };
 
 typedef std::shared_ptr<MenuStateManager> MenuStateManagerPtr;

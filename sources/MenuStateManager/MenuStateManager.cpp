@@ -63,7 +63,6 @@ void MenuStateManager::Update(Render::View viewbox, float time, float deltaTime)
 			default:
 				assert(false);
 		}
-
 	}
 	m_commands.clear();
 

@@ -7,7 +7,7 @@
 #include <fsal.h>
 
 
-BaseMenuState::BaseMenuState(const fsal::File& yaml, MenuStateManager* msm): m_msm(msm)
+BaseMenuState::BaseMenuState(const fsal::File& yaml, MenuStateManager* msm): m_msm(msm), m_eventDispatcher(msm->GetEventDispatcher())
 {
 	m_root = msm->Load(yaml);
 	YAML::Node root_node = YAML::Load(std::string(yaml));
