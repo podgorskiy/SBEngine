@@ -8,6 +8,7 @@
 #include <FileInterface.h>
 #include <bgfx/bgfx.h>
 #include <yaml-cpp/yaml.h>
+#include "utils/string_format.h"
 
 
 using namespace Render;
@@ -31,6 +32,9 @@ void Renderer2D::Init()
 	m_programTex = Render::MakeProgram("vs_gui.bin", "fs_gui_tex.bin");
 
 	u_texture = m_programTex->GetUniform("u_texture");
+
+	u_resolution = bgfx::createUniform("iResolution", bgfx::UniformType::Vec4, 1);
+	u_time = bgfx::createUniform("iTime", bgfx::UniformType::Vec4, 1);
 
 	m_vertexSpec
 		.begin()
@@ -102,6 +106,7 @@ void Renderer2D::Init()
 			auto name = t["name"].as<std::string>();
 			auto priority = t["priority"].as<int>();
 			auto id = m_text_driver.NewTypeface(name.c_str(), priority);
+			m_typeface_pool[name] = id;
 
 			auto fonts = t["fonts"];
 
@@ -125,6 +130,31 @@ void Renderer2D::Init()
 			}
 		}
 	}
+
+	YAML::Node shaders_config = YAML::Load(std::string(fs().Open("ui_shaders.yaml")));
+
+	auto shaders = shaders_config["shaders"];
+
+	if (shaders.IsDefined())
+	{
+		for (auto s: shaders)
+		{
+			auto name = s["name"].as<std::string>();
+			auto program = Render::MakeProgram("vs_gui.bin", utils::format("%s.bin", name.c_str()).c_str());
+			m_shader_pool[name] = m_shaders.size();
+			m_shaders.push_back(program);
+		}
+	}
+}
+
+std::map<std::string, int> Renderer2D::GetShaderMap()
+{
+	return m_shader_pool;
+}
+
+std::map<std::string, int> Renderer2D::GetTypefaceMap()
+{
+	return m_typeface_pool;
 }
 
 void Renderer2D::SetUp(View view_box)
@@ -134,7 +164,7 @@ void Renderer2D::SetUp(View view_box)
 }
 
 
-void Renderer2D::Draw()
+void Renderer2D::Draw(float time)
 {
 	auto command_queue =  m_encoder.GetCommandQueue();
 
@@ -143,6 +173,8 @@ void Renderer2D::Draw()
 	m_mesher.PrimReset();
 
 	bgfx::TextureHandle tex;
+	uint8_t  shader = 0;
+	glm::vec4 iSize;
 
 	Command cmd;
 	while (command_queue.Read(cmd) && cmd != C_End)
@@ -194,6 +226,20 @@ void Renderer2D::Draw()
 				{
 
 				}
+			}
+			need_flush = true;
+			break;
+
+			case C_Shader:
+			{
+				glm::aabb2 rect;
+				command_queue.Read(rect);
+				command_queue.Read(tex);
+				command_queue.Read(shader);
+				glm::aabb2 uv(glm::vec2(0.0, 1.0), glm::vec2(1.0, 0.0));
+				iSize = glm::vec4(rect.size(), 0.0f, 0.0f);
+
+				m_mesher.PrimRect(rect.minp, rect.maxp, uv.minp, uv.maxp, color(0));
 			}
 			need_flush = true;
 			break;
@@ -319,6 +365,39 @@ void Renderer2D::Draw()
 				bgfx::setState(state);
 
 				bgfx::submit(ViewIds::GUI, m_programTex->GetHandle(), 0);
+			}
+			break;
+			case C_Shader:
+			{
+				int num_vertex = m_mesher.vcount();
+				int num_index = m_mesher.icount();
+				bgfx::TransientVertexBuffer tvb;
+				bgfx::TransientIndexBuffer tib;
+
+				bgfx::allocTransientVertexBuffer(&tvb, num_vertex, m_vertexSpec);
+				bgfx::allocTransientIndexBuffer(&tib, num_index);
+
+				memcpy(tvb.data, m_mesher.vptr(), num_vertex * sizeof(Vertex));
+				memcpy(tib.data, m_mesher.iptr(), num_index * sizeof(uint16_t));
+
+				m_mesher.PrimReset();
+
+				bgfx::setVertexBuffer(0, &tvb, 0, num_vertex);
+				bgfx::setIndexBuffer(&tib, 0, num_index);
+
+				if (bgfx::isValid(tex))
+					bgfx::setTexture(0, u_texture.m_handle, tex);
+
+				bgfx::setUniform(u_resolution, &iSize, 1);
+				glm::vec4 vtime(time);
+				bgfx::setUniform(u_time, &vtime, 1);
+
+				uint64_t state = 0
+				                 | BGFX_STATE_WRITE_RGB
+				                 | BGFX_STATE_BLEND_FUNC(BGFX_STATE_BLEND_SRC_ALPHA, BGFX_STATE_BLEND_INV_SRC_ALPHA);
+				bgfx::setState(state);
+
+				bgfx::submit(ViewIds::GUI, m_shaders[shader]->GetHandle(), 0);
 			}
 			break;
 			case C_Text:

@@ -25,7 +25,10 @@ namespace Render
 
 	    void SetUp(View view);
 		void Init();
-		void Draw();
+		void Draw(float time);
+
+		std::map<std::string, int> GetShaderMap();
+		std::map<std::string, int> GetTypefaceMap();
 
 		bool m_gamma_correction;
 
@@ -41,7 +44,14 @@ namespace Render
 
 		Render::ProgramPtr m_programCol;
 		Render::ProgramPtr m_programTex;
+
+		std::vector<Render::ProgramPtr> m_shaders;
+		std::map<std::string, int> m_shader_pool;
+		std::map<std::string, int> m_typeface_pool;
+
 		Render::Uniform u_texture;
+		bgfx::UniformHandle u_resolution;
+		bgfx::UniformHandle u_time;
 		bgfx::VertexLayout m_vertexSpec;
 		Scriber::IRenderAPIPtr m_text_backend;
 	};

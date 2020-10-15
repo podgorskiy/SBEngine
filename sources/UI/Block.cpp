@@ -239,7 +239,7 @@ namespace UI
 			if (block->IsClipping())
 				encoder->PopScissors();
 		});
-		renderer->Draw();
+		renderer->Draw(time);
 	}
 
 	void InterpolateTransitionValues(const Constraint* tcnst, MController<float>* ctrl, int count, float (&alt_cst_values)[2][5],  float (&dst_cst_values)[2][5], float time)

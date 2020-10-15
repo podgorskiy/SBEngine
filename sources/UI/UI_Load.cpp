@@ -74,14 +74,42 @@ namespace UI
 		}
 	}
 
-	bool BuildList(const BlockPtr& parent, const YAML::Node& sequence, ExpessionEvaluator::INTContext& ctx, const std::map<std::string, Render::color>& color_map);
+	bool BuildList(const BlockPtr& parent, const YAML::Node& sequence, ExpessionEvaluator::INTContext& ctx, const ColorMap& color_map, const IntMap& tf_map, const IntMap& shader_map);
 
-	void LoadEmmitters(YAML::Node node, const BlockPtr& block, const std::map<std::string, Render::color>& color_map)
+	void LoadEmmitters(YAML::Node node, const BlockPtr& block, const ColorMap& color_map, const IntMap& tf_map, const IntMap& shader_map)
 	{
 		auto bg_color = node["bg_color"];
 		auto bg_img = node["bg_img"];
 		auto label_node = node["label"];
-		if (bg_color.IsDefined())
+		auto shader_node = node["shader"];
+		if (shader_node.IsDefined())
+		{
+			auto ichannel0_node = node["ichannel0"];
+			auto shader_str = shader_node.as<std::string>();
+
+			Render::TexturePtr  ichannel0_tex;
+
+			if (ichannel0_node.IsDefined())
+			{
+				auto ichannel0_str = ichannel0_node.as<std::string>();
+				ichannel0_tex = Render::LoadTexture(ichannel0_str);
+				spdlog::info("Texture: {}", ichannel0_str);
+			}
+
+			int shader_id = 0;
+			auto it = shader_map.find(shader_str);
+			if (it != shader_map.end())
+			{
+				spdlog::info("Shader: {}", shader_str);
+				shader_id = it->second;
+			}
+			else{
+				ASSERT(false, "Could not find shader %s", shader_str.c_str());
+			}
+
+    	    block->EmplaceEmitter<SShaderEmitter>(ichannel0_tex, shader_id);
+		}
+		else if (bg_color.IsDefined())
 		{
 			Render::color c;
 			auto str = bg_color.as<std::string>();
@@ -203,7 +231,6 @@ namespace UI
 		}
 		else if (label_node.IsDefined())
 		{
-
 			auto text = label_node["text"].as<std::string>();
 			spdlog::info("Text: {}", text);
 			auto label_color = label_node["color"];
@@ -236,6 +263,12 @@ namespace UI
 				ParseStyle(style_str.c_str(), style);
 			}
 
+			int stroke = 0;
+			if (label_node["stroke"].IsDefined())
+			{
+				stroke = label_node["stroke"].as<int>();
+			}
+
 			if (label_node["align"].IsDefined())
 			{
 				auto align_str = label_node["align"].as<std::string>();
@@ -243,15 +276,26 @@ namespace UI
 			}
 			if (align == Scriber::Align::None) align = Scriber::Align::Left;
 
-			auto typeface = label_node["typeface"].as<int>();
+			auto typeface_str = label_node["typeface"].as<std::string>();
+
+			int typeface_id = 0;
+			auto it = tf_map.find(typeface_str);
+			if (it != tf_map.end())
+			{
+				spdlog::info("Typeface: {}", typeface_str);
+				typeface_id = it->second;
+			}
+			else{
+				ASSERT(false, "Could not find typeface %s", typeface_str.c_str());
+			}
 
 			uint8_t a = Scriber::Aggregate(style, align);
 
-    	    block->EmplaceEmitter<STextEmitter>((uint8_t)typeface, text, (uint8_t)height, c, a, 0);
+    	    block->EmplaceEmitter<STextEmitter>((uint8_t)typeface_id, text, (uint8_t)height, c, a, stroke);
 		}
 	}
 
-	BlockPtr BuildBlock(YAML::Node node, ExpessionEvaluator::INTContext& ctx, const std::map<std::string, Render::color>& color_map)
+	BlockPtr BuildBlock(YAML::Node node, ExpessionEvaluator::INTContext& ctx, const ColorMap& color_map, const IntMap& tf_map, const IntMap& shader_map)
 	{
 		auto block = UI::make_block({});
 		auto name = node["name"];
@@ -299,12 +343,12 @@ namespace UI
 			}
 		}
 
-		LoadEmmitters(node, block, color_map);
+		LoadEmmitters(node, block, color_map, tf_map, shader_map);
 
 		auto blocks = node["blocks"];
 		if (blocks.IsDefined())
 		{
-			BuildList(block, blocks, ctx, color_map);
+			BuildList(block, blocks, ctx, color_map, tf_map, shader_map);
 		}
 		auto clip_overflow = node["clip_overflow"];
 		if (clip_overflow.IsDefined())
@@ -315,17 +359,17 @@ namespace UI
 		return block;
 	}
 
-	bool BuildList(const BlockPtr& parent, const YAML::Node& sequence, ExpessionEvaluator::INTContext& ctx, const std::map<std::string, Render::color>& color_map)
+	bool BuildList(const BlockPtr& parent, const YAML::Node& sequence, ExpessionEvaluator::INTContext& ctx, const ColorMap& color_map, const IntMap& tf_map, const IntMap& shader_map)
 	{
 		ASSERT(sequence.IsSequence(), "'blocks' must be sequence")
 		for (YAML::Node node: sequence)
 		{
-			parent->AddChild(BuildBlock(node, ctx, color_map));
+			parent->AddChild(BuildBlock(node, ctx, color_map, tf_map, shader_map));
 		}
 		return true;
 	}
 
-	BlockPtr Load(const fsal::File& f)
+	BlockPtr Load(const fsal::File& f, const IntMap& tf_map, const IntMap& shader_map)
 	{
 		using namespace UI::lit;
 		using Render::operator""_c;
@@ -367,14 +411,16 @@ namespace UI
 
 		auto root = UI::make_block({0_l, 100_wpe, 0_t, 100_hpe});
 
-		LoadEmmitters(root_node, root, color_map);
+		LoadEmmitters(root_node, root, color_map, tf_map, shader_map);
 
 		auto blocks = root_node["blocks"];
 
-		ASSERT(blocks.IsSequence(), "'blocks' must be sequence, in file %s", f.GetPath().string().c_str())
+		if (blocks.IsDefined())
+		{
+			ASSERT(blocks.IsSequence(), "'blocks' must be sequence, in file %s", f.GetPath().string().c_str())
 
-		BuildList(root, blocks, ctx, color_map);
-
+			BuildList(root, blocks, ctx, color_map, tf_map, shader_map);
+		}
 		return root;
 	}
 }

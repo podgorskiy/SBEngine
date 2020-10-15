@@ -18,8 +18,55 @@ MenuStateManager::~MenuStateManager()
 	spdlog::info("Destroying MenuStateManager");
 }
 
+
+UI::BlockPtr MenuStateManager::Load(const fsal::File& yaml)
+{
+	return UI::Load(yaml, m_tf_map, m_shader_map);
+}
+
+
 void MenuStateManager::Update(Render::View viewbox, float time, float deltaTime)
 {
+	for (auto& com: m_commands)
+	{
+		switch (com.first)
+		{
+			case CPop:
+			{
+				IMenuStatePtr state = m_stack.back().first;
+				spdlog::info("Poping state: {}", state->GetName());
+				state->OnPop();
+				m_stack.pop_back();
+				break;
+			}
+			case CPush:
+			{
+				auto filename = com.second;
+			    using fs = fsal::FileSystem;
+			    auto f = fs().Open(filename);
+				ASSERT(f, "Could not find menu file %s", filename.c_str());
+				spdlog::info("Loading: {}", f.GetPath().string().c_str());
+
+				YAML::Node root_node = YAML::Load(std::string(f));
+
+				auto class_ = root_node["class"];
+				ASSERT(class_.IsDefined(), "No class defines");
+
+				auto ctr = MenuRegisterer::GetConstructor(class_.as<std::string>().c_str());
+				auto state = ctr(f, this);
+
+				spdlog::info("Pushing state: {}", state->GetName());
+				state->OnPush();
+				m_stack.push_back(std::make_pair(std::move(state), filename));
+				break;
+			}
+			default:
+				assert(false);
+		}
+
+	}
+	m_commands.clear();
+
 	auto state = GetFrontState();
 	if (state)
 		state->Update(viewbox, time, deltaTime);
@@ -31,8 +78,6 @@ void MenuStateManager::Update(Render::View viewbox, float time, float deltaTime)
 		m_frameCount = 0;
 		m_dtime = 0;
 	}
-
-	m_deletionQueue.clear();
 }
 
 void MenuStateManager::Draw(Render::View viewbox, Render::Renderer2D* rd, float time, float deltaTime)
@@ -44,24 +89,8 @@ void MenuStateManager::Draw(Render::View viewbox, Render::Renderer2D* rd, float 
 
 void MenuStateManager::Push(std::string filename)
 {
-    using fs = fsal::FileSystem;
-    auto f = fs().Open(filename);
-	ASSERT(f, "Could not find menu file %s", filename.c_str());
-	spdlog::info("Loading: {}", f.GetPath().string().c_str());
-
-	YAML::Node root_node = YAML::Load(std::string(f));
-
-	auto class_ = root_node["class"];
-	ASSERT(class_.IsDefined(), "No class defines");
-
-	auto ctr = MenuRegisterer::GetConstructor(class_.as<std::string>().c_str());
-	auto state = ctr(f, this);
-
-	spdlog::info("Pushing state: {}", state->GetName());
-	state->OnPush();
-	m_stack.push_back(std::make_pair(std::move(state), filename));
+	m_commands.push_back(std::make_pair(CPush, std::move(filename)));
 }
-
 
 void MenuStateManager::Reload()
 {
@@ -73,14 +102,9 @@ void MenuStateManager::Reload()
 	}
 }
 
-
 void MenuStateManager::Pop()
 {
-	IMenuStatePtr state = m_stack.back().first;
-	spdlog::info("Poping state: {}", state->GetName());
-	state->OnPop();
-	m_stack.pop_back();
-	m_deletionQueue.push_back(std::move(state));
+	m_commands.push_back(std::make_pair(CPop, std::string()));
 }
 
 IMenuStatePtr MenuStateManager::GetFrontState(int i) const

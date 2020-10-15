@@ -59,10 +59,30 @@ void UI::SImageEmitter::operator()(Render::Encoder* r, const UI::Block* block, f
 	r->Rect(box, tex->m_handle, uv);
 }
 
+void UI::SShaderEmitter::operator()(Render::Encoder* r, const UI::Block* block, float time, int flags)
+{
+	auto box = block->GetBox();
+	if (tex)
+	{
+		r->RectShader(box, tex->m_handle, shader);
+	}
+	else
+	{
+		r->RectShader(box, {bgfx::kInvalidHandle}, shader);
+	}
+}
+
 UI::SImageEmitter::SImageEmitter(Render::TexturePtr tex, ImSize::Enum size,  ImPos::Enum pos,  ImTransform::Enum t):
 	image_size(tex->GetSize()), tex(std::move(tex)), size(size), pos(pos), t(t)
 {
 }
+
+
+UI::SShaderEmitter::SShaderEmitter(Render::TexturePtr tex, int shader):
+	tex(std::move(tex)), shader(shader)
+{
+}
+
 
 UI::STextEmitter::STextEmitter(uint8_t f_id, std::string text, uint8_t f_height, Render::color f_color, uint8_t f_style, uint8_t f_stroke):
 	text(std::move(text)), f_color(f_color), f_id(f_id),  f_style(f_style), f_height(f_height), f_stroke(f_stroke)

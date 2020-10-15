@@ -2,15 +2,24 @@
 #include "IMenuState.h"
 #include "2DEngine/View.h"
 #include "2DEngine/Renderer2D.h"
+#include "UI/UI_Load.h"
 #include <memory>
 #include <vector>
 
 
 typedef std::vector<std::pair<IMenuStatePtr, std::string> > StateStack;
-typedef std::vector<IMenuStatePtr> StateQueue;
 
 class MenuStateManager // : public EventReceiver
 {
+	enum Command
+	{
+		CNone,
+		CPop,
+		CPush
+	};
+
+	typedef std::vector<std::pair<Command, std::string> > Commands;
+
 public:
 	MenuStateManager();
 	~MenuStateManager();
@@ -25,19 +34,28 @@ public:
 
 	void Reload();
 
+	void InjectMaps(const std::map<std::string, int>& tf_map, const std::map<std::string, int>& shader_map)
+	{
+		m_tf_map = tf_map;
+		m_shader_map = shader_map;
+	}
+
+	UI::BlockPtr Load(const fsal::File& yaml);
+
 	// void EventReceiver_OnEvent( EventBase* event );
 
 	IMenuStatePtr GetFrontState(int i=0) const;
 
 private:
-	void PushState(IMenuStatePtr state);
-
 	StateStack m_stack;
-	StateQueue m_deletionQueue;
+	Commands m_commands;
 
 	int m_frameCount;
 	float m_dtime;
 	float m_fps;
+
+	std::map<std::string, int> m_tf_map;
+	std::map<std::string, int> m_shader_map;
 };
 
 typedef std::shared_ptr<MenuStateManager> MenuStateManagerPtr;

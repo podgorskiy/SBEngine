@@ -27,5 +27,6 @@ protected:
 	UI::BlockPtr m_root;
 	MenuStateManager* m_msm;
 	std::string m_name;
+	float m_time;
 	// virtual void OnEvent(EventBase* event) {};
 };

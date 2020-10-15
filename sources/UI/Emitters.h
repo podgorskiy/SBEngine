@@ -42,6 +42,18 @@ namespace UI
 		ImTransform::Enum t;
 	};
 
+	class SShaderEmitter : public IEmitter
+	{
+	public:
+		SShaderEmitter(Render::TexturePtr tex, int shader);
+
+		virtual void operator()(Render::Encoder* encoder, const Block*, float time, int flags);
+
+	private:
+		Render::TexturePtr tex;
+		int shader;
+	};
+
 	class STextEmitter : public IEmitter
 	{
 	public:

@@ -12,6 +12,6 @@ namespace Render
 		C_SetScissors,
 		C_ResetScissors,
 		C_Shader,
-		C_End
+		C_End,
 	};
 }
