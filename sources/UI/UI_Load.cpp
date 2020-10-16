@@ -9,40 +9,40 @@
 
 namespace UI
 {
-	void ReadConstraint(YAML::Node node, const char* name, Constraint::Type type, const BlockPtr& blk, ExpessionEvaluator::INTContext& ctx)
+	auto ReadCST(std::string str, Constraint::Type type, ExpessionEvaluator::INTContext& ctx)
 	{
-		auto read_cst = +[](const BlockPtr& blk, std::string str, Constraint::Type type, ExpessionEvaluator::INTContext& ctx)
+		Constraint::Unit unit;
+		float value;
+		// spdlog::info("{}: {}", name, x);
+		if (ParseUnitValue(str.c_str(), unit, value))
 		{
-			Constraint::Unit unit;
-			float value;
-			// spdlog::info("{}: {}", name, x);
-			if (ParseUnitValue(str.c_str(), unit, value))
+			return Constraint(type, unit, value);
+		}
+		else
+		{
+			auto pos = str.find(':');
+			if (pos != std::string::npos)
 			{
-				return Constraint(type, unit, value);
-			}
-			else
-			{
-				auto pos = str.find(':');
-				if (pos != std::string::npos)
+				str[pos] = '\0';
+				ctx.func("anonymus", str.c_str());
+				ctx.Link();
+				value = ctx.get_func("anonymus").Eval();
+				serialization::Parser parser(str.c_str() + pos + 1);
+				parser.AcceptWhiteSpace();
+				if (AcceptUnit(parser, unit))
 				{
-					str[pos] = '\0';
-					ctx.func("anonymus", str.c_str());
-					ctx.Link();
-					value = ctx.get_func("anonymus").Eval();
-					serialization::Parser parser(str.c_str() + pos + 1);
 					parser.AcceptWhiteSpace();
-					if (AcceptUnit(parser, unit))
+					if (parser.EOS())
 					{
-						parser.AcceptWhiteSpace();
-						if (parser.EOS())
-						{
-							return Constraint(type, unit, value);
-						}
+						return Constraint(type, unit, value);
 					}
 				}
 			}
-		};
+		}
+	};
 
+	void ReadConstraint(YAML::Node node, const char* name, Constraint::Type type, const BlockPtr& blk, ExpessionEvaluator::INTContext& ctx)
+	{
 		auto cnstr = node[name];
 		if (cnstr.IsDefined())
 		{
@@ -55,26 +55,26 @@ namespace UI
 				auto vcnstr = cnstr["value"];
 				auto tcnstr = cnstr["target"];
 				std::string x = vcnstr.as<std::string>("0");
-				auto ctsr = read_cst(blk, x, type, ctx);
+				auto ctsr = ReadCST(x, type, ctx);
 				blk->PushConstraint(ctsr);
-				if (tcnstr.IsDefined())
-				{
-					std::string t = tcnstr.as<std::string>("0");
-					blk->PushTargetTransitionConstraints(read_cst(blk, t, type, ctx));
-				}
+//				if (tcnstr.IsDefined())
+//				{
+//					std::string t = tcnstr.as<std::string>("0");
+//					blk->PushTargetTransitionConstraints(read_cst(blk, t, type, ctx));
+//				}
 
 				blk->SetTransitionProperty(type, duration_v);
 			}
 			else
 			{
 				std::string x = cnstr.as<std::string>();
-				auto ctsr = read_cst(blk, x, type, ctx);
+				auto ctsr = ReadCST(x, type, ctx);
 				blk->PushConstraint(ctsr);
 			}
 		}
 	}
 
-	bool BuildList(const BlockPtr& parent, const YAML::Node& sequence, ExpessionEvaluator::INTContext& ctx, const ColorMap& color_map, const IntMap& tf_map, const IntMap& shader_map);
+	bool BuildList(const BlockPtr& parent, const YAML::Node& sequence, ExpessionEvaluator::INTContext& ctx, std::map<std::string, BlockPtr>& namedir, const ColorMap& color_map, const IntMap& tf_map, const IntMap& shader_map);
 
 	void LoadEmmitters(YAML::Node node, const BlockPtr& block, const ColorMap& color_map, const IntMap& tf_map, const IntMap& shader_map)
 	{
@@ -295,13 +295,15 @@ namespace UI
 		}
 	}
 
-	BlockPtr BuildBlock(YAML::Node node, ExpessionEvaluator::INTContext& ctx, const ColorMap& color_map, const IntMap& tf_map, const IntMap& shader_map)
+	//					block->UpdateProp(c.type, c.unit, c.value, time);
+	BlockPtr BuildBlock(YAML::Node node, ExpessionEvaluator::INTContext& ctx, std::map<std::string, BlockPtr>& namedir, const ColorMap& color_map, const IntMap& tf_map, const IntMap& shader_map)
 	{
 		auto block = UI::make_block({});
 		auto name = node["name"];
 		if (name.IsDefined())
 		{
 			spdlog::info("Node name: {}", name.as<std::string>());
+			namedir[name.as<std::string>()] = block;
 		}
 		ReadConstraint(node, "width", Constraint::Width, block, ctx);
 		ReadConstraint(node, "height", Constraint::Height, block, ctx);
@@ -348,7 +350,7 @@ namespace UI
 		auto blocks = node["blocks"];
 		if (blocks.IsDefined())
 		{
-			BuildList(block, blocks, ctx, color_map, tf_map, shader_map);
+			BuildList(block, blocks, ctx, namedir, color_map, tf_map, shader_map);
 		}
 		auto clip_overflow = node["clip_overflow"];
 		if (clip_overflow.IsDefined())
@@ -359,17 +361,17 @@ namespace UI
 		return block;
 	}
 
-	bool BuildList(const BlockPtr& parent, const YAML::Node& sequence, ExpessionEvaluator::INTContext& ctx, const ColorMap& color_map, const IntMap& tf_map, const IntMap& shader_map)
+	bool BuildList(const BlockPtr& parent, const YAML::Node& sequence, ExpessionEvaluator::INTContext& ctx, std::map<std::string, BlockPtr>& namedir, const ColorMap& color_map, const IntMap& tf_map, const IntMap& shader_map)
 	{
 		ASSERT(sequence.IsSequence(), "'blocks' must be sequence")
 		for (YAML::Node node: sequence)
 		{
-			parent->AddChild(BuildBlock(node, ctx, color_map, tf_map, shader_map));
+			parent->AddChild(BuildBlock(node, ctx, namedir, color_map, tf_map, shader_map));
 		}
 		return true;
 	}
 
-	BlockPtr Load(const fsal::File& f, const IntMap& tf_map, const IntMap& shader_map)
+	std::pair<BlockPtr, Animation> Load(const fsal::File& f, const IntMap& tf_map, const IntMap& shader_map)
 	{
 		using namespace UI::lit;
 		using Render::operator""_c;
@@ -410,6 +412,7 @@ namespace UI
 		}
 
 		auto root = UI::make_block({0_l, 100_wpe, 0_t, 100_hpe});
+		std::map<std::string, BlockPtr> namedir;
 
 		LoadEmmitters(root_node, root, color_map, tf_map, shader_map);
 
@@ -419,8 +422,51 @@ namespace UI
 		{
 			ASSERT(blocks.IsSequence(), "'blocks' must be sequence, in file %s", f.GetPath().string().c_str())
 
-			BuildList(root, blocks, ctx, color_map, tf_map, shader_map);
+			BuildList(root, blocks, ctx, namedir, color_map, tf_map, shader_map);
 		}
-		return root;
+
+		auto animations = root_node["animations"];
+
+		Animation animtaion_set;
+
+		if (animations.IsDefined())
+		{
+			for (auto animation: animations)
+			{
+				auto name = animation["name"].as<std::string>();
+				auto tracks = animation["tracks"];
+				for (auto track: tracks)
+				{
+					auto block_name = track["block"].as<std::string>();
+					auto block_ptr = namedir[block_name];
+
+					auto f = [&animtaion_set, name, block_ptr](YAML::Node block, const char* cnst_name, Constraint::Type type, ExpessionEvaluator::INTContext& ctx)
+					{
+						auto cnstr = block[cnst_name];
+						if (cnstr.IsDefined())
+						{
+							auto ctsr = ReadCST(cnstr.as<std::string>(), type, ctx);
+							animtaion_set[name][block_ptr].push_back(ctsr);
+						}
+					};
+
+					f(track, "width", Constraint::Width, ctx);
+					f(track, "height", Constraint::Height, ctx);
+
+					f(track, "top", Constraint::Top, ctx);
+					f(track, "bottom", Constraint::Bottom, ctx);
+					f(track, "left", Constraint::Left, ctx);
+					f(track, "right", Constraint::Right, ctx);
+
+					f(track, "ctop", Constraint::CenterTop, ctx);
+					f(track, "cbottom", Constraint::CenterBottom, ctx);
+					f(track, "cleft", Constraint::CenterLeft, ctx);
+					f(track, "cright", Constraint::CenterRight, ctx);
+				}
+
+			}
+		}
+
+		return std::make_pair(root, animtaion_set);
 	}
 }

@@ -21,6 +21,8 @@ namespace UI
 	class Block;
 	typedef std::shared_ptr<Block> BlockPtr;
 
+	typedef std::map<std::string, std::map<BlockPtr, std::vector<Constraint> > > Animation;
+
 	class Block
 	{
 		friend void Traverse(const BlockPtr& block, const BlockPtr& parent, const std::function<void(Block* block, Block* parent)>& lambda);

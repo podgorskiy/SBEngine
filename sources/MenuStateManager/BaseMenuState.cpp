@@ -9,7 +9,9 @@
 
 BaseMenuState::BaseMenuState(const fsal::File& yaml, MenuStateManager* msm): m_msm(msm), m_eventDispatcher(msm->GetEventDispatcher())
 {
-	m_root = msm->Load(yaml);
+	auto res = msm->Load(yaml);
+	m_root = res.first;
+	m_animation = res.second;
 	YAML::Node root_node = YAML::Load(std::string(yaml));
 	auto name = root_node["menu_name"];
 	m_name = name.as<std::string>("noname");

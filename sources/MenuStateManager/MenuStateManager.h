@@ -46,7 +46,7 @@ public:
 
 	core::EventDispatcher* GetEventDispatcher() const { return m_eventDispatcher; }
 
-	UI::BlockPtr Load(const fsal::File& yaml);
+	std::pair<UI::BlockPtr, UI::Animation> Load(const fsal::File& yaml);
 
 	// void EventReceiver_OnEvent( EventBase* event );
 

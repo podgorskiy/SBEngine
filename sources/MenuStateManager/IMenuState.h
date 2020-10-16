@@ -11,9 +11,9 @@ public:
 	IMenuState() = default;
 	virtual ~IMenuState() = default;
 
-	virtual void OnPush() {};
-	virtual void OnResume() {};
-	virtual void OnPop() {};
+	virtual void OnPush(float time) {};
+	virtual void OnResume(float time) {};
+	virtual void OnPop(float time) {};
 	virtual void Update(Render::View viewbox, float time, float deltaTime) {};
 	virtual void Draw(Render::View viewbox, Render::Renderer2D* rd) {};
 	virtual std::string GetName() { return "noname"; };

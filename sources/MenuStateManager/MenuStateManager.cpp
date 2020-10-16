@@ -19,7 +19,7 @@ MenuStateManager::~MenuStateManager()
 }
 
 
-UI::BlockPtr MenuStateManager::Load(const fsal::File& yaml)
+std::pair<UI::BlockPtr, UI::Animation> MenuStateManager::Load(const fsal::File& yaml)
 {
 	return UI::Load(yaml, m_tf_map, m_shader_map);
 }
@@ -35,7 +35,7 @@ void MenuStateManager::Update(Render::View viewbox, float time, float deltaTime)
 			{
 				IMenuStatePtr state = m_stack.back().first;
 				spdlog::info("Poping state: {}", state->GetName());
-				state->OnPop();
+				state->OnPop(time);
 				m_stack.pop_back();
 				break;
 			}
@@ -56,7 +56,7 @@ void MenuStateManager::Update(Render::View viewbox, float time, float deltaTime)
 				auto state = ctr(f, this);
 
 				spdlog::info("Pushing state: {}", state->GetName());
-				state->OnPush();
+				state->OnPush(time);
 				m_stack.push_back(std::make_pair(std::move(state), filename));
 				break;
 			}
