@@ -3,6 +3,7 @@
 #include "utils/priority_queue.h"
 #include "utils/math.h"
 #include "utils/comp.h"
+#include "elo.h"
 #include "utils/glm_printers.h"
 #include "utils/vector2d_func.h"
 #include "Serialization/Property.h"
@@ -343,3 +344,24 @@ TEST_CASE("[math] Complex")
 	}
 }
 
+
+TEST_CASE("[elo] elo")
+{
+	auto o = elo::ExpectedOutcome(1000, 1000);
+	CHECK_EQ(o, 0.5);
+	spdlog::info("{}", o);
+	o = elo::ExpectedOutcome(800, 1200);
+	CHECK_LT(o, 0.5);
+	spdlog::info("{}", o);
+	o = elo::ExpectedOutcome(1200, 1000);
+	CHECK_GT(o, 0.5);
+	spdlog::info("{}", o);
+
+	auto deltas = elo::Match(800, 1200, 0.0);
+	spdlog::info("{} : {}", deltas.first, deltas.second);
+	deltas = elo::Match(800, 1200, 0.5);
+	spdlog::info("{} : {}", deltas.first, deltas.second);
+	deltas = elo::Match(800, 1200, 1.0);
+	spdlog::info("{} : {}", deltas.first, deltas.second);
+
+}
