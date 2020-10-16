@@ -63,7 +63,8 @@ ENDFUNCTION(PREPEND)
 if(MSVC)
 else()
 	set(DEBUG_OPTIONS -g -Wall)
-	set(RELEASE_OPTIONS -g -Ofast -fPIC -funsafe-math-optimizations -fno-strict-aliasing -fno-rtti -ffast-math -msse2 -msse3 -msse4)
+	# -fno-rtti
+	set(RELEASE_OPTIONS -g -Ofast -fPIC -funsafe-math-optimizations -fno-strict-aliasing  -ffast-math -msse2 -msse3 -msse4)
 endif()
 
 add_compile_options(
