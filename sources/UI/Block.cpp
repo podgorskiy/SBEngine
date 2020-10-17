@@ -82,6 +82,10 @@ namespace UI
 			float w = 0.0f;
 			switch (mask[id])
 			{
+				case Constraint::None:
+					l = pl;
+					r = pr;
+					break;
 				case Constraint::Right:
 					l = r = pr - cst_values[id][id_map[Constraint::Right]];
 					break;

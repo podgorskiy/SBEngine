@@ -305,18 +305,22 @@ namespace UI
 			spdlog::info("Node name: {}", name.as<std::string>());
 			namedir[name.as<std::string>()] = block;
 		}
-		ReadConstraint(node, "width", Constraint::Width, block, ctx);
-		ReadConstraint(node, "height", Constraint::Height, block, ctx);
+		auto constraints = node["constraints"];
+		if (constraints.IsDefined())
+		{
+			ReadConstraint(constraints, "width", Constraint::Width, block, ctx);
+			ReadConstraint(constraints, "height", Constraint::Height, block, ctx);
 
-		ReadConstraint(node, "top", Constraint::Top, block, ctx);
-		ReadConstraint(node, "bottom", Constraint::Bottom, block, ctx);
-		ReadConstraint(node, "left", Constraint::Left, block, ctx);
-		ReadConstraint(node, "right", Constraint::Right, block, ctx);
+			ReadConstraint(constraints, "top", Constraint::Top, block, ctx);
+			ReadConstraint(constraints, "bottom", Constraint::Bottom, block, ctx);
+			ReadConstraint(constraints, "left", Constraint::Left, block, ctx);
+			ReadConstraint(constraints, "right", Constraint::Right, block, ctx);
 
-		ReadConstraint(node, "ctop", Constraint::CenterTop, block, ctx);
-		ReadConstraint(node, "cbottom", Constraint::CenterBottom, block, ctx);
-		ReadConstraint(node, "cleft", Constraint::CenterLeft, block, ctx);
-		ReadConstraint(node, "cright", Constraint::CenterRight, block, ctx);
+			ReadConstraint(constraints, "ctop", Constraint::CenterTop, block, ctx);
+			ReadConstraint(constraints, "cbottom", Constraint::CenterBottom, block, ctx);
+			ReadConstraint(constraints, "cleft", Constraint::CenterLeft, block, ctx);
+			ReadConstraint(constraints, "cright", Constraint::CenterRight, block, ctx);
+		}
 
 		auto cnstr = node["border-radius"];
 		if (cnstr.IsDefined())

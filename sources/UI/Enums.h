@@ -15,7 +15,7 @@ namespace UI
 			CnstVp = 4u,
 			CnstV = 1u << CnstVp, // Vertical flag
 
-			Invalid = 0x0,
+			None = 0x0,
 			Left = CnstL,
 			Right = CnstR,
 			Width = CnstS,
@@ -57,7 +57,7 @@ namespace UI
 		Constraint(Type type, Unit unit, float value): type(type), unit(unit), value(value)
 		{};
 
-		Constraint(): type(Invalid), unit(Pixel), value(0.0f)
+		Constraint(): type(None), unit(Pixel), value(0.0f)
 		{};
 
 		Type type;
