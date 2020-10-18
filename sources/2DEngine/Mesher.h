@@ -20,6 +20,8 @@ namespace Render
 		void PrimRect(const glm::vec2& a, const glm::vec2& c, const glm::vec2& uv_a, const glm::vec2& uv_c, color col);
 		void PrimRect(const glm::vec2& a, const glm::vec2& c, const glm::mat2x3& t, const glm::vec2& uv_a, const glm::vec2& uv_c, color col);
 
+		void PrimRectShadow(const glm::vec2& a, const glm::vec2& c, glm::vec2 dir, Render::color col, float size);
+
 		void PrimRectRounded(const glm::vec2& a, const glm::vec2& c, const glm::vec4& radius, color col);
 
 		void PrimConvexPolyFilled(const glm::vec2* points, int count, color col);

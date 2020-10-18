@@ -261,7 +261,7 @@ void Update(void* window, glm::ivec2 m_windowBufferSize)
 	                uint16_t(m_windowBufferSize.x), uint16_t(m_windowBufferSize.y)
 	);
 
-	ImGui::ShowDemoWindow();
+	// ImGui::ShowDemoWindow();
 
 	app->Update(elapsed_time.count(), delta_time.count());
 

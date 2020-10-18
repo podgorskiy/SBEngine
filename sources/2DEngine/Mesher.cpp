@@ -61,6 +61,43 @@ void Mesher::PrimRect(const glm::vec2& _a, const glm::vec2& _c, const glm::mat2x
     m_index_write_ptr += 6;
 }
 
+void Mesher::PrimRectShadow(const glm::vec2& a, const glm::vec2& c,glm::vec2 dir, Render::color col,
+                            float size)
+{
+	PrimReserve(6 * 4, 4 * 4);
+	auto uv_a = glm::vec2(0.0, 1.0);
+	auto uv_c = glm::vec2(1.0, 0.0);
+	auto uv_a_e = glm::vec2(-1.0, 2.0);
+	auto uv_c_e = glm::vec2(2.0, -1.0);
+
+	glm::vec2 per[4] = { a, {c.x, a.y}, c, {a.x, c.y} };
+	glm::vec2 per_extruded[4] = { a - size, {c.x + size, a.y - size}, c + size, {a.x - size, c.y + size } };
+
+	glm::vec2 per_uv[4] = { uv_a, {uv_c.x, uv_a.y}, uv_c, {uv_a.x, uv_c.y} };
+	glm::vec2 per_extruded_uv[4] = { uv_a_e, {uv_c_e.x, uv_a_e.y}, uv_c_e, {uv_a_e.x, uv_c_e.y} };
+
+    for (int i = 0; i < 4; ++i)
+    {
+        auto idx = m_current_index + 4 * i;
+	    m_index_write_ptr[0 + 6 * i] = idx; m_index_write_ptr[1 + 6 * i] = idx+1; m_index_write_ptr[2 + 6 * i] = idx+2;
+	    m_index_write_ptr[3 + 6 * i] = idx; m_index_write_ptr[4 + 6 * i] = idx+2; m_index_write_ptr[5 + 6 * i] = idx+3;
+    }
+
+    auto p = m_vertex_write_ptr;
+    for (int i = 0; i < 4; ++i)
+    {
+    	int j = (i + 1) % 4;
+    	p->pos = per[i]; p->uv = per_uv[i]; p->col = col; ++p;
+    	p->pos = per[j]; p->uv = per_uv[j]; p->col = col; ++p;
+    	p->pos = per_extruded[j]; p->uv = per_extruded_uv[j]; p->col = col; ++p;
+    	p->pos = per_extruded[i]; p->uv = per_extruded_uv[i]; p->col = col; ++p;
+    }
+
+    m_vertex_write_ptr += 4 * 4;
+    m_current_index += 4 * 4;
+    m_index_write_ptr += 6 * 4;
+}
+
 void Mesher::PrimRectRounded(const glm::vec2& a, const glm::vec2& c, const glm::vec4& radius, color col)
 {
 	m_path.PathClear();

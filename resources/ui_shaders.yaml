@@ -1,0 +1,4 @@
+shaders:
+  - name: fs_splash_shader
+  - name: fs_sword_background
+  - name: fs_metalpattern

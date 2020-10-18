@@ -44,6 +44,7 @@ namespace Render
 
 		Render::ProgramPtr m_programCol;
 		Render::ProgramPtr m_programTex;
+		Render::ProgramPtr m_programShadow;
 
 		std::vector<Render::ProgramPtr> m_shaders;
 		std::map<std::string, int> m_shader_pool;

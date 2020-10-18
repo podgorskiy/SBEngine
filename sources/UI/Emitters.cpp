@@ -11,6 +11,15 @@ void UI::SFillEmitter::operator()(Render::Encoder* r, const UI::Block* block, fl
 UI::SFillEmitter::SFillEmitter(Render::color c): col(c)
 {}
 
+void UI::SShadowEmitter::operator()(Render::Encoder* r, const UI::Block* block, float time, int flags)
+{
+	auto box = block->GetBox();
+	r->RectShadow(box, col, glm::vec2(0.), size);
+}
+
+UI::SShadowEmitter::SShadowEmitter(Render::color col, float size): col(col), size(size)
+{}
+
 void UI::SImageEmitter::operator()(Render::Encoder* r, const UI::Block* block, float time, int flags)
 {
 	auto box = block->GetBox();

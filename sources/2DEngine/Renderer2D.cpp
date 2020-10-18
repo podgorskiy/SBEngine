@@ -30,6 +30,7 @@ void Renderer2D::Init()
     using fs = fsal::FileSystem;
 	m_programCol = Render::MakeProgram("vs_gui.bin", "fs_gui.bin");
 	m_programTex = Render::MakeProgram("vs_gui.bin", "fs_gui_tex.bin");
+	m_programShadow = Render::MakeProgram("vs_gui.bin", "fs_gui_shadow.bin");
 
 	u_texture = m_programTex->GetUniform("u_texture");
 
@@ -230,6 +231,31 @@ void Renderer2D::Draw(float time)
 			need_flush = true;
 			break;
 
+			case C_RectShadow:
+			{
+				glm::aabb2 rect;
+				glm::vec4  radius;
+				glm::vec2 dir;
+				color col;
+				float size;
+				command_queue.Read(rect);
+				command_queue.Read(radius);
+				command_queue.Read(dir);
+				command_queue.Read(col);
+				command_queue.Read(size);
+
+				if (radius == glm::vec4(0))
+				{
+					m_mesher.PrimRectShadow(rect.minp, rect.maxp, dir, col, size);
+				}
+				else
+				{
+
+				}
+			}
+			need_flush = true;
+			break;
+
 			case C_Shader:
 			{
 				glm::aabb2 rect;
@@ -365,6 +391,32 @@ void Renderer2D::Draw(float time)
 				bgfx::setState(state);
 
 				bgfx::submit(ViewIds::GUI, m_programTex->GetHandle(), 0);
+			}
+			break;
+			case C_RectShadow:
+			{
+				int num_vertex = m_mesher.vcount();
+				int num_index = m_mesher.icount();
+				bgfx::TransientVertexBuffer tvb;
+				bgfx::TransientIndexBuffer tib;
+
+				bgfx::allocTransientVertexBuffer(&tvb, num_vertex, m_vertexSpec);
+				bgfx::allocTransientIndexBuffer(&tib, num_index);
+
+				memcpy(tvb.data, m_mesher.vptr(), num_vertex * sizeof(Vertex));
+				memcpy(tib.data, m_mesher.iptr(), num_index * sizeof(uint16_t));
+
+				m_mesher.PrimReset();
+
+				bgfx::setVertexBuffer(0, &tvb, 0, num_vertex);
+				bgfx::setIndexBuffer(&tib, 0, num_index);
+
+				uint64_t state = 0
+				                 | BGFX_STATE_WRITE_RGB
+				                 | BGFX_STATE_BLEND_FUNC(BGFX_STATE_BLEND_SRC_ALPHA, BGFX_STATE_BLEND_INV_SRC_ALPHA);
+				bgfx::setState(state);
+
+				bgfx::submit(ViewIds::GUI, m_programShadow->GetHandle(), 0);
 			}
 			break;
 			case C_Shader:

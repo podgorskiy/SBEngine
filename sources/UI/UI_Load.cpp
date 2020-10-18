@@ -82,7 +82,27 @@ namespace UI
 		auto bg_img = node["bg_img"];
 		auto label_node = node["label"];
 		auto shader_node = node["shader"];
-		if (shader_node.IsDefined())
+		auto shadow_node = node["shadow"];
+		if (shadow_node.IsDefined())
+		{
+			auto size = shadow_node["size"].as<float>(10);
+
+			Render::color c;
+			auto str = shadow_node["color"].as<std::string>("000000");
+			str.erase(std::remove (str.begin(), str.end(), ' '), str.end());
+
+			if (ParseColor(str.c_str(), c))
+			{
+			}
+			else
+			{
+				auto it = color_map.find(str);
+				if (it != color_map.end())
+					c = it->second;
+			}
+    	    block->EmplaceEmitter<SShadowEmitter>(c, size);
+		}
+		else if (shader_node.IsDefined())
 		{
 			auto ichannel0_node = node["ichannel0"];
 			auto shader_str = shader_node.as<std::string>();

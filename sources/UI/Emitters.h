@@ -54,6 +54,18 @@ namespace UI
 		int shader;
 	};
 
+	class SShadowEmitter : public IEmitter
+	{
+	public:
+		SShadowEmitter(Render::color col, float size);
+
+		virtual void operator()(Render::Encoder* encoder, const Block*, float time, int flags);
+
+	private:
+		Render::color col;
+		float size;
+	};
+
 	class STextEmitter : public IEmitter
 	{
 	public:

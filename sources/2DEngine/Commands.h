@@ -8,6 +8,7 @@ namespace Render
 		C_RectCol,
 		C_RectTex,
 		C_RectTexTr,
+		C_RectShadow,
 		C_Text,
 		C_SetScissors,
 		C_ResetScissors,

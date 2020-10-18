@@ -50,6 +50,15 @@ void Encoder::Rect(glm::aabb2 rect, color col, glm::vec4 radius)
 	m_command_queue.Write(col);
 }
 
+void Encoder::RectShadow(glm::aabb2 rect, Render::color col, glm::vec2 dir, float size, glm::vec4 radius)
+{
+	m_command_queue.Write(C_RectShadow);
+	m_command_queue.Write(rect);
+	m_command_queue.Write(radius);
+	m_command_queue.Write(dir);
+	m_command_queue.Write(col);
+	m_command_queue.Write(size);
+}
 
 void Encoder::Rect(glm::aabb2 rect, bgfx::TextureHandle texture, glm::aabb2 uv, glm::vec4 radius)
 {
