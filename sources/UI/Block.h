@@ -66,7 +66,7 @@ namespace UI
 		PropControllers& GetControllers() { return m_controllers; };
 		const TransitionConstraints& GetTransitionConstraints() const { return m_transition_constraints; };
 		TransitionConstraints& GetTransitionConstraintsTarget() { return m_transition_target_constraints; };
-		void Emit(Render::Encoder* r, float time = 0.0f, int flags = 0) {	if (has_emitter) (*GetEmitter())(r, this, time, flags); }
+		void Emit(Render::Encoder* r, float time = 0.0f, int flags = 0, float ppd=1.0) {	if (has_emitter) (*GetEmitter())(r, this, time, flags, ppd); }
 		void PushTargetTransitionConstraints(const Constraint& cnst) { m_transition_target_constraints.push_back(cnst); };
 
 		template <typename R, typename... Ts>
@@ -160,4 +160,6 @@ namespace UI
 	void DoLayout(const BlockPtr& block, const Render::View& view, float time);
 
 	void Action(const BlockPtr& root, const Render::View& view, glm::vec2 mouse_pos, bool trigger, bool mouse_left_click);
+
+	float ComputeValue(const glm::aabb2& this_box, float value, Constraint::Unit unit, float ppd);
 }

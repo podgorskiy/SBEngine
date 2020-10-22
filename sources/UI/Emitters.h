@@ -11,7 +11,7 @@ namespace UI
 	class IEmitter
 	{
 	public:
-		virtual void operator()(Render::Encoder* encoder, const Block*, float time, int flags) = 0;
+		virtual void operator()(Render::Encoder* encoder, const Block*, float time, int flags, float ppd) = 0;
 
 		virtual ~IEmitter() = default;
 	};
@@ -21,7 +21,7 @@ namespace UI
 	public:
 		explicit SFillEmitter(Render::color c);
 
-		virtual void operator()(Render::Encoder* encoder, const Block*, float time, int flags);
+		virtual void operator()(Render::Encoder* encoder, const Block*, float time, int flags, float ppd);
 
 	private:
 		Render::color col;
@@ -32,7 +32,7 @@ namespace UI
 	public:
 		SImageEmitter(Render::TexturePtr tex, ImSize::Enum size, ImPos::Enum pos, ImTransform::Enum t);
 
-		virtual void operator()(Render::Encoder* encoder, const Block*, float time, int flags);
+		virtual void operator()(Render::Encoder* encoder, const Block*, float time, int flags, float ppd);
 
 	private:
 		glm::ivec2 image_size;
@@ -47,7 +47,7 @@ namespace UI
 	public:
 		SShaderEmitter(Render::TexturePtr tex, int shader);
 
-		virtual void operator()(Render::Encoder* encoder, const Block*, float time, int flags);
+		virtual void operator()(Render::Encoder* encoder, const Block*, float time, int flags, float ppd);
 
 	private:
 		Render::TexturePtr tex;
@@ -57,13 +57,14 @@ namespace UI
 	class SShadowEmitter : public IEmitter
 	{
 	public:
-		SShadowEmitter(Render::color col, float size);
+		SShadowEmitter(Render::color col, float size_value, Constraint::Unit size_unit);
 
-		virtual void operator()(Render::Encoder* encoder, const Block*, float time, int flags);
+		virtual void operator()(Render::Encoder* encoder, const Block*, float time, int flags, float ppd);
 
 	private:
 		Render::color col;
-		float size;
+		float size_value;
+		Constraint::Unit size_unit;
 	};
 
 	class STextEmitter : public IEmitter
@@ -71,7 +72,7 @@ namespace UI
 	public:
 		STextEmitter(uint8_t f_id, std::string text, uint8_t f_height, Render::color f_color, uint8_t f_style=0, uint8_t f_stroke=0);
 
-		virtual void operator()(Render::Encoder* encoder, const Block*, float time, int flags);
+		virtual void operator()(Render::Encoder* encoder, const Block*, float time, int flags, float ppd);
 
 	private:
 		std::string text;

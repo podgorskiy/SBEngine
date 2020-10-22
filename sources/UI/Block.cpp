@@ -70,6 +70,28 @@ namespace UI
 		}
 	}
 
+	float ComputeValue(const glm::aabb2& this_box, const float value, const Constraint::Unit unit, float ppd)
+	{
+		auto p_size = this_box.size();
+		float p;
+		switch(unit)
+		{
+			case Constraint::Percentage: p = glm::mean(this_box.size()) * value / 100.0f; break;
+			case Constraint::RValueHeight: p = p_size.y; p *= value / 100.0f; break;
+			case Constraint::RValueWidth: p = p_size.x; p *= value / 100.0f; break;
+			case Constraint::RValueMin: p = glm::min(p_size.x, p_size.y); p *= value / 100.0f; break;
+			case Constraint::RValueMax: p = glm::max(p_size.x, p_size.y); p *= value / 100.0f; break;
+			case Constraint::Pixel: p = value / ppd; break;
+			case Constraint::Point: p = value; break;
+			case Constraint::Centimeters: p = value * (72.0f / 2.54f); break;
+			case Constraint::Millimeters: p = value * (72.0f / 25.4f); break;
+			case Constraint::Inches: p = value * 72.0f; break;
+			default:
+				assert(false);
+		}
+		return p;
+	}
+
 	glm::aabb2 SolveConstraints(const glm::aabb2& root_box, const glm::aabb2& parent_box, const Constraint* cnst, int count, const float (&cst_values)[2][5], const uint8_t (&mask)[2])
 	{
 		glm::aabb2 box = parent_box;
@@ -189,23 +211,10 @@ namespace UI
 
 	glm::vec4 ResolveRadius(const glm::aabb2& this_box, const glm::vec4& values, const Constraint::Unit* units,  float ppd)
 	{
-    	glm::vec4 output = glm::vec4(0);
+    	auto output = glm::vec4(0);
 		for (int i = 0; i < 4; ++i)
 		{
-			float p = 0;
-			float v = values[i];
-			switch(units[i])
-			{
-				case Constraint::Percentage: p = glm::mean(this_box.size()) * v / 100.0f; break;
-				case Constraint::Pixel: p = v / ppd; break;
-				case Constraint::Point: p = v; break;
-				case Constraint::Centimeters: p = v * (72.0f / 2.54f); break;
-				case Constraint::Millimeters: p = v * (72.0f / 25.4f); break;
-				case Constraint::Inches: p = v * 72.0f; break;
-				default:
-					continue;
-			}
-			output[i] = p;
+			output[i] = ComputeValue(this_box, values[i], units[i], ppd);
 		}
 		return output;
 	}

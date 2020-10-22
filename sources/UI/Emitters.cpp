@@ -2,7 +2,7 @@
 #include "Block.h"
 
 
-void UI::SFillEmitter::operator()(Render::Encoder* r, const UI::Block* block, float time, int flags)
+void UI::SFillEmitter::operator()(Render::Encoder* r, const UI::Block* block, float time, int flags, float ppd)
 {
 	auto box = block->GetBox();
 	r->Rect(box, col, block->GetRadius());
@@ -11,16 +11,16 @@ void UI::SFillEmitter::operator()(Render::Encoder* r, const UI::Block* block, fl
 UI::SFillEmitter::SFillEmitter(Render::color c): col(c)
 {}
 
-void UI::SShadowEmitter::operator()(Render::Encoder* r, const UI::Block* block, float time, int flags)
+void UI::SShadowEmitter::operator()(Render::Encoder* r, const UI::Block* block, float time, int flags, float ppd)
 {
 	auto box = block->GetBox();
-	r->RectShadow(box, col, glm::vec2(0.), size);
+	r->RectShadow(box, col, glm::vec2(0.), ComputeValue(box, size_value, size_unit, ppd));
 }
 
-UI::SShadowEmitter::SShadowEmitter(Render::color col, float size): col(col), size(size)
+UI::SShadowEmitter::SShadowEmitter(Render::color col, float size_value, Constraint::Unit size_unit): col(col), size_value(size_value), size_unit(size_unit)
 {}
 
-void UI::SImageEmitter::operator()(Render::Encoder* r, const UI::Block* block, float time, int flags)
+void UI::SImageEmitter::operator()(Render::Encoder* r, const UI::Block* block, float time, int flags, float ppd)
 {
 	auto box = block->GetBox();
 	glm::aabb2 uv;
@@ -68,7 +68,7 @@ void UI::SImageEmitter::operator()(Render::Encoder* r, const UI::Block* block, f
 	r->Rect(box, tex->m_handle, uv);
 }
 
-void UI::SShaderEmitter::operator()(Render::Encoder* r, const UI::Block* block, float time, int flags)
+void UI::SShaderEmitter::operator()(Render::Encoder* r, const UI::Block* block, float time, int flags, float ppd)
 {
 	auto box = block->GetBox();
 	if (tex)
@@ -98,7 +98,7 @@ UI::STextEmitter::STextEmitter(uint8_t f_id, std::string text, uint8_t f_height,
 {
 }
 
-void UI::STextEmitter::operator()(Render::Encoder* r, const Block* block, float time, int flags)
+void UI::STextEmitter::operator()(Render::Encoder* r, const Block* block, float time, int flags, float ppd)
 {
 	auto box = block->GetBox();
 	r->Text(f_id, box, text.c_str(), f_height, f_color, f_style, f_stroke, text.size());

@@ -9,14 +9,11 @@
 
 namespace UI
 {
-	auto ReadCST(std::string str, Constraint::Type type, ExpessionEvaluator::INTContext& ctx)
+	bool ReadValue(std::string str, ExpessionEvaluator::INTContext& ctx, Constraint::Unit& unit, float& value)
 	{
-		Constraint::Unit unit;
-		float value;
-		// spdlog::info("{}: {}", name, x);
 		if (ParseUnitValue(str.c_str(), unit, value))
 		{
-			return Constraint(type, unit, value);
+			return true;
 		}
 		else
 		{
@@ -34,12 +31,21 @@ namespace UI
 					parser.AcceptWhiteSpace();
 					if (parser.EOS())
 					{
-						return Constraint(type, unit, value);
+						return true;
 					}
 				}
 			}
 		}
-	};
+		return false;
+	}
+
+	auto ReadCST(std::string str, Constraint::Type type, ExpessionEvaluator::INTContext& ctx)
+	{
+		Constraint::Unit unit;
+		float value;
+		ReadValue(std::move(str), ctx, unit, value);
+		return Constraint(type, unit, value);
+	}
 
 	void ReadConstraint(YAML::Node node, const char* name, Constraint::Type type, const BlockPtr& blk, ExpessionEvaluator::INTContext& ctx)
 	{
@@ -54,7 +60,7 @@ namespace UI
 				ParseTime(d_s.c_str(), duration_v);
 				auto vcnstr = cnstr["value"];
 				auto tcnstr = cnstr["target"];
-				std::string x = vcnstr.as<std::string>("0");
+				auto x = vcnstr.as<std::string>("0");
 				auto ctsr = ReadCST(x, type, ctx);
 				blk->PushConstraint(ctsr);
 //				if (tcnstr.IsDefined())
@@ -76,7 +82,7 @@ namespace UI
 
 	bool BuildList(const BlockPtr& parent, const YAML::Node& sequence, ExpessionEvaluator::INTContext& ctx, std::map<std::string, BlockPtr>& namedir, const ColorMap& color_map, const IntMap& tf_map, const IntMap& shader_map);
 
-	void LoadEmmitters(YAML::Node node, const BlockPtr& block, const ColorMap& color_map, const IntMap& tf_map, const IntMap& shader_map)
+	void LoadEmmitters(YAML::Node node, ExpessionEvaluator::INTContext& ctx, const BlockPtr& block, const ColorMap& color_map, const IntMap& tf_map, const IntMap& shader_map)
 	{
 		auto bg_color = node["bg_color"];
 		auto bg_img = node["bg_img"];
@@ -85,7 +91,11 @@ namespace UI
 		auto shadow_node = node["shadow"];
 		if (shadow_node.IsDefined())
 		{
-			auto size = shadow_node["size"].as<float>(10);
+			auto size = shadow_node["size"].as<std::string>();
+			Constraint::Unit unit;
+			float value;
+			auto res = ReadValue(size, ctx, unit, value);
+			ASSERT(res, "Error parsing shadow size");
 
 			Render::color c;
 			auto str = shadow_node["color"].as<std::string>("000000");
@@ -100,7 +110,7 @@ namespace UI
 				if (it != color_map.end())
 					c = it->second;
 			}
-    	    block->EmplaceEmitter<SShadowEmitter>(c, size);
+    	    block->EmplaceEmitter<SShadowEmitter>(c, value, unit);
 		}
 		else if (shader_node.IsDefined())
 		{
@@ -369,7 +379,7 @@ namespace UI
 			}
 		}
 
-		LoadEmmitters(node, block, color_map, tf_map, shader_map);
+		LoadEmmitters(node, ctx, block, color_map, tf_map, shader_map);
 
 		auto blocks = node["blocks"];
 		if (blocks.IsDefined())
@@ -438,7 +448,7 @@ namespace UI
 		auto root = UI::make_block({0_l, 100_wpe, 0_t, 100_hpe});
 		std::map<std::string, BlockPtr> namedir;
 
-		LoadEmmitters(root_node, root, color_map, tf_map, shader_map);
+		LoadEmmitters(root_node, ctx, root, color_map, tf_map, shader_map);
 
 		auto blocks = root_node["blocks"];
 
