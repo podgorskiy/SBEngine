@@ -102,7 +102,7 @@ void UI::STextEmitter::operator()(Render::Encoder* r, const Block* block, float 
 {
 	auto box = block->GetBox();
 	float height = ComputeValue(box, height_value, height_unit, ppd);
-	int iheight = glm::max(4 * int(roundf(powf(1.1f, roundf(logf(height) / logf(1.1f))) / 4.0f)), 10);
+	int iheight = glm::max(1 * int(roundf(powf(1.1f, roundf(logf(height) / logf(1.1f))) / 1.0f)), 10);
 
 	r->Text(f_id, box, text.c_str(), iheight, f_color, f_style, f_stroke, text.size());
 }
