@@ -282,7 +282,11 @@ namespace UI
 				spdlog::info("Label color: {}", c);
 			}
 
-			auto height = label_node["height"].as<int>();
+			auto height = label_node["height"].as<std::string>();
+			Constraint::Unit unit;
+			float value;
+			auto res = ReadValue(height, ctx, unit, value);
+			ASSERT(res, "Error parsing text height");
 
 			Scriber::FontStyle::Enum style = Scriber::FontStyle::Regular;
 			Scriber::Align::Enum align = Scriber::Align::None;
@@ -321,7 +325,7 @@ namespace UI
 
 			uint8_t a = Scriber::Aggregate(style, align);
 
-    	    block->EmplaceEmitter<STextEmitter>((uint8_t)typeface_id, text, (uint8_t)height, c, a, stroke);
+    	    block->EmplaceEmitter<STextEmitter>((uint8_t)typeface_id, text, value, unit, c, a, stroke);
 		}
 	}
 

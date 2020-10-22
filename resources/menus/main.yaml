@@ -8,74 +8,81 @@ vars:
   container_width: 95
 
 colors:
-  window_bg: d5e6d5
+  window_bg: c7c7bf
   panel_bg: f7f6e9
+  text_color: 1f1f1f
+  text_color_w: f7f7f7
+  text_color_t:  1f1f1f60
 
-bg_img: graphics/bubble/bg.png
+bg_img: graphics/background.png
 bg_size: cover
 bg_pos: center_center
+# bg_color: 40485e
+
+animations:
+  - name: on_push
+    tracks:
+      - block: block1
+        bottom: 10%
+
+  - name: on_pop
+    tracks:
+      - block: block1
+        bottom: 50%
 
 blocks:
-  - bg_color: window_bg
-    width: container_width:%
-    bottom:
-      value: 50%
-      target: 10pt
-      duration: 2s
-
-    top: 20pt
-    border-radius: 50pt 50pt 50pt 50pt
+  - name: block1
+    # bg_color: window_bg
+    constraints: { width: 80sh%, bottom: 10%, right: 10%, top: 10% }
 
     blocks:
-      - bg_img: graphics/bubble/up.png
-        bg_size: contain
-        width: 100%
-        left: 0pt
-        height: 199 / 1536 * 100 :vw%
-        top: 0pt
+      - constraints: { left: 2vh%, right: 2vh%, bottom: 2vh%, top: 2vh% }
         blocks:
-          - bg_img: graphics/bubble/table.png
-            bg_size: contain
-            clip_overflow: True
-            left: 8%
-            ctop: 40%
-            width: 150pt
-            height: 31.7sw%
+          - constraints: { width: 120%, height: 5vw%, top: -8vw% }
+            bg_color: 454545A0
             blocks:
-              - text: "01:48DDD"
-                left: 125vh%
-                top: 74%
-              - bg_img: graphics/bubble/clock.png
-                bg_size: contain
-                width: 120vh%
-                left: -10vh%
-                height: 95 / 82 * 100 :sw%
-                top: -10vh%
+              - constraints: { left: 150vh%, width: 0pt, cbottom: 50% }
+                label: { text: " Rating: 448  Over the week: +12 (2.69%)", typeface: Roboto, height: 40pt, color: text_color_w, style: regular, align: vcenter, stroke: 1 }
 
-      - name: child1
-        bg_color: panel_bg
-        width: 150pt
-        left: 10pt
-        bottom: 10pt
-        top: 23vw
-        border-radius: 15pt 15pt 15pt 15pt
+          - bg_color: ebedebE0
+            constraints: { right: 0pt, left: 15vw%, height: 25vw%, top: 0pt }
 
-      - name: child2
-        bg_color: panel_bg
-        left: 170pt
-        right: 10pt
-        bottom: 10pt
-        top: 23vw
-        border-radius: 150pt
+            blocks:
+              - shadow: { color: f7f6e9, size: 15vh%}
 
-        blocks:
-          - name: child1
-            text: "Some text"
-            left: 0pt
-            bottom: 100pt
+              - shader: fs_metalpattern
 
-  - name: el2
-    width: 150px
-    height: 150px
-    top: 100px
-    left: 100px
+              - constraints: { width: 80%, height: 5%, bottom: -1% }
+                bg_color: FF7F00
+
+              - constraints: { left: 90vh%, width: 100vh%, cbottom: 50% }
+                label: { text: "Armed Conflict", typeface: Roboto, height: 60%, color: text_color, style: bold, align: vcenter }
+
+              - constraints: { right: -35vh%, width: 100vh%, cbottom: 50% }
+                label: { text: "", typeface: Roboto, height: 140%, color: text_color_t, style: bold, align: vcenter left}
+
+          - bg_color: ebedebF0
+            constraints: { right: 50vw%, left: 0pt, height: 20vw%, top: 28vw% }
+            blocks:
+              - shadow: { color: f7f6e9, size: 15vh%}
+
+              - shader: fs_metalpattern
+                
+              - constraints: { left: 20vh%, width: 100vh%, cbottom: 50% }
+                label: { text: "Combatants", typeface: Roboto, height: 60%, color: text_color, style: bold, align: vcenter }
+
+              - constraints: { right: -35vh%, width: 100vh%, cbottom: 50% }
+                label: { text: "", typeface: Roboto, height: 140%, color: text_color_t, style: bold, align: vcenter left }
+              
+          - bg_color: ebedebF0
+            constraints: { right: 3vw%, left: 53vw%, height: 20vw%, top: 28vw% }
+            blocks:
+              - shadow: { color: f7f6e9, size: 15vh%}
+
+              - shader: fs_metalpattern
+
+              - constraints: { left: 20vh%, width: 100vh%, cbottom: 50% }
+                label: { text: "Warlords", typeface: Roboto, height: 60%, color: text_color, style: bold, align: vcenter }
+
+              - constraints: { right: -20vh%, width: 100vh%, cbottom: 50% }
+                label: { text: "", typeface: Roboto, height: 140%, color: text_color_t, style: bold, align: vcenter left }

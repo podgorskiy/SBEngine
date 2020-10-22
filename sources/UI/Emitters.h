@@ -70,7 +70,7 @@ namespace UI
 	class STextEmitter : public IEmitter
 	{
 	public:
-		STextEmitter(uint8_t f_id, std::string text, uint8_t f_height, Render::color f_color, uint8_t f_style=0, uint8_t f_stroke=0);
+		STextEmitter(uint8_t f_id, std::string text, float height_value, Constraint::Unit height_unit, Render::color f_color, uint8_t f_style=0, uint8_t f_stroke=0);
 
 		virtual void operator()(Render::Encoder* encoder, const Block*, float time, int flags, float ppd);
 
@@ -78,9 +78,11 @@ namespace UI
 		std::string text;
 
 		Render::color f_color;
+		float height_value;
+		Constraint::Unit height_unit;
+
 		uint8_t f_id;
 		uint8_t f_style;
-		uint8_t f_height;
 		uint8_t f_stroke;
 	};
 

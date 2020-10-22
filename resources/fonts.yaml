@@ -1,6 +1,6 @@
 typefaces:
   - name: NotoSans
-    priority: 10
+    priority: 20
     fonts:
       - path: "fonts/NotoSans-Regular.ttf"
         style: Regular
@@ -16,7 +16,7 @@ typefaces:
         index: 0
 
   - name: Roboto
-    priority: 1
+    priority: 10
     fonts:
       - path: "fonts/Roboto-Regular.ttf"
         style: Regular
@@ -32,15 +32,36 @@ typefaces:
         index: 0
 
   - name: Dragon Fire
-    priority: 1
+    priority: 10
     fonts:
       - path: "fonts/Dragon Fire.ttf"
         style: Regular
         index: 0
 
   - name: Beyond Wonderland
-    priority: 1
+    priority: 10
     fonts:
       - path: "fonts/Beyond Wonderland.ttf"
+        style: Regular
+        index: 0
+
+  - name: fontawesome
+    priority: 10
+    fonts:
+      - path: "fonts/free-fa-solid-900.ttf"
+        style: Regular
+        index: 0
+
+  - name: icon
+    priority: 5
+    fonts:
+      - path: "fonts/kenney-icon-font.ttf"
+        style: Regular
+        index: 0
+
+  - name: emoji
+    priority: 5
+    fonts:
+      - path: "fonts/NotoEmoji-Regular.ttf"
         style: Regular
         index: 0

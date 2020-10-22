@@ -1,0 +1,55 @@
+# Loading screen
+
+class: LuaMenuState
+
+menu_name: loading screen
+
+lua: |
+  time_since_push = 0
+  function update (viewbox, time, deltaTime)
+      time_since_push = time_since_push + deltaTime
+      if time_since_push > 20.0 then
+        -- msm:pop()
+      end
+  end
+  function draw (viewbox, renderer)
+  end
+  function pop ()
+      if time_since_push > 1.0 then
+          msm:pop()
+          msm:push("menus/main.yaml")
+      end
+  end
+
+events:
+  - name: KeyDown
+    call: pop
+  - name: MouseButtonDown
+    call: pop
+
+vars:
+  container_width: 95
+
+colors:
+  window_bg: 14050d
+  text_color: f7f6e9
+
+
+blocks:
+  - constraints: { width: 80%, cleft: 50%, height: 20%, ctop: 40% }
+    blocks:
+      - bg_color: window_bg
+        constraints: { width: 80%, top: -200pt, height: 280pt }
+      - shader: fs_sword_background
+        constraints: { width: 70%, top: 10vh, height: 40vh }
+
+        blocks:
+          - label: { text: "[ Press any key to continue ]", typeface: Dragon Fire, height: 20vh%, color: text_color, align: hcenter }
+            constraints: { bottom: -50%, cleft: 50%, height: 30% }
+
+      - label: { text: "- A Dance of Swords -", typeface: Beyond Wonderland, height: 50vh%,  color: text_color, align: hcenter }
+        constraints: { left: 50%, width: 50%, bottom: 0%, height: 100% }
+
+        blocks:
+          - label: { text: "Game by Stanislav Pidhorskyi", typeface: Roboto, height: 7vh%, color: text_color, align: right }
+            constraints: { left: 260vh%, width: 0pt, bottom: -30%, height: 100% }
