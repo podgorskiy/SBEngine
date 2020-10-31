@@ -12,6 +12,10 @@ MenuStateManager::MenuStateManager(): m_frameCount(0),m_dtime(0), m_fps(0)
 	spdlog::info("Starting MenuStateManager");
 }
 
+void MenuStateManager::InjectEventDispatcher(core::EventDispatcher* eventDispatcher)
+{
+	m_eventDispatcher = eventDispatcher;
+}
 
 MenuStateManager::~MenuStateManager()
 {

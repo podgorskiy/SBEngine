@@ -44,6 +44,7 @@ static void InstallCallbacks(GLFWwindow* window)
 	glfwSetCharCallback(window, io::CharCallback);
 	glfwSetScrollCallback(window, io::ScrollCallback);
 	glfwSetMouseButtonCallback(window, io::MouseButtonCallback);
+	glfwSetCursorPosCallback(window, io::MouseMoveCallback);
 
 	ImGuiIO& io = ImGui::GetIO();
 	io.KeyMap[ImGuiKey_Tab] = GLFW_KEY_TAB;

@@ -159,7 +159,7 @@ namespace UI
 
 	void DoLayout(const BlockPtr& block, const Render::View& view, float time);
 
-	void Action(const BlockPtr& root, const Render::View& view, glm::vec2 mouse_pos, bool trigger, bool mouse_left_click);
+	void Action(const BlockPtr& root, const Render::View& view, float time, glm::vec2 mouse_pos, bool mouse_down, bool mouse_left_click);
 
 	float ComputeValue(const glm::aabb2& this_box, float value, Constraint::Unit unit, float ppd);
 }

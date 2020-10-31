@@ -106,6 +106,12 @@ void io::MouseButtonCallback(GLFWwindow* window, int button, int action, int mod
 	app->OnMouseButton(button, action, mods);
 }
 
+void io::MouseMoveCallback(GLFWwindow* window, double x, double y)
+{
+	auto* app = GetApp(window);
+	app->OnMouseMove({x, y});
+}
+
 void io::ScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 {
 	auto* app = GetApp(window);

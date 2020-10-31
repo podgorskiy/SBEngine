@@ -42,7 +42,7 @@ public:
 		m_shader_map = shader_map;
 	}
 
-	void InjectEventDispatcher(core::EventDispatcher* eventDispatcher) { m_eventDispatcher = eventDispatcher; }
+	void InjectEventDispatcher(core::EventDispatcher* eventDispatcher);
 
 	core::EventDispatcher* GetEventDispatcher() const { return m_eventDispatcher; }
 
