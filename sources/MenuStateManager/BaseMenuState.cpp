@@ -2,6 +2,7 @@
 #include "MenuStateManager.h"
 #include "MenuFactory.h"
 #include "UI/UI_Load.h"
+#include "UI/UI.h"
 #include "EventIds.h"
 #include <spdlog/spdlog.h>
 #include <yaml-cpp/yaml.h>

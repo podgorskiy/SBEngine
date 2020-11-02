@@ -1,5 +1,6 @@
 #include "2DEngine/Renderer2D.h"
 #include "Block.h"
+#include "UI_Constraint_solver.h"
 
 
 void UI::SFillEmitter::operator()(Render::Encoder* r, const UI::Block* block, float time, int flags, float ppd)
