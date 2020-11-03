@@ -102,8 +102,6 @@ UI::STextEmitter::STextEmitter(uint8_t f_id, std::string text, float height_valu
 void UI::STextEmitter::operator()(Render::Encoder* r, const Block* block, float time, int flags, float ppd)
 {
 	auto box = block->GetBox();
-	float height = ComputeValue(box, height_value, height_unit, ppd);
-	int iheight = glm::max(1 * int(roundf(powf(1.1f, roundf(logf(height) / logf(1.1f))) / 1.0f)), 10);
-
+	float iheight = ComputeValue(box, height_value, height_unit, ppd);
 	r->Text(f_id, box, text.c_str(), iheight, f_color, f_style, f_stroke, text.size());
 }

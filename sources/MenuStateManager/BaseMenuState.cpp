@@ -63,10 +63,7 @@ void BaseMenuState::OnPop(float time)
 void BaseMenuState::Update(Render::View viewbox, float time, float deltaTime)
 {
 	m_time += deltaTime;
-	UI::DoLayout(m_root, viewbox, time);
-	UI::Action(m_root, viewbox, time, m_cursor_pos, m_cursor_down, m_cursor_action);
-
-
+	UI::DoLayout(m_root, viewbox, time, m_cursor_pos, m_cursor_down, m_cursor_action);
 	m_cursor_action = false;
 }
 

@@ -32,8 +32,8 @@ public:
 
 protected:
 	glm::vec2 m_cursor_pos;
-	bool m_cursor_down;
-	bool m_cursor_action;
+	bool m_cursor_down = false;
+	bool m_cursor_action = false;
 
 	UI::BlockPtr m_root;
 	UI::Animation m_animation;

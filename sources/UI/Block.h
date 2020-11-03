@@ -5,6 +5,7 @@
 #include "2DEngine/View.h"
 #include "UI/Enums.h"
 #include "UI/Emitters.h"
+#include "UI/Actors.h"
 #include "Render/Texture.h"
 #include "Controller/mcontroller.h"
 
@@ -33,9 +34,7 @@ namespace UI
 
 		Block() = default;
 		~Block()
-		{
-			if (has_emitter) GetEmitter()->~IEmitter();
-		}
+		{}
 
 		explicit Block(std::initializer_list<Constraint> cnst): m_constraints(cnst) {}
 
@@ -68,21 +67,25 @@ namespace UI
 		void SetTransitionProperty(Constraint::Type type, float duration);
 
 		// Emitters
-		void Emit(Render::Encoder* r, float time = 0.0f, int flags = 0, float ppd=1.0) {	if (has_emitter) (*GetEmitter())(r, this, time, flags, ppd); }
+		void Emit(Render::Encoder* r, float time = 0.0f, int flags = 0, float ppd=1.0) { if (m_emitter) (*m_emitter)(r, this, time, flags, ppd); }
 
 		template <typename R, typename... Ts>
 		void EmplaceEmitter(Ts&&... args) {
-		    new (userdata) R(std::forward<Ts>(args)...);
-		    has_emitter = true;
+		    m_emitter.reset(new R(std::forward<Ts>(args)...));
 		}
+
+		// Actors
+		template <typename R, typename... Ts>
+		void EmplaceActor(Ts&&... args) {
+		    m_actor.reset(new R(std::forward<Ts>(args)...));
+		}
+		IActor* GetActor() const { return m_actor.get(); }
 
 		// Clipping
 		void EnableClipping(bool flag) { clip_overflow = flag; }
 		bool IsClipping() const { return clip_overflow; }
 
 	private:
-		IEmitter* GetEmitter() { return (IEmitter*)userdata; }
-
 		glm::aabb2 m_box;
 		glm::vec4 m_radius;
 		glm::vec4 m_radius_val = glm::vec4(0);
@@ -95,9 +98,9 @@ namespace UI
 		uint8_t m_transition_mask;
 
 		stack::vector<BlockPtr, 4> m_childs;
-		//glm::vec2 m_rotation = glm::vec2(1.0f, 0.0f);
-		uint8_t userdata[EmitterSizeCheck::DataSize] = {0};
-		bool has_emitter = false;
+
+		std::unique_ptr<IEmitter> m_emitter = nullptr;
+		std::unique_ptr<IActor> m_actor = nullptr;
 		bool clip_overflow = false;
 	};
 

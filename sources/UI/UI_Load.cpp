@@ -47,6 +47,22 @@ namespace UI
 		return Constraint(type, unit, value);
 	}
 
+	void ReadCSTSet(std::function<void(const char*, Constraint::Type, ExpessionEvaluator::INTContext&)> f,  ExpessionEvaluator::INTContext& ctx)
+	{
+		f("width", Constraint::Width, ctx);
+		f("height", Constraint::Height, ctx);
+
+		f("top", Constraint::Top, ctx);
+		f("bottom", Constraint::Bottom, ctx);
+		f("left", Constraint::Left, ctx);
+		f("right", Constraint::Right, ctx);
+
+		f("ctop", Constraint::CenterTop, ctx);
+		f("cbottom", Constraint::CenterBottom, ctx);
+		f("cleft", Constraint::CenterLeft, ctx);
+		f("cright", Constraint::CenterRight, ctx);
+	}
+
 	void ReadConstraint(YAML::Node node, const char* name, Constraint::Type type, const BlockPtr& blk, ExpessionEvaluator::INTContext& ctx)
 	{
 		auto cnstr = node[name];
@@ -81,6 +97,40 @@ namespace UI
 	}
 
 	bool BuildList(const BlockPtr& parent, const YAML::Node& sequence, ExpessionEvaluator::INTContext& ctx, std::map<std::string, BlockPtr>& namedir, const ColorMap& color_map, const IntMap& tf_map, const IntMap& shader_map);
+
+	void LoadActors(YAML::Node node, ExpessionEvaluator::INTContext& ctx, const BlockPtr& block)
+	{
+		auto actor_node = node["actor"];
+		if (actor_node.IsDefined())
+		{
+			auto actor_cls = actor_node["class"].as<std::string>("None");
+			if (actor_cls == "button")
+			{
+				std::vector<Constraint> c_idle;
+				std::vector<Constraint> c_hower;
+				std::vector<Constraint> c_down;
+
+				auto reader = [&ctx](YAML::Node node, std::vector<Constraint>& c_list)
+				{
+					ReadCSTSet([&node, &c_list](const char* name, Constraint::Type type, ExpessionEvaluator::INTContext& ctx)
+					           {
+						           auto cnstr = node[name];
+						           if (cnstr.IsDefined())
+						           {
+							           auto ctsr = ReadCST(cnstr.as<std::string>(), type, ctx);
+							           c_list.push_back(ctsr);
+						           }
+					           }, ctx);
+				};
+				reader(actor_node["idle"], c_idle);
+				reader(actor_node["hower"], c_hower);
+				reader(actor_node["down"], c_down);
+
+				block->EmplaceActor<ButtonActor>(actor_node["action"].as<std::string>("none"), c_idle, c_hower, c_down);
+
+			}
+		}
+	}
 
 	void LoadEmmitters(YAML::Node node, ExpessionEvaluator::INTContext& ctx, const BlockPtr& block, const ColorMap& color_map, const IntMap& tf_map, const IntMap& shader_map)
 	{
@@ -342,18 +392,9 @@ namespace UI
 		auto constraints = node["constraints"];
 		if (constraints.IsDefined())
 		{
-			ReadConstraint(constraints, "width", Constraint::Width, block, ctx);
-			ReadConstraint(constraints, "height", Constraint::Height, block, ctx);
-
-			ReadConstraint(constraints, "top", Constraint::Top, block, ctx);
-			ReadConstraint(constraints, "bottom", Constraint::Bottom, block, ctx);
-			ReadConstraint(constraints, "left", Constraint::Left, block, ctx);
-			ReadConstraint(constraints, "right", Constraint::Right, block, ctx);
-
-			ReadConstraint(constraints, "ctop", Constraint::CenterTop, block, ctx);
-			ReadConstraint(constraints, "cbottom", Constraint::CenterBottom, block, ctx);
-			ReadConstraint(constraints, "cleft", Constraint::CenterLeft, block, ctx);
-			ReadConstraint(constraints, "cright", Constraint::CenterRight, block, ctx);
+			ReadCSTSet([&constraints, &block](const char* name, Constraint::Type type, ExpessionEvaluator::INTContext& ctx){
+				ReadConstraint(constraints, name, type, block, ctx);
+			}, ctx);
 		}
 
 		auto cnstr = node["border-radius"];
@@ -384,6 +425,7 @@ namespace UI
 		}
 
 		LoadEmmitters(node, ctx, block, color_map, tf_map, shader_map);
+		LoadActors(node, ctx, block);
 
 		auto blocks = node["blocks"];
 		if (blocks.IsDefined())
@@ -471,35 +513,21 @@ namespace UI
 		{
 			for (auto animation: animations)
 			{
-				auto name = animation["name"].as<std::string>();
+				auto animation_name = animation["name"].as<std::string>();
 				auto tracks = animation["tracks"];
 				for (auto track: tracks)
 				{
 					auto block_name = track["block"].as<std::string>();
 					auto block_ptr = namedir[block_name];
 
-					auto f = [&animtaion_set, name, block_ptr](YAML::Node block, const char* cnst_name, Constraint::Type type, ExpessionEvaluator::INTContext& ctx)
-					{
-						auto cnstr = block[cnst_name];
+					ReadCSTSet([&animtaion_set, animation_name, block_ptr, track](const char* name, Constraint::Type type, ExpessionEvaluator::INTContext& ctx){
+						auto cnstr = track[name];
 						if (cnstr.IsDefined())
 						{
 							auto ctsr = ReadCST(cnstr.as<std::string>(), type, ctx);
-							animtaion_set[name][block_ptr].push_back(ctsr);
+							animtaion_set[animation_name][block_ptr].push_back(ctsr);
 						}
-					};
-
-					f(track, "width", Constraint::Width, ctx);
-					f(track, "height", Constraint::Height, ctx);
-
-					f(track, "top", Constraint::Top, ctx);
-					f(track, "bottom", Constraint::Bottom, ctx);
-					f(track, "left", Constraint::Left, ctx);
-					f(track, "right", Constraint::Right, ctx);
-
-					f(track, "ctop", Constraint::CenterTop, ctx);
-					f(track, "cbottom", Constraint::CenterBottom, ctx);
-					f(track, "cleft", Constraint::CenterLeft, ctx);
-					f(track, "cright", Constraint::CenterRight, ctx);
+					}, ctx);
 				}
 
 			}

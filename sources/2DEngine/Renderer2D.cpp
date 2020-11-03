@@ -290,13 +290,13 @@ void Renderer2D::Draw(float time)
 				glm::aabb2 rect;
 				size_t len;
 				uint8_t f_id;
-				uint8_t f_size;
+				float f_height;
 				uint8_t f_style;
 				uint8_t f_stroke;
 				uint32_t f_color;
 				command_queue.Read(rect);
 				command_queue.Read(f_id);
-				command_queue.Read(f_size);
+				command_queue.Read(f_height);
 				command_queue.Read(f_style);
 				command_queue.Read(f_color);
 				command_queue.Read(f_stroke);
@@ -308,7 +308,9 @@ void Renderer2D::Draw(float time)
 				Scriber::Align::Enum align = Scriber::Align::Left;
 				Scriber::Deaggregate(f_style, style, align);
 
-				m_text_driver.DrawLabel(ptr, rect.minp.x, rect.minp.y, Scriber::Font(f_id, f_size, style, f_color, f_stroke), align);
+				int iheight = glm::max(4 * int(roundf(powf(1.1f, roundf(logf(f_height) / logf(1.1f))) / 4.0f)), 10);
+
+				m_text_driver.DrawLabel(ptr, rect.minp.x, rect.minp.y, Scriber::Font(f_id, iheight, style, f_color, f_stroke), align, f_height);
 			}
 			need_flush = true;
 			break;
