@@ -1,6 +1,8 @@
 #pragma once
 #include "IAudioStream.h"
 #include "SineWave.h"
+#include "MP3Stream.h"
+#include "OGGStream.h"
 #include <fsal.h>
 #include <vector>
 

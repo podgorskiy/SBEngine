@@ -1,10 +1,4 @@
 #include "Audio.h"
-#define OV_EXCLUDE_STATIC_CALLBACKS
-#include <vorbis/vorbisfile.h>
-
-#define MINIMP3_IMPLEMENTATION
-#define MINIMP3_ONLY_MP3
-#include "minimp3.h"
 
 #include <spdlog/spdlog.h>
 #include <AL/al.h>
@@ -21,67 +15,19 @@ struct PlaybackContext
 {
 	AudioStream m_stream;
 
-	enum Type
-	{
-		Unknown = 0,
-		OGG = 1,
-		MP3 = 2,
-		Stream
-	};
-
-	Type type;
-
 	fsal::File file;
     uint32_t buffers[buffers_count];
     unsigned int source;
-    mp3dec_t mp3d;
-    mp3dec_frame_info_t info;
-    OggVorbis_File* ogg_file;
-    short pcm[MINIMP3_MAX_SAMPLES_PER_FRAME];
-
-    uint8_t data_buffer[1024 * 16 * 2];
-
-    int data_start = 0;
-    int data_end = 0;
+    short pcm[1152*16];
 
 	int current = 0;
 	int last = 0;
 	int buffers_in_queue = 0;
 
-	bool last_byte_was_read = false;
 	bool last_byte_was_decoded = false;
 
 	bool loop = false;
 };
-
-
-static size_t readOgg(void* dst, size_t size1, size_t size2, void* fh)
-{
-	auto* of = reinterpret_cast<fsal::File*>(fh);
-	size_t len = size1 * size2;
-	size_t read;
-	of->Read((uint8_t*)dst, len, &read);
-	return read;
-}
-
-static int seekOgg(void* fh, ogg_int64_t to, int type)
-{
-	auto* of = reinterpret_cast<fsal::File*>(fh);
-	of->Seek(to, (fsal::File::Origin)type);
-	return 0;
-}
-
-static int closeOgg(void* fh)
-{
-	return 0;
-}
-
-static long tellOgg(void* fh)
-{
-	auto* of = reinterpret_cast<fsal::File*>(fh);
-	return of->Tell();
-}
-
 
 static void list_audio_devices(const ALCchar *devices)
 {
@@ -142,59 +88,6 @@ void AudioContext::InitContext(PlaybackContext& ctx)
     alSourcei(ctx.source, AL_BUFFER, 0);
     alGenBuffers(buffers_count, ctx.buffers);
 
-    /*
-    uint8_t magic[4];
-	ctx.file.Read(magic, 4);
-	ctx.file.Seek(0);
-
-	if (magic[0] == 'I' && magic[1] == 'D' && magic[2] == '3')
-	{
-		ctx.type = PlaybackContext::MP3;
-	}
-	else if (magic[0] == 'O' && magic[1] == 'g' && magic[2] == 'g')
-	{
-		ctx.type = PlaybackContext::OGG;
-	}
-
-	if (ctx.type == PlaybackContext::OGG)
-	{
-		ov_callbacks callbacks;
-		callbacks.read_func = readOgg;
-		callbacks.seek_func = seekOgg;
-		callbacks.close_func = closeOgg;
-		callbacks.tell_func = tellOgg;
-
-		ctx.ogg_file = new OggVorbis_File;
-		memset(ctx.ogg_file, 0, sizeof(OggVorbis_File));
-
-		if (ov_test_callbacks(&ctx.file, ctx.ogg_file, nullptr, 0, callbacks) != 0)
-		{
-			throw std::runtime_error("File is not a valid ogg vorbis file");
-		}
-
-        if (ov_test_open(ctx.ogg_file) != 0)
-        {
-            throw std::runtime_error("ov_test_open failed");
-        }
-
-        vorbis_info * ovInfo = ov_info(ctx.ogg_file, -1);
-
-        if (ov_streams(ctx.ogg_file) != 1)
-        {
-            throw std::runtime_error( "Unsupported: file contains multiple bitstreams");
-        }
-
-        ctx.info.channels = ovInfo->channels;
-        ctx.info.hz = ovInfo->rate;
-	}
-	else if (ctx.type == PlaybackContext::MP3)
-	{
-		mp3dec_init(&ctx.mp3d);
-	}
-    */
-
-    ctx.data_start = 0;
-    ctx.data_end = 0;
 	ctx.current = 0;
 	ctx.last = 0;
 	ctx.buffers_in_queue = 0;
@@ -262,23 +155,13 @@ void AudioContext::Reset(PlaybackContext* ctx)
 			break;
 		}
 	}
-	ctx->data_start = 0;
-	ctx->data_end = 0;
 	ctx->current = 0;
 	ctx->last = 0;
 	ctx->buffers_in_queue = 0;
-	ctx->last_byte_was_read = false;
 	ctx->last_byte_was_decoded = false;
 
 	ctx->m_stream.Reset();
-//	if (ctx->type ==PlaybackContext::MP3)
-//	{
-//		ctx->file.Seek(0);
-//	}
-//	else if (ctx->type ==PlaybackContext::OGG)
-//	{
-//		ov_raw_seek(ctx->ogg_file, 0);
-//	}
+
 	m_contexts.push_back(ctx);
 }
 
@@ -299,65 +182,10 @@ void AudioContext::Update()
 			int samples = ctx->m_stream.Read((uint8_t*)ctx->pcm, frames);
 			ctx->last_byte_was_decoded = samples == 0;
 
-			/*
-			if (ctx->type == PlaybackContext::MP3)
-			{
-				size_t read_bytes = 0;
-				size_t size_to_read = 1024 * 16 - (ctx->data_end - ctx->data_start);
+			if (samples < 0)
+				continue;
 
-				if (size_to_read > 0 && !ctx->last_byte_was_read)
-				{
-					if (size_to_read + ctx->data_end > 1024 * 16 * 2)
-					{
-						size_t size = ctx->data_end - ctx->data_start;
-						memmove(ctx->data_buffer, ctx->data_buffer + ctx->data_start, size);
-						ctx->data_end = size;
-						ctx->data_start = 0;
-					}
-
-					ctx->file.Read(ctx->data_buffer + ctx->data_end, size_to_read, &read_bytes);
-					ctx->data_end += read_bytes;
-				}
-
-				size_t buffer_size = ctx->data_end - ctx->data_start;
-				ctx->last_byte_was_decoded = buffer_size == 0;
-				samples = mp3dec_decode_frame(&ctx->mp3d, ctx->data_buffer + ctx->data_start, buffer_size, ctx->pcm,
-                              &ctx->info);
-				ctx->data_start += ctx->info.frame_bytes;
-
-				ctx->last_byte_was_read = ctx->file.Tell() == ctx->file.GetSize();
-			}
-			else if (ctx->type == PlaybackContext::OGG)
-			{
-                float **buffer = nullptr;
-                int bitstream = 0;
-                int64_t framesRead = ov_read_float(ctx->ogg_file, &buffer, MINIMP3_MAX_SAMPLES_PER_FRAME, &bitstream);
-
-	            if( !framesRead)
-	            {
-	            	ctx->last_byte_was_decoded = true;
-	            	ctx->last_byte_was_read = true;
-	            	break;
-	            }
-
-	            if (framesRead < 0)
-	            {
-	                continue;
-	            }
-
-	            for (int i = 0; i < framesRead; ++i)
-	            {
-	                for(int ch = 0; ch < ctx->info.channels; ch++)
-	                {
-						ctx->pcm[i * ctx->info.channels + ch] = short(buffer[ch][i] * 0xFFFF);
-	                }
-	            }
-	            samples = framesRead;
-			}
-			*/
-
-            // ALenum format = ctx->info.channels == 1 ?  AL_FORMAT_MONO16 : AL_FORMAT_STEREO16;
-            assert(ctx->m_stream.GetChannelCount() < 2);
+            assert(ctx->m_stream.GetChannelCount() <= 2);
             assert(ctx->m_stream.GetDataType() == IAudioStream::S16I);
             ALenum format = ctx->m_stream.GetChannelCount() == 1 ?  AL_FORMAT_MONO16 : AL_FORMAT_STEREO16;
 			alBufferData(ctx->buffers[ctx->current], format, ctx->pcm, ctx->m_stream.GetChannelCount() * 2 * samples, ctx->m_stream.GetSamplingRate());
@@ -395,14 +223,11 @@ void AudioContext::Update()
 			{
 				if (ctx->loop)
 				{
-				    ctx->data_start = 0;
-				    ctx->data_end = 0;
 					ctx->current = 0;
 					ctx->last = 0;
 					ctx->buffers_in_queue = 0;
-					ctx->last_byte_was_read = false;
 					ctx->last_byte_was_decoded = false;
-					ctx->file.Seek(0);
+					ctx->m_stream.Reset();
 				}
 				else
 				{
