@@ -1,4 +1,7 @@
 #include "Audio.h"
+#include "SineWave.h"
+#include "MP3Stream.h"
+#include "OGGStream.h"
 
 #include <spdlog/spdlog.h>
 #include <AL/al.h>
@@ -9,13 +12,22 @@
 
 using namespace Audio;
 
+
+typedef struct ALCdevice_struct ALCdevice;
+
 static constexpr int buffers_count = 20;
 
-struct PlaybackContext
+struct Audio::AudioImplementation
+{
+	std::vector<PlaybackContext*> m_contexts;
+	float listenerVolume = 100.f;
+	ALCdevice* m_device = nullptr;
+};
+
+struct Audio::PlaybackContext
 {
 	AudioStream m_stream;
 
-	fsal::File file;
     uint32_t buffers[buffers_count];
     unsigned int source;
     short pcm[1152*16];
@@ -43,14 +55,29 @@ static void list_audio_devices(const ALCchar *devices)
         }
 }
 
+#if defined AUDIO_SINGLETON
+
+AudioContext::AudioContext()
+{
+	static std::shared_ptr<AudioImplementation> ptr(new AudioImplementation());
+	m_impl = ptr;
+}
+#else
+AudioContext::AudioContext()
+{
+	m_impl.reset(new AudioImplementation());
+}
+#endif
+
+
 void AudioContext::Init()
 {
 	glm::vec3 listenerPosition (0.f, 0.f, 0.f);
 	glm::vec3 listenerDirection(0.f, 0.f, -1.f);
 	glm::vec3 listenerUpVector (0.f, 1.f, 0.f);
 
-	m_device = alcOpenDevice(nullptr);
-	if (!m_device)
+	m_impl->m_device = alcOpenDevice(nullptr);
+	if (!m_impl->m_device)
 	{
 		spdlog::error("Error during opening OpenAL device");
 	}
@@ -59,7 +86,7 @@ void AudioContext::Init()
 
 	ALCcontext *context;
 
-	context = alcCreateContext(m_device, NULL);
+	context = alcCreateContext(m_impl->m_device, NULL);
 	if (!alcMakeContextCurrent(context))
 	{
 		spdlog::error("Error during making context current, OpenAL");
@@ -71,7 +98,7 @@ void AudioContext::Init()
                            listenerUpVector.x,
                            listenerUpVector.y,
                            listenerUpVector.z};
-    alListenerf(AL_GAIN, listenerVolume * 0.01f);
+    alListenerf(AL_GAIN, m_impl->listenerVolume * 0.01f);
     alListener3f(AL_POSITION, listenerPosition.x, listenerPosition.y, listenerPosition.z);
     alListenerfv(AL_ORIENTATION, orientation);
 	alListener3f(AL_VELOCITY, 0, 0, 0);
@@ -79,7 +106,7 @@ void AudioContext::Init()
 
 void AudioContext::Destroy()
 {
-	alcCloseDevice(m_device);
+	alcCloseDevice(m_impl->m_device);
 }
 
 void AudioContext::InitContext(PlaybackContext& ctx)
@@ -101,19 +128,33 @@ void AudioContext::DeleteContext(PlaybackContext& ctx)
 
 PlaybackContext* AudioContext::PlayFile(fsal::File file, bool loop)
 {
-	auto ctx = new PlaybackContext;
-	m_contexts.push_back(ctx);
-	ctx->file = std::move(file);
-	InitContext(*ctx);
-	ctx->loop = loop;
-	return ctx;
+    uint8_t magic[5];
+	file.Read(magic, 4);
+	magic[4] = 0;
+	file.Seek(0);
+	if (magic[0] == 'I' && magic[1] == 'D' && magic[2] == '3')
+	{
+		PlayStream(MakeMP3Stream(file), loop);
+	}
+	else if (magic[0] == 'O' && magic[1] == 'g' && magic[2] == 'g')
+	{
+		PlayStream(MakeOGGStream(file), loop);
+	}
+	else
+	{
+		spdlog::error("Audio file format \"{}\"not supported!", (const char*)magic);
+	}
 }
 
+PlaybackContext* AudioContext::PlayFile(fsal::Location file, bool loop)
+{
+	PlayFile(fsal::FileSystem().Open(file), loop);
+}
 
 PlaybackContext* AudioContext::PlayStream(const Audio::AudioStream& stream, bool loop)
 {
 	auto ctx = new PlaybackContext;
-	m_contexts.push_back(ctx);
+	m_impl->m_contexts.push_back(ctx);
 	ctx->m_stream = stream;
 	InitContext(*ctx);
 	ctx->loop = loop;
@@ -122,19 +163,20 @@ PlaybackContext* AudioContext::PlayStream(const Audio::AudioStream& stream, bool
 
 void AudioContext::StopPlaying(PlaybackContext* ctx)
 {
-	for (int i = 0, l = m_contexts.size(); i < l; ++i)
+	auto ptr = m_impl.get();
+	for (int i = 0, l = ptr->m_contexts.size(); i < l; ++i)
 	{
-		if (ctx == m_contexts[i])
+		if (ctx == ptr->m_contexts[i])
 		{
 			alSourcei(ctx->source, AL_SOURCE_STATE, AL_STOPPED);
 			DeleteContext(*ctx);
 			delete ctx;
-			m_contexts[i] = nullptr;
+			ptr->m_contexts[i] = nullptr;
 			if (i + 1 != l)
 			{
-				m_contexts[i] = m_contexts[l - 1];
+				ptr->m_contexts[i] = ptr->m_contexts[l - 1];
 			}
-			m_contexts.resize(l - 1);
+			ptr->m_contexts.resize(l - 1);
 			break;
 		}
 	}
@@ -142,16 +184,17 @@ void AudioContext::StopPlaying(PlaybackContext* ctx)
 
 void AudioContext::Reset(PlaybackContext* ctx)
 {
-	for (int i = 0, l = m_contexts.size(); i < l; ++i)
+	auto ptr = m_impl.get();
+	for (int i = 0, l = ptr->m_contexts.size(); i < l; ++i)
 	{
-		if (ctx == m_contexts[i])
+		if (ctx == ptr->m_contexts[i])
 		{
-			m_contexts[i] = nullptr;
+			ptr->m_contexts[i] = nullptr;
 			if (i + 1 != l)
 			{
-				m_contexts[i] = m_contexts[l - 1];
+				ptr->m_contexts[i] = ptr->m_contexts[l - 1];
 			}
-			m_contexts.resize(l - 1);
+			ptr->m_contexts.resize(l - 1);
 			break;
 		}
 	}
@@ -162,15 +205,16 @@ void AudioContext::Reset(PlaybackContext* ctx)
 
 	ctx->m_stream.Reset();
 
-	m_contexts.push_back(ctx);
+	ptr->m_contexts.push_back(ctx);
 }
 
 
 void AudioContext::Update()
 {
-	for (size_t i = 0; i < m_contexts.size(); ++i)
+	auto ptr = m_impl.get();
+	for (size_t i = 0; i < ptr->m_contexts.size(); ++i)
 	{
-		auto ctx = m_contexts[i];
+		auto ctx = ptr->m_contexts[i];
 		if (ctx == nullptr)
 			continue;
 
@@ -232,14 +276,14 @@ void AudioContext::Update()
 				else
 				{
 					DeleteContext(*ctx);
-					delete m_contexts[i];
-					m_contexts[i] = nullptr;
-					if (i + 1 != m_contexts.size())
+					delete ptr->m_contexts[i];
+					ptr->m_contexts[i] = nullptr;
+					if (i + 1 != ptr->m_contexts.size())
 					{
-						m_contexts[i] = m_contexts[m_contexts.size() - 1];
+						ptr->m_contexts[i] = ptr->m_contexts[ptr->m_contexts.size() - 1];
 						--i;
 					}
-					m_contexts.resize(m_contexts.size() - 1);
+					ptr->m_contexts.resize(ptr->m_contexts.size() - 1);
 				}
 			}
 		}
