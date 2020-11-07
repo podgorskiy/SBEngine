@@ -1,30 +1,39 @@
 #pragma once
+#include "IAudioStream.h"
+#include "SineWave.h"
 #include <fsal.h>
 #include <vector>
 
 
 typedef struct ALCdevice_struct ALCdevice;
-struct AudioContext;
+struct PlaybackContext;
 
-class Audio
+namespace Audio
 {
-public:
-	void Init();
-	void Destroy();
+	class AudioContext
+	{
+	public:
+		void Init();
 
-	AudioContext* PlayFile(fsal::File file, bool loop = false);
+		void Destroy();
 
-	void Update();
-	void StopPlaying(AudioContext* ctx);
+		PlaybackContext* PlayFile(fsal::File file, bool loop = false);
+		PlaybackContext* PlayStream(const AudioStream& stream, bool loop = false);
 
-	void Reset(AudioContext* ctx);
+		void Update();
 
-private:
-	void InitContext(AudioContext& ctx);
-	void DeleteContext(AudioContext& ctx);
+		void StopPlaying(PlaybackContext* ctx);
 
-	std::vector<AudioContext*> m_contexts;
+		void Reset(PlaybackContext* ctx);
 
-	float listenerVolume = 100.f;
-	ALCdevice* m_device;
-};
+	private:
+		void InitContext(PlaybackContext& ctx);
+
+		void DeleteContext(PlaybackContext& ctx);
+
+		std::vector<PlaybackContext*> m_contexts;
+
+		float listenerVolume = 100.f;
+		ALCdevice* m_device;
+	};
+}
