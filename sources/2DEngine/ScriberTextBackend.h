@@ -22,6 +22,8 @@ namespace Render
 
 		void Render(Scriber::Vertex* vertexBuffer, uint16_t* indexBuffer, uint16_t vertex_count, uint16_t primitiveCount) override;
 
+		virtual int GetTextureSize() { return 2048; }
+
 		bgfx::TextureHandle m_textureHandle;
 		Render::ProgramPtr m_program;
 		bgfx::VertexLayout m_vertexSpec;

@@ -10,7 +10,8 @@ TextBackend::TextBackend()
 
 	m_textureHandle = bgfx::createTexture2D(
 			(uint16_t) size, (uint16_t) size, false, 1, bgfx::TextureFormat::RG8,
-			BGFX_SAMPLER_MAG_ANISOTROPIC | BGFX_SAMPLER_MIN_ANISOTROPIC | BGFX_SAMPLER_UVW_CLAMP, nullptr
+			// BGFX_SAMPLER_POINT | BGFX_SAMPLER_UVW_CLAMP, nullptr
+			BGFX_SAMPLER_UVW_CLAMP, nullptr
 	);
 
 	m_program = Render::MakeProgram("vs_text.bin", "fs_text.bin");

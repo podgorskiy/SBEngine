@@ -40,6 +40,7 @@ protected:
 	MenuStateManager* m_msm;
 	std::string m_name;
 	float m_time;
+	int m_frame;
 	core::EventDispatcher* m_eventDispatcher;
 	// virtual void OnEvent(EventBase* event) {};
 };

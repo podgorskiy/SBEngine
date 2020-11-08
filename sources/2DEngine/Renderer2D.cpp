@@ -308,7 +308,9 @@ void Renderer2D::Draw(float time)
 				Scriber::Align::Enum align = Scriber::Align::Left;
 				Scriber::Deaggregate(f_style, style, align);
 
-				int iheight = glm::max(4 * int(roundf(powf(1.1f, roundf(logf(f_height) / logf(1.1f))) / 4.0f)), 10);
+				int iheight = glm::max(4 * int(roundf(powf(1.1f, roundf(logf(f_height) / logf(1.1f))) / 4.0f)), 10) / 2;
+				iheight = glm::min(iheight, 64);
+				iheight = 32;
 
 				m_text_driver.DrawLabel(ptr, rect.minp.x, rect.minp.y, Scriber::Font(f_id, iheight, style, f_color, f_stroke), align, f_height);
 			}

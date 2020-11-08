@@ -18,6 +18,7 @@ BaseMenuState::BaseMenuState(const fsal::File& yaml, MenuStateManager* msm): m_m
 	auto name = root_node["menu_name"];
 	m_name = name.as<std::string>("noname");
 	m_time = 0.0f;
+	m_frame = 0;
 }
 
 void BaseMenuState::OnPush(float time)
@@ -69,7 +70,10 @@ void BaseMenuState::Update(Render::View viewbox, float time, float deltaTime)
 
 void BaseMenuState::Draw(Render::View viewbox, Render::Renderer2D* rd)
 {
+	if (m_frame < 2)
+		m_time = 0;
 	UI::Render(rd, m_root, viewbox, m_time);
+	++m_frame;
 }
 
 std::string BaseMenuState::GetName()

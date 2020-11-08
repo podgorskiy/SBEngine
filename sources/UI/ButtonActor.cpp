@@ -1,4 +1,5 @@
 #include "Actors.h"
+#include "Audio/Audio.h"
 #include "Block.h"
 #include "EventDispatcher/EventDispatcher.h"
 #include "EventIds.h"
@@ -19,16 +20,19 @@ namespace UI
 
 		if (inside && mouse_left_click)
 		{
+			Audio::AudioContext().PlayFile("audio/ui/381995-Complex_Button_3.mp3");
 			core::GetEventDispatcher().Dispatch(Events::UI_UserAction, m_action_str);
 		}
 
 		if (transition_to_down)
 		{
+			Audio::AudioContext().PlayFile("audio/ui/navigate_8.mp3");
 			for (auto c: c_down) block->PushTargetTransitionConstraints(c);
 			m_down_state = true;
 		}
 		if (transition_to_hower)
 		{
+			Audio::AudioContext().PlayFile("audio/ui/App Menu Button 6.mp3");
 			for (auto c: c_hower) block->PushTargetTransitionConstraints(c);
 			m_down_state = false;
 			m_hovered_state = true;
