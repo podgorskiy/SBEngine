@@ -22,6 +22,7 @@
 #include <bx/math.h>
 #include "views.h"
 #include "UI/UI_Load.h"
+#include "EventIds.h"
 
 
 #include "imgui.h"
@@ -29,9 +30,18 @@
 #include "Audio/Audio.h"
 #include "TTS/TTS.h"
 
+#include <entt/entt.hpp>
+#include <tuple>
 
 
-Application::Application(int argc, const char* const* argv)
+struct position {
+    float x;
+    float y;
+};
+entt::registry registry;
+
+
+Application::Application(int argc, const char* const* argv): m_eventDispatcher(core::GetEventDispatcher())
 {
     spdlog::info("{}", utils::GetMemoryUsage());
     using fs = fsal::FileSystem;
@@ -105,46 +115,71 @@ Application::Application(int argc, const char* const* argv)
 
 	bgfx::setViewMode(0, bgfx::ViewMode::Sequential);
 
-	m_program = Render::MakeProgram("vs_unlit.bin", "fs_unlit.bin");
+//	m_program = Render::MakeProgram("vs_unlit.bin", "fs_unlit.bin");
+//
+//	u_texture = m_program->GetUniform("u_texture");
 
-	u_texture = m_program->GetUniform("u_texture");
-
-	m_obj.Load("LeePerrySmith.obj");
+//	m_obj.Load("LeePerrySmith.obj");
 
 	bgfx::setViewName(ViewIds::Main, "Main");
 	bgfx::setViewName(ViewIds::GUI, "GUI");
 	bgfx::setViewMode(ViewIds::GUI, bgfx::ViewMode::Sequential);
 
+	m_uir.Init();
+	m_uir.m_gamma_correction = config["srgb"].as<bool>();
+
+	auto shader_map = m_uir.GetShaderMap();
+	auto tf_map = m_uir.GetTypefaceMap();
+
 	m_menu_manager.reset(new MenuStateManager);
+	m_menu_manager->InjectMaps(tf_map, shader_map);
+	m_menu_manager->InjectEventDispatcher(&m_eventDispatcher);
 	m_menu_manager->Push(config["startup_state"].as<std::string>());
 
+    for(auto i = 0; i < 10; ++i)
+    {
+        auto entity = registry.create();
+        registry.emplace<position>(entity, i * 1.f, i * 1.f);
+    }
 
 //	m_dr.Init();
 //
 //	{
 //		Render::debug_guard<> debug_lock;
 //	}
-	m_uir.Init();
-	m_uir.m_gamma_correction = config["srgb"].as<bool>();
+	Audio::AudioContext().Init();
 
-//	TTS tts;
-//	tts.LoadDict();
-//	tts.SetText("")
-//	tts.TextToPhonems();
-////	tts.TestPhonems();
-//	tts.PhonemsToPCM();
-//	tts.SaveToWav("");
-//	fflush(stdout);
+//	m_audio_driver.PlayStream(Audio::Convert(
+//			Audio::MakeAModulation(
+//					Audio::MakeFModulatedSineWave(
+//							Audio::MakeFModulatedSineWave(Audio::MakeSineWave(26.0f), 0.5, 126.0), 0.3f, 349.228f * 2
+//					),
+//					Audio::MakeEnvelope(0.01, 0.03, 0.3, 0.6, 0.03)
+//			)
+//	));
+
+	// Audio::AudioContext().PlayFile("audio/ui/App Menu Button 6.mp3", true);
+	// Audio::AudioContext().PlayFile("audio/Celtic_Nakarada.mp3", true);
+
+	//Audio::AudioContext().PlayFile("audio/dialog/boss.ogg", true);
+	m_userInput.InjectEventDispatcher(&m_eventDispatcher);
 }
 
 
 Application::~Application()
 {
+	Audio::AudioContext().Destroy();
 }
 
 
 void Application::Update(float time, float deltaTime)
 {
+	Audio::AudioContext().Update();
+
+    auto v = registry.view<position>();
+
+	// ImGui::SliderFloat();
+
 	bgfx::setViewRect(ViewIds::Main, 0, 0, uint16_t(m_windowBufferSize.x), uint16_t(m_windowBufferSize.y));
 	bgfx::touch(ViewIds::Main);
 	bgfx::setViewFrameBuffer(ViewIds::GUI, BGFX_INVALID_HANDLE);
@@ -231,7 +266,6 @@ void Application::Update(float time, float deltaTime)
 //		room->AddChild(tile2c);
 //		room->AddChild(tile1c);
 
-		bool trigger = !mouse_left_click && mouse_left_click_prev;
 		//UI::DoLayout(root, view_box);
 
 //		UI::Editor(root, view_box);
@@ -252,32 +286,47 @@ void Application::OnKey(int key, char asci, int action, int mods)
 {
 	if (action == 0)
 	{
-		// keyboard.ListenOnKeyDown(asci);
+		m_eventDispatcher.Dispatch(Events::KeyDown, std::pair(key, asci));
 	}
 	else if (action == 1)
 	{
-		// keyboard.ListenOnKeyUp(asci);
+		m_eventDispatcher.Dispatch(Events::KeyUp, std::pair(key, asci));
 		if (asci == 'R')
 		{
             m_menu_manager->Reload();
+		}
+		if (asci == 'Y')
+		{
+			Audio::AudioContext().PlayFile("audio/dialog/boss.ogg");
+			// Audio::AudioContext().PlayFile("audio/dialog/shark.ogg");
 		}
 	}
 }
 
 void Application::OnMouseButton(int button, int action, int mods)
 {
-
+	if (action == 0)
+	{
+		m_eventDispatcher.Dispatch(Events::MouseButtonDown, button);
+	}
+	else if (action == 1)
+	{
+		m_eventDispatcher.Dispatch(Events::MouseButtonUp, button);
+	}
+	m_userInput.OnMouseButton(button, action, mods);
 }
 
 void Application::OnMouseMove(glm::vec2 pos)
 {
-
+	m_eventDispatcher.Dispatch(Events::MouseMove, pos);
+	m_userInput.OnMouseMove(pos);
 }
 
 void Application::OnWindowResize(glm::ivec2 size)
 {
 	m_windowBufferSize = size;
 	bgfx::reset(m_windowBufferSize.x, m_windowBufferSize.y, m_reset_flags);
+	m_eventDispatcher.Dispatch(Events::WindowResize);
 }
 
 namespace ApplicationFactory

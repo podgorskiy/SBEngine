@@ -1,5 +1,6 @@
 #pragma once
 #include "Object.h"
+#include "EventDispatcher/EventDispatcher.h"
 #include "IApplication.h"
 #include "MenuStateManager/MenuStateManager.h"
 #include "Render/Texture.h"
@@ -7,6 +8,7 @@
 #include "Render/DebugRenderer.h"
 #include "2DEngine/Renderer2D.h"
 #include "misc/bgfx_custom_printers.h"
+#include "UserInput/UserInput.h"
 #include <glm/glm.hpp>
 
 
@@ -43,6 +45,7 @@ public:
 
 private:
 	MenuStateManagerPtr m_menu_manager;
+	core::EventDispatcher& m_eventDispatcher;
 
 	uint32_t m_reset_flags = 0;
 	glm::ivec2 m_windowBufferSize;
@@ -57,4 +60,6 @@ private:
 	bool mouse_left_click = false;
 	bool mouse_left_click_prev = false;
 	Object m_obj;
+
+	UserInput m_userInput;
 };
