@@ -5,9 +5,18 @@ $input v_color0, v_uv
 uniform vec4 u_stroke;
 SAMPLER2D(u_texture, 0);
 
+
+float sdf2alpha(float d)
+{
+    float distanceChange = fwidth(d) * 0.5;
+    return smoothstep(distanceChange, -distanceChange, d);
+}
+
 void main()
 {
-	vec2 color = texelFetch(u_texture, ivec2(v_uv), 0).rg;
+	// vec2 color = texelFetch(u_texture, ivec2(v_uv), 0).rg;
+	vec2 color = texture2D(u_texture, v_uv / vec2(textureSize(u_texture, 0))).rg;
+	color = vec2(sdf2alpha(0.5 - color.x), sdf2alpha(0.5 - color.y));
 
 	// color = pow(color, vec2(2.2));
 
