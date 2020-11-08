@@ -61,3 +61,6 @@
 [submodule "libs/backward-cpp"]
 	path = libs/backward-cpp
 	url = https://github.com/bombela/backward-cpp.git
+[submodule "libs/openal-soft"]
+	path = libs/openal-soft
+	url = https://github.com/kcat/openal-soft.git

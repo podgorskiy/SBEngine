@@ -6,6 +6,7 @@
 #include <spdlog/spdlog.h>
 #include <AL/al.h>
 #include <AL/alc.h>
+#include <AL/alext.h>
 #include <stdio.h>
 #include <glm/glm.hpp>
 
@@ -13,9 +14,9 @@
 using namespace Audio;
 
 
-typedef struct ALCdevice_struct ALCdevice;
+typedef struct ALCdevice ALCdevice;
 
-static constexpr int buffers_count = 20;
+static constexpr int buffers_count = 10;
 
 struct Audio::AudioImplementation
 {
@@ -23,6 +24,9 @@ struct Audio::AudioImplementation
 	float listenerVolume = 100.f;
 	ALCdevice* m_device = nullptr;
 };
+
+
+static LPALGETSOURCEDVSOFT alGetSourcedvSOFT;
 
 struct Audio::PlaybackContext
 {
@@ -37,6 +41,8 @@ struct Audio::PlaybackContext
 	int buffers_in_queue = 0;
 
 	bool last_byte_was_decoded = false;
+
+	bool is_playing = false;
 
 	bool loop = false;
 };
@@ -69,6 +75,7 @@ AudioContext::AudioContext()
 }
 #endif
 
+static int error = 0;
 
 void AudioContext::Init()
 {
@@ -86,12 +93,18 @@ void AudioContext::Init()
 
 	ALCcontext *context;
 
-	context = alcCreateContext(m_impl->m_device, NULL);
+	int att[] = {
+			ALC_SYNC, 1,
+			0
+	};
+
+	alGetError();
+
+	context = alcCreateContext(m_impl->m_device, att);
 	if (!alcMakeContextCurrent(context))
 	{
 		spdlog::error("Error during making context current, OpenAL");
 	}
-
     float orientation[] = {listenerDirection.x,
                            listenerDirection.y,
                            listenerDirection.z,
@@ -102,6 +115,15 @@ void AudioContext::Init()
     alListener3f(AL_POSITION, listenerPosition.x, listenerPosition.y, listenerPosition.z);
     alListenerfv(AL_ORIENTATION, orientation);
 	alListener3f(AL_VELOCITY, 0, 0, 0);
+
+	if ((error = alGetError()) != AL_NO_ERROR)
+	{
+		spdlog::error("alGenBuffers :{}", error);
+		exit(-1);
+	}
+
+#define LOAD_PROC(T, x)  ((x) = (T)alGetProcAddress(#x))
+    LOAD_PROC(LPALGETSOURCEDVSOFT, alGetSourcedvSOFT);
 }
 
 void AudioContext::Destroy()
@@ -112,7 +134,7 @@ void AudioContext::Destroy()
 void AudioContext::InitContext(PlaybackContext& ctx)
 {
     alGenSources(1, &ctx.source);
-    alSourcei(ctx.source, AL_BUFFER, 0);
+    // alSourcei(ctx.source, AL_BUFFER, 0);
     alGenBuffers(buffers_count, ctx.buffers);
 
 	ctx.current = 0;
@@ -211,6 +233,11 @@ void AudioContext::Reset(PlaybackContext* ctx)
 
 void AudioContext::Update()
 {
+	if ((error = alGetError()) != AL_NO_ERROR)
+	{
+		spdlog::error("alGenBuffers :{}", error);
+		exit(-1);
+	}
 	auto ptr = m_impl.get();
 	for (size_t i = 0; i < ptr->m_contexts.size(); ++i)
 	{
@@ -218,36 +245,6 @@ void AudioContext::Update()
 		if (ctx == nullptr)
 			continue;
 
-		bool just_read_first = true;
-		while (ctx->buffers_in_queue < buffers_count && !ctx->last_byte_was_decoded)
-		{
-			int frames = MINIMP3_MAX_SAMPLES_PER_FRAME / ctx->m_stream.GetChannelCount();
-
-			int samples = ctx->m_stream.Read((uint8_t*)ctx->pcm, frames);
-			ctx->last_byte_was_decoded = samples == 0;
-
-			if (samples < 0)
-				continue;
-
-            assert(ctx->m_stream.GetChannelCount() <= 2);
-            assert(ctx->m_stream.GetDataType() == IAudioStream::S16I);
-            ALenum format = ctx->m_stream.GetChannelCount() == 1 ?  AL_FORMAT_MONO16 : AL_FORMAT_STEREO16;
-			alBufferData(ctx->buffers[ctx->current], format, ctx->pcm, ctx->m_stream.GetChannelCount() * 2 * samples, ctx->m_stream.GetSamplingRate());
-			alSourceQueueBuffers(ctx->source, 1, ctx->buffers + ctx->current);
-
-			++ctx->buffers_in_queue;
-			++ctx->current;
-			ctx->current = ctx->current % buffers_count;
-
-			if (just_read_first)
-			{
-				ALint state = 0;
-				alGetSourcei(ctx->source, AL_SOURCE_STATE, &state);
-				if (state != AL_PLAYING)
-					alSourcePlay(ctx->source);
-				just_read_first = false;
-			}
-		}
 		int processed = 0;
 		alGetSourcei(ctx->source, AL_BUFFERS_PROCESSED, &processed);
 
@@ -259,32 +256,79 @@ void AudioContext::Update()
 			--ctx->buffers_in_queue;
 		}
 
+		if ((error = alGetError()) != AL_NO_ERROR)
+		{
+			spdlog::error("alGenBuffers :{}", error);
+			exit(-1);
+		}
+		while (ctx->buffers_in_queue < buffers_count - 1 && (!ctx->last_byte_was_decoded || ctx->loop))
+		{
+			int frames = MINIMP3_MAX_SAMPLES_PER_FRAME / ctx->m_stream.GetChannelCount();
+
+			int samples = ctx->m_stream.Read((uint8_t*)ctx->pcm, frames);
+			if (samples == 0 && ctx->loop)
+			{
+				ctx->m_stream.Reset();
+				samples = ctx->m_stream.Read((uint8_t*)ctx->pcm, frames);
+			}
+
+			if (samples < 0)
+				continue;
+
+			ctx->last_byte_was_decoded = samples == 0;
+
+            assert(ctx->m_stream.GetChannelCount() <= 2);
+            assert(ctx->m_stream.GetDataType() == IAudioStream::S16I);
+            ALenum format = ctx->m_stream.GetChannelCount() == 1 ?  AL_FORMAT_MONO16 : AL_FORMAT_STEREO16;
+			alBufferData(ctx->buffers[ctx->current], format, ctx->pcm, sizeof(short) * samples * ctx->m_stream.GetChannelCount(), ctx->m_stream.GetSamplingRate());
+			alSourceQueueBuffers(ctx->source, 1, ctx->buffers + ctx->current);
+
+			++ctx->buffers_in_queue;
+			++ctx->current;
+			ctx->current = ctx->current % buffers_count;
+		}
+
+		if ((error = alGetError()) != AL_NO_ERROR)
+		{
+			spdlog::error("alGenBuffers :{}", error);
+			exit(-1);
+		}
+		if (!ctx->is_playing && ctx->buffers_in_queue)
+		{
+			ALint state = 0;
+			alGetSourcei(ctx->source, AL_SOURCE_STATE, &state);
+			if (state != AL_PLAYING)
+			{
+				alSourcePlay(ctx->source);
+			}
+			ctx->is_playing = true;
+		}
+
+        ALdouble offsets[2];
+        alGetSourcedvSOFT(ctx->source, AL_SEC_OFFSET_LATENCY_SOFT, offsets);
+        spdlog::info("Offset: {} - Latency:{} ms", offsets[0], (ALuint)(offsets[1]*1000));
+
+        fflush(stdout);
+		if ((error = alGetError()) != AL_NO_ERROR)
+		{
+			spdlog::error("alGenBuffers :{}", error);
+			exit(-1);
+		}
 		if (ctx->buffers_in_queue == 0 && ctx->last_byte_was_decoded)
 		{
 			ALint state = 0;
 			alGetSourcei(ctx->source, AL_SOURCE_STATE, &state);
 			if (state != AL_PLAYING)
 			{
-				if (ctx->loop)
+				DeleteContext(*ctx);
+				delete ptr->m_contexts[i];
+				ptr->m_contexts[i] = nullptr;
+				if (i + 1 != ptr->m_contexts.size())
 				{
-					ctx->current = 0;
-					ctx->last = 0;
-					ctx->buffers_in_queue = 0;
-					ctx->last_byte_was_decoded = false;
-					ctx->m_stream.Reset();
+					ptr->m_contexts[i] = ptr->m_contexts[ptr->m_contexts.size() - 1];
+					--i;
 				}
-				else
-				{
-					DeleteContext(*ctx);
-					delete ptr->m_contexts[i];
-					ptr->m_contexts[i] = nullptr;
-					if (i + 1 != ptr->m_contexts.size())
-					{
-						ptr->m_contexts[i] = ptr->m_contexts[ptr->m_contexts.size() - 1];
-						--i;
-					}
-					ptr->m_contexts.resize(ptr->m_contexts.size() - 1);
-				}
+				ptr->m_contexts.resize(ptr->m_contexts.size() - 1);
 			}
 		}
 	}

@@ -5,7 +5,6 @@
 
 using namespace Audio;
 
-#define MINIMP3_MAX_SAMPLES_PER_FRAME (1152*2)
 
 static size_t readOgg(void* dst, size_t size1, size_t size2, void* fh)
 {
@@ -74,28 +73,9 @@ OGGStream::OGGStream(fsal::File file): m_file(file)
 
 int OGGStream::Read(uint8_t* dst, int frames)
 {
-	float** buffer = nullptr;
 	int bitstream = 0;
-	int64_t framesRead = ov_read_float(ogg_file, &buffer, MINIMP3_MAX_SAMPLES_PER_FRAME, &bitstream);
-
-	if (!framesRead)
-	{
-		return 0;
-	}
-
-	if (framesRead < 0)
-	{
-		return -1;
-	}
-
-	for (int i = 0; i < framesRead; ++i)
-	{
-		for (int ch = 0; ch < info.channels; ch++)
-		{
-			((short*)dst)[i * info.channels + ch] = short(buffer[ch][i] * 0xFFFF);
-		}
-	}
-	return framesRead;
+	int64_t bytesRead = ov_read(ogg_file, (char*)dst, 4096, 0, 2, 1, &bitstream);
+	return (bytesRead / 2 / info.channels);
 }
 
 void OGGStream::Reset()

@@ -26,7 +26,6 @@ set(CMAKE_CXX_STANDARD 17)
 # list(APPEND CMAKE_PREFIX_PATH libs/backward-cpp/)
 
 find_package(OpenGL REQUIRED)
-find_package(OpenAL REQUIRED)
 
 
 if (OPENGL_FOUND)
@@ -35,20 +34,20 @@ if (OPENGL_FOUND)
 else (OPENGL_FOUND)
 	message("OpenGL environment missing")
 endif (OPENGL_FOUND)
-
-if (OPENAL_FOUND)
-	message("OpenAL Correctly Found")
-	include_directories(${OPENAL_INCLUDE_DIR})
-else (OPENAL_FOUND)
-	if(MSVC)
-	set(OPENAL_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libs/openal/include)
-	link_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/openal/libs/Win64/)
-	set(OPENAL_LIBRARY OpenAL32)
-	include_directories(${OPENAL_INCLUDE_DIR})
-	else()
-		message("OpenAL environment missing")
-	endif()
-endif (OPENAL_FOUND)
+#
+#if (OPENAL_FOUND)
+#	message("OpenAL Correctly Found")
+#	include_directories(${OPENAL_INCLUDE_DIR})
+#else (OPENAL_FOUND)
+#	if(MSVC)
+#	set(OPENAL_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libs/openal/include)
+#	link_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/openal/libs/Win64/)
+#	set(OPENAL_LIBRARY OpenAL32)
+#	include_directories(${OPENAL_INCLUDE_DIR})
+#	else()
+#		message("OpenAL environment missing")
+#	endif()
+#endif (OPENAL_FOUND)
 
 
 FUNCTION(PREPEND var prefix)
@@ -87,6 +86,7 @@ add_subdirectory (libs/fsal)
 add_subdirectory (libs/scriberlib)
 add_subdirectory (libs/yaml-cpp)
 add_subdirectory (libs/spdlog)
+add_subdirectory (libs/openal-soft)
 
 target_include_directories(fsal PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/libs/lz4/lib)
 
@@ -335,7 +335,7 @@ if (TESTS)
 endif()
 
 add_executable(Oquonie ${SOURCES} ${TESTS})
-target_link_libraries(Oquonie PRIVATE gl3w glfw bx bgfx pthread dl  imgui pugixml fsal lz4 zlib_static vorbis ogg scribe yaml-cpp lua ${OPENGL_LIBRARIES} ${OPENAL_LIBRARY})
+target_link_libraries(Oquonie PRIVATE gl3w glfw bx bgfx pthread dl  imgui pugixml fsal lz4 zlib_static vorbis ogg scribe yaml-cpp lua ${OPENGL_LIBRARIES} OpenAL)
 target_link_libraries(Oquonie PRIVATE spdlog::spdlog)
 
 
@@ -364,6 +364,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/scriberlib/3rdparty/utf8)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/yaml-cpp/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/LuaBridge/Source)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/backward-cpp)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/openal-soft/include)
 
 
 
