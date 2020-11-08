@@ -304,11 +304,10 @@ void AudioContext::Update()
 			ctx->is_playing = true;
 		}
 
-        ALdouble offsets[2];
-        alGetSourcedvSOFT(ctx->source, AL_SEC_OFFSET_LATENCY_SOFT, offsets);
-        spdlog::info("Offset: {} - Latency:{} ms", offsets[0], (ALuint)(offsets[1]*1000));
+//        ALdouble offsets[2];
+//        alGetSourcedvSOFT(ctx->source, AL_SEC_OFFSET_LATENCY_SOFT, offsets);
+//        spdlog::info("Offset: {} - Latency:{} ms", offsets[0], (ALuint)(offsets[1]*1000));
 
-        fflush(stdout);
 		if ((error = alGetError()) != AL_NO_ERROR)
 		{
 			spdlog::error("alGenBuffers :{}", error);

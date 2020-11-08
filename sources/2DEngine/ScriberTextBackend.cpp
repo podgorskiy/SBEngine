@@ -6,7 +6,7 @@ using namespace Render;
 
 TextBackend::TextBackend()
 {
-	int size = 1024;
+	int size = GetTextureSize();
 
 	m_textureHandle = bgfx::createTexture2D(
 			(uint16_t) size, (uint16_t) size, false, 1, bgfx::TextureFormat::RG8,
@@ -27,6 +27,7 @@ TextBackend::TextBackend()
 	u_stroke = m_program->GetUniform("u_stroke");
 }
 
+int TextBackend::GetTextureSize() { return 1024; }
 
 void TextBackend::UpdateTexture(Scriber::Image glyph, Scriber::u16vec2 pos)
 {
