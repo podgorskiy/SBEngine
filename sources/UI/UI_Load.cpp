@@ -382,8 +382,8 @@ namespace UI
 	//					block->UpdateProp(c.type, c.unit, c.value, time);
 	BlockPtr BuildBlock(YAML::Node node, ExpessionEvaluator::INTContext& ctx, std::map<std::string, BlockPtr>& namedir, const ColorMap& color_map, const IntMap& tf_map, const IntMap& shader_map)
 	{
-		auto block = UI::make_block({});
 		auto name = node["name"];
+		auto block = UI::make_block(name.as<std::string>(""), {});
 		if (name.IsDefined())
 		{
 			spdlog::info("Node name: {}", name.as<std::string>());
@@ -491,7 +491,7 @@ namespace UI
 			}
 		}
 
-		auto root = UI::make_block({0_l, 100_wpe, 0_t, 100_hpe});
+		auto root = UI::make_block("root", {0_l, 100_wpe, 0_t, 100_hpe});
 		std::map<std::string, BlockPtr> namedir;
 
 		LoadEmmitters(root_node, ctx, root, color_map, tf_map, shader_map);

@@ -21,6 +21,7 @@ namespace UI
 {
 	class Block;
 	typedef std::shared_ptr<Block> BlockPtr;
+	typedef std::shared_ptr<const Block> CnstBlockPtr;
 
 	typedef std::map<std::string, std::map<BlockPtr, std::vector<Constraint> > > Animation;
 
@@ -36,9 +37,19 @@ namespace UI
 		~Block()
 		{}
 
-		explicit Block(std::initializer_list<Constraint> cnst): m_constraints(cnst) {}
+		explicit Block(const std::string& name, std::initializer_list<Constraint> cnst): m_name(name), m_constraints(cnst) {}
+		explicit Block(const char* name, std::initializer_list<Constraint> cnst): m_name(name), m_constraints(cnst) {}
+
+		void Rename(const char* new_name) { m_name = new_name; }
+		void Rename(const std::string& new_name) { m_name = new_name; }
 
 		void AddChild(const BlockPtr& child) { m_childs.push_back(child); }
+		void RemoveAllChildren() { m_childs.clear(); }
+		BlockPtr GetBlock(const std::string& name, bool recursive=false);
+		CnstBlockPtr GetBlock(const std::string& name, bool recursive=false) const;
+		BlockPtr RemoveBlock(const std::string& name, bool recursive=false);
+		BlockPtr RemoveBlock(BlockPtr block, bool recursive=false);
+		// BlockPtr Copy() const;
 
 		// aabb
 		glm::aabb2 GetBox() const { return m_box; }
@@ -46,6 +57,8 @@ namespace UI
 		glm::vec2 GetPositionUL() const { return m_box.minp; }
 		glm::vec2 GetPositionC() const { return m_box.center(); }
 		glm::vec2 GetSize() const { return m_box.size(); }
+		void SetDepth(int d) { m_depth = d; }
+		int GetDepth() const { return m_depth; }
 
 		// Radius
 		glm::vec4 GetRadius() const { return m_radius; }
@@ -57,6 +70,7 @@ namespace UI
 
 		// Constraints and controllers
 		void PushConstraint(const Constraint& cnst) { m_constraints.push_back(cnst); };
+		void UpdateConstraint(Constraint c);
 		const stack::vector<Constraint, 4>& GetConstraints() const { return m_constraints; };
 		PropControllers& GetControllers() { return m_controllers; };
 		const TransitionConstraints& GetTransitionConstraints() const { return m_transition_constraints; };
@@ -73,6 +87,8 @@ namespace UI
 		void EmplaceEmitter(Ts&&... args) {
 		    m_emitter.reset(new R(std::forward<Ts>(args)...));
 		}
+		template <typename R>
+		R* GetEmitter() { return static_cast<R*>(m_emitter.get()); }
 
 		// Actors
 		template <typename R, typename... Ts>
@@ -86,6 +102,7 @@ namespace UI
 		bool IsClipping() const { return clip_overflow; }
 
 	private:
+		std::string m_name;
 		glm::aabb2 m_box;
 		glm::vec4 m_radius;
 		glm::vec4 m_radius_val = glm::vec4(0);
@@ -101,14 +118,18 @@ namespace UI
 
 		std::unique_ptr<IEmitter> m_emitter = nullptr;
 		std::unique_ptr<IActor> m_actor = nullptr;
+
+		int m_depth = 0;
 		bool clip_overflow = false;
 	};
 
-    BlockPtr make_block(std::initializer_list<Constraint> constraints);
+    BlockPtr make_block(const std::string& name, std::initializer_list<Constraint> constraints);
 
-    BlockPtr make_block(std::initializer_list<Constraint> constraints, Render::color c);
+    BlockPtr make_block(const char* name, std::initializer_list<Constraint> constraints);
 
-    BlockPtr make_block(std::initializer_list<Constraint> constraints,
+    BlockPtr make_block(const char* name, std::initializer_list<Constraint> constraints, Render::color c);
+
+    BlockPtr make_block(const char* name, std::initializer_list<Constraint> constraints,
     		Render::TexturePtr tex,
     		ImSize::Enum size = ImSize::Auto,
     		ImPos::Enum pos = ImPos::LeftTop,

@@ -112,6 +112,8 @@ namespace stack
 		size_type size() const { return _vector.size(); }
 		bool empty() const { return begin() == end(); }
 
+		iterator erase(const_iterator position) { return _vector.erase(position); }
+
         reference operator[](size_type n) noexcept { return _vector[n]; }
         const_reference operator[](size_type n)  const noexcept { return _vector[n]; }
 

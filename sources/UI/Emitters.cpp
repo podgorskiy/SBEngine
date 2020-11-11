@@ -6,7 +6,7 @@
 void UI::SFillEmitter::operator()(Render::Encoder* r, const UI::Block* block, float time, int flags, float ppd)
 {
 	auto box = block->GetBox();
-	r->Rect(box, col, block->GetRadius());
+	r->Rect(box, col, block->GetRadius(), block->GetDepth());
 }
 
 UI::SFillEmitter::SFillEmitter(Render::color c): col(c)
@@ -15,7 +15,7 @@ UI::SFillEmitter::SFillEmitter(Render::color c): col(c)
 void UI::SShadowEmitter::operator()(Render::Encoder* r, const UI::Block* block, float time, int flags, float ppd)
 {
 	auto box = block->GetBox();
-	r->RectShadow(box, col, glm::vec2(0.), ComputeValue(box, size_value, size_unit, ppd));
+	r->RectShadow(box, col, glm::vec2(0.), ComputeValue(box, size_value, size_unit, ppd), block->GetDepth());
 }
 
 UI::SShadowEmitter::SShadowEmitter(Render::color col, float size_value, Constraint::Unit size_unit): col(col), size_value(size_value), size_unit(size_unit)
@@ -66,7 +66,7 @@ void UI::SImageEmitter::operator()(Render::Encoder* r, const UI::Block* block, f
 			uv.maxp.x = 1.0 - uv.maxp.x;
 			break;
 	}
-	r->Rect(box, tex->m_handle, uv);
+	r->Rect(box, tex->m_handle, uv, block->GetDepth());
 }
 
 void UI::SShaderEmitter::operator()(Render::Encoder* r, const UI::Block* block, float time, int flags, float ppd)
@@ -103,5 +103,5 @@ void UI::STextEmitter::operator()(Render::Encoder* r, const Block* block, float 
 {
 	auto box = block->GetBox();
 	float iheight = ComputeValue(box, height_value, height_unit, ppd);
-	r->Text(f_id, box, text.c_str(), iheight, f_color, f_style, f_stroke, text.size());
+	r->Text(f_id, box, text.c_str(), iheight, f_color, f_style, f_stroke, text.size(), block->GetDepth());
 }

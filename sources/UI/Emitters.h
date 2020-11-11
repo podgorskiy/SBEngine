@@ -23,7 +23,6 @@ namespace UI
 
 		virtual void operator()(Render::Encoder* encoder, const Block*, float time, int flags, float ppd);
 
-	private:
 		Render::color col;
 	};
 

@@ -44,7 +44,7 @@ blocks:
         constraints: { width: 70%, top: 10vh, height: 40vh }
 
         blocks:
-          - label: { text: "[ Press any key to continue ]", typeface: Dragon Fire, height: 20vh%, color: text_color, align: hcenter }
+          - label: { text: "m[ Press any key to continue ]", typeface: Roboto, height: 20vh%, color: text_color, style: bold, align: hcenter }
             constraints: { bottom: -50%, cleft: 50%, height: 30% }
 
       - label: { text: "- A Dance of Swords -", typeface: Beyond Wonderland, height: 50vh%,  color: text_color, align: hcenter }
