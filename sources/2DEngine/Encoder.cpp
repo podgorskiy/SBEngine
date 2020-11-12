@@ -1,19 +1,30 @@
 #include "Encoder.h"
 #include "Commands.h"
 #include <MemRefFile.h>
+#include <algorithm>
 
 using namespace Render;
+
+
+#define BEGIN int _start = m_command_data.Tell();
+#define END(NAME) int _size = m_command_data.Tell() - _start; m_command_queue.push_back(Render::Pack(NAME, depth, _start, _size));
 
 
 Encoder::Encoder()
 {
 	m_sciscors.set_any();
-	m_command_queue = fsal::File(new fsal::MemRefFile());
+	m_command_data = fsal::File(new fsal::MemRefFile());
+}
+
+bool compare_as_cmd(uint64_t i,uint64_t j)
+{
+  return i < j;
 }
 
 void Encoder::PushScissors(glm::aabb2 box)
 {
-	m_command_queue.Write(C_SetScissors);
+	std::sort(m_command_queue.begin() + m_sorted, m_command_queue.end(), compare_as_cmd);
+	m_sorted = m_command_queue.size();
 
 	if (!scissors_stack.empty())
 	{
@@ -22,93 +33,124 @@ void Encoder::PushScissors(glm::aabb2 box)
 	}
 	m_sciscors = box;
 	scissors_stack.push_back(box);
-	m_command_queue.Write(box);
+
+	int depth = -2147483647;
+
+	BEGIN
+	m_command_data.Write(box);
+	END(C_SetScissors)
+
 }
 
 void Encoder::PopScissors()
 {
+	int depth = 2147483647;
 	scissors_stack.pop_back();
 	if (!scissors_stack.empty())
 	{
 		auto box = scissors_stack.back();
-		m_command_queue.Write(C_SetScissors);
-		m_command_queue.Write(box);
+		BEGIN
+		m_command_data.Write(box);
+		END(C_SetScissors)
 		m_sciscors = box;
 	}
 	else
 	{
-		m_command_queue.Write(C_ResetScissors);
+		BEGIN
+		END(C_ResetScissors)
 		m_sciscors.set_any();
 	}
+	std::sort(m_command_queue.begin() + m_sorted, m_command_queue.end(), compare_as_cmd);
+	m_sorted = m_command_queue.size();
 }
 
-void Encoder::Rect(glm::aabb2 rect, color col, glm::vec4 radius)
+void Encoder::Rect(glm::aabb2 rect, color col, glm::vec4 radius, int depth)
 {
-	m_command_queue.Write(C_RectCol);
-	m_command_queue.Write(rect);
-	m_command_queue.Write(radius);
-	m_command_queue.Write(col);
+	BEGIN
+	m_command_data.Write(rect);
+	m_command_data.Write(radius);
+	m_command_data.Write(col);
+	END(C_RectCol)
 }
 
-void Encoder::RectShadow(glm::aabb2 rect, Render::color col, glm::vec2 dir, float size, glm::vec4 radius)
+void Encoder::RectShadow(glm::aabb2 rect, Render::color col, glm::vec2 dir, float size, glm::vec4 radius, int depth)
 {
-	m_command_queue.Write(C_RectShadow);
-	m_command_queue.Write(rect);
-	m_command_queue.Write(radius);
-	m_command_queue.Write(dir);
-	m_command_queue.Write(col);
-	m_command_queue.Write(size);
+	BEGIN
+	m_command_data.Write(rect);
+	m_command_data.Write(radius);
+	m_command_data.Write(dir);
+	m_command_data.Write(col);
+	m_command_data.Write(size);
+	END(C_RectShadow)
 }
 
-void Encoder::Rect(glm::aabb2 rect, bgfx::TextureHandle texture, glm::aabb2 uv, glm::vec4 radius)
-{
-	if (glm::is_overlapping(m_sciscors, rect))
-	{
-		m_command_queue.Write(C_RectTex);
-		m_command_queue.Write(rect);
-		m_command_queue.Write(radius);
-		m_command_queue.Write(uv);
-		m_command_queue.Write(texture);
-	}
-}
-
-void Encoder::RectShader(glm::aabb2 rect, bgfx::TextureHandle texture, uint8_t shader)
+void Encoder::Rect(glm::aabb2 rect, bgfx::TextureHandle texture, glm::aabb2 uv, glm::vec4 radius, int depth)
 {
 	if (glm::is_overlapping(m_sciscors, rect))
 	{
-		m_command_queue.Write(C_Shader);
-		m_command_queue.Write(rect);
-		m_command_queue.Write(texture);
-		m_command_queue.Write(shader);
+		BEGIN
+		m_command_data.Write(rect);
+		m_command_data.Write(radius);
+		m_command_data.Write(uv);
+		m_command_data.Write(texture);
+		END(C_RectTex)
 	}
 }
 
-void Encoder::Rect(glm::aabb2 rect, const glm::mat3& transform, bgfx::TextureHandle texture, glm::aabb2 uv)
+void Encoder::RectShader(glm::aabb2 rect, bgfx::TextureHandle texture, uint8_t shader, int depth)
 {
 	if (glm::is_overlapping(m_sciscors, rect))
 	{
-		m_command_queue.Write(C_RectTex);
-		m_command_queue.Write(rect);
-		m_command_queue.Write(transform);
-		m_command_queue.Write(uv);
-		m_command_queue.Write(texture);
+		BEGIN
+		m_command_data.Write(rect);
+		m_command_data.Write(texture);
+		m_command_data.Write(shader);
+		END(C_Shader)
 	}
 }
 
-void Encoder::Text(uint8_t f_id, glm::aabb2 rect, const char* text, float f_size, color f_color, uint8_t f_style, uint8_t f_stroke, size_t len)
+void Encoder::Rect(glm::aabb2 rect, const glm::mat3& transform, bgfx::TextureHandle texture, glm::aabb2 uv, int depth)
 {
-	m_command_queue.Write(C_Text);
-	m_command_queue.Write(rect);
-	m_command_queue.Write(f_id);
-	m_command_queue.Write(f_size);
-	m_command_queue.Write(f_style);
-	m_command_queue.Write(f_color);
-	m_command_queue.Write(f_stroke);
+	if (glm::is_overlapping(m_sciscors, rect))
+	{
+		BEGIN
+		m_command_data.Write(rect);
+		m_command_data.Write(transform);
+		m_command_data.Write(uv);
+		m_command_data.Write(texture);
+		END(C_RectTex)
+	}
+}
+
+void Encoder::Text(uint8_t f_id, glm::aabb2 rect, const char* text, float f_size, color f_color, uint8_t f_style, uint8_t f_stroke, size_t len, int depth)
+{
+	BEGIN
+	m_command_data.Write(rect);
+	m_command_data.Write(f_id);
+	m_command_data.Write(f_size);
+	m_command_data.Write(f_style);
+	m_command_data.Write(f_color);
+	m_command_data.Write(f_stroke);
 	if (len == 0)
 	{
 		len = strlen(text);
 	}
-	m_command_queue.Write(len + 1);
-	m_command_queue.Write((const uint8_t*)text, len);
-	m_command_queue.Write(char(0));
+	m_command_data.Write(len + 1);
+	m_command_data.Write((const uint8_t*)text, len);
+	m_command_data.Write(char(0));
+	END(C_Text)
+}
+
+void Encoder::Finish()
+{
+	std::sort(m_command_queue.begin() + m_sorted, m_command_queue.end(), compare_as_cmd);
+	m_sorted = m_command_queue.size();
+	m_command_data.Seek(0);
+}
+
+void Encoder::Reset()
+{
+	m_command_data.Seek(0);
+	m_command_queue.clear();
+	m_sorted = 0;
 }

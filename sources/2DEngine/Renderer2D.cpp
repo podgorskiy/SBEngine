@@ -167,19 +167,26 @@ void Renderer2D::SetUp(View view_box)
 
 void Renderer2D::Draw(float time)
 {
-	auto command_queue =  m_encoder.GetCommandQueue();
+	m_encoder.Finish();
+	const auto& command_queue =  m_encoder.GetCommandQueue();
+	auto command_data =  m_encoder.GetCommandData();
 
-	command_queue.Write(C_End);
-	command_queue.Seek(0);
 	m_mesher.PrimReset();
 
 	bgfx::TextureHandle tex;
 	uint8_t  shader = 0;
 	glm::vec4 iSize;
 
-	Command cmd;
-	while (command_queue.Read(cmd) && cmd != C_End)
+	for (uint64_t packed: command_queue)
 	{
+		Command cmd;
+		int depth;
+		int start;
+		int size;
+		UnPack(packed, cmd, depth, start, size);
+
+		command_data.Seek(start);
+
 		bool need_flush = false;
 		switch(cmd)
 		{
@@ -188,9 +195,9 @@ void Renderer2D::Draw(float time)
 				glm::aabb2 rect;
 				color col;
 				glm::vec4 radius;
-				command_queue.Read(rect);
-				command_queue.Read(radius);
-				command_queue.Read(col);
+				command_data.Read(rect);
+				command_data.Read(radius);
+				command_data.Read(col);
 
 				if (m_gamma_correction)
 				{
@@ -214,10 +221,10 @@ void Renderer2D::Draw(float time)
 				glm::aabb2 rect;
 				glm::aabb2 uv;
 				glm::vec4  radius;
-				command_queue.Read(rect);
-				command_queue.Read(radius);
-				command_queue.Read(uv);
-				command_queue.Read(tex);
+				command_data.Read(rect);
+				command_data.Read(radius);
+				command_data.Read(uv);
+				command_data.Read(tex);
 
 				if (radius == glm::vec4(0))
 				{
@@ -238,11 +245,11 @@ void Renderer2D::Draw(float time)
 				glm::vec2 dir;
 				color col;
 				float size;
-				command_queue.Read(rect);
-				command_queue.Read(radius);
-				command_queue.Read(dir);
-				command_queue.Read(col);
-				command_queue.Read(size);
+				command_data.Read(rect);
+				command_data.Read(radius);
+				command_data.Read(dir);
+				command_data.Read(col);
+				command_data.Read(size);
 
 				if (radius == glm::vec4(0))
 				{
@@ -259,9 +266,9 @@ void Renderer2D::Draw(float time)
 			case C_Shader:
 			{
 				glm::aabb2 rect;
-				command_queue.Read(rect);
-				command_queue.Read(tex);
-				command_queue.Read(shader);
+				command_data.Read(rect);
+				command_data.Read(tex);
+				command_data.Read(shader);
 				glm::aabb2 uv(glm::vec2(0.0, 1.0), glm::vec2(1.0, 0.0));
 				iSize = glm::vec4(rect.size(), 0.0f, 0.0f);
 
@@ -275,10 +282,10 @@ void Renderer2D::Draw(float time)
 				glm::aabb2 rect;
 				glm::aabb2 uv;
 				glm::mat2x3 transoform;
-				command_queue.Read(rect);
-				command_queue.Read(transoform);
-				command_queue.Read(uv);
-				command_queue.Read(tex);
+				command_data.Read(rect);
+				command_data.Read(transoform);
+				command_data.Read(uv);
+				command_data.Read(tex);
 
 				m_mesher.PrimRect(rect.minp, rect.maxp, transoform, uv.minp, uv.maxp, color(0));
 			}
@@ -294,15 +301,15 @@ void Renderer2D::Draw(float time)
 				uint8_t f_style;
 				uint8_t f_stroke;
 				uint32_t f_color;
-				command_queue.Read(rect);
-				command_queue.Read(f_id);
-				command_queue.Read(f_height);
-				command_queue.Read(f_style);
-				command_queue.Read(f_color);
-				command_queue.Read(f_stroke);
-				command_queue.Read(len);
-				auto ptr = (const char*)command_queue.GetDataPointer() + command_queue.Tell();
-				command_queue.Seek(len, fsal::File::CurrentPosition);
+				command_data.Read(rect);
+				command_data.Read(f_id);
+				command_data.Read(f_height);
+				command_data.Read(f_style);
+				command_data.Read(f_color);
+				command_data.Read(f_stroke);
+				command_data.Read(len);
+				auto ptr = (const char*)command_data.GetDataPointer() + command_data.Tell();
+				command_data.Seek(len, fsal::File::CurrentPosition);
 
 				Scriber::FontStyle::Enum style = Scriber::FontStyle::Regular;
 				Scriber::Align::Enum align = Scriber::Align::Left;
@@ -318,7 +325,7 @@ void Renderer2D::Draw(float time)
 			break;
 			case C_SetScissors:
 			{
-				command_queue.Read(current_sciscors);
+				command_data.Read(current_sciscors);
 				scissoring_enabled = true;
 			}
 			need_flush = true;
@@ -331,6 +338,7 @@ void Renderer2D::Draw(float time)
 			need_flush = true;
 			break;
 		}
+		assert(command_data.Tell() == start + size);
 
 		if (scissoring_enabled)
 		{
@@ -467,5 +475,5 @@ void Renderer2D::Draw(float time)
 		{
 		}
 	}
-	command_queue.Seek(0);
+	m_encoder.Reset();
 }

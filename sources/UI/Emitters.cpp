@@ -15,7 +15,7 @@ UI::SFillEmitter::SFillEmitter(Render::color c): col(c)
 void UI::SShadowEmitter::operator()(Render::Encoder* r, const UI::Block* block, float time, int flags, float ppd)
 {
 	auto box = block->GetBox();
-	r->RectShadow(box, col, glm::vec2(0.), ComputeValue(box, size_value, size_unit, ppd), block->GetDepth());
+	r->RectShadow(box, col, glm::vec2(0.), ComputeValue(box, size_value, size_unit, ppd), glm::vec4(0.0), block->GetDepth());
 }
 
 UI::SShadowEmitter::SShadowEmitter(Render::color col, float size_value, Constraint::Unit size_unit): col(col), size_value(size_value), size_unit(size_unit)
@@ -66,7 +66,7 @@ void UI::SImageEmitter::operator()(Render::Encoder* r, const UI::Block* block, f
 			uv.maxp.x = 1.0 - uv.maxp.x;
 			break;
 	}
-	r->Rect(box, tex->m_handle, uv, block->GetDepth());
+	r->Rect(box, tex->m_handle, uv, glm::vec4(0), block->GetDepth());
 }
 
 void UI::SShaderEmitter::operator()(Render::Encoder* r, const UI::Block* block, float time, int flags, float ppd)
