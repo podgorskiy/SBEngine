@@ -59,7 +59,7 @@ namespace glm
 
 	// Union of a point with aabb
 	template <int Dim, typename Type>
-	inline aabb<Dim, Type> operator |= (const aabb<Dim, Type>& x, const vec<Dim, Type>& point)
+	inline aabb<Dim, Type> operator |= (aabb<Dim, Type>& x, const vec<Dim, Type>& point)
 	{
 		x = x | point;
 		return x;
