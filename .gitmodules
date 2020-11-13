@@ -64,3 +64,6 @@
 [submodule "libs/openal-soft"]
 	path = libs/openal-soft
 	url = https://github.com/kcat/openal-soft.git
+[submodule "sources/Game"]
+	path = sources/Game
+	url = https://github.com/podgorskiy/Oq.git
