@@ -5,7 +5,8 @@ flush_after_render: True
 vsync: False
 flip_after_render: False
 srgb: True
-debug_text: False
-debug_stats: False
+debug_text: True
+debug_stats: True
 
-startup_state: menus/main.yaml
+startup_state: menus/ingame.yaml
+# startup_state: menus/intro_animation.yaml

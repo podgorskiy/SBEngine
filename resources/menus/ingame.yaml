@@ -1,0 +1,41 @@
+# Example menu
+
+class: InGameMenuState
+
+menu_name: ingame
+
+vars:
+  container_width: 95
+
+colors:
+  window_bg: FFFFFFFF
+  panel_bg: f7f6e9
+  text_color: 1f1f1f
+  text_color_w: f7f7f7
+  text_color_t:  1f1f1f60
+
+#bg_img: graphics/background.png
+#bg_size: cover
+#bg_pos: center_center
+bg_color: window_bg
+
+blocks:
+  - name: stage
+    constraints: { width: 130vh%, height: 130vh%, cleft: 50%, ctop: 60% }
+
+    blocks:
+      - name: room
+        constraints: { width: 100%, height: 100%, top: 5vh%, left: 0pt }
+
+        blocks:
+          - name: tile2a
+            constraints: { width: 20%, height: 40%, top: 25%, left: 30% }
+            bg_img: graphics/floor/2.png
+            bg_size: contain
+            bg_pos: left_center
+
+          - name: tile1a
+            constraints: { width: 20%, height: 40%, top: 30%, left: 20% }
+            bg_img: graphics/floor/2.png
+            bg_size: contain
+            bg_pos: left_center
