@@ -49,9 +49,6 @@
 [submodule "libs/lua"]
 	path = libs/lua
 	url = https://github.com/lua/lua
-[submodule "libs/swig-openframeworks"]
-	path = libs/swig-openframeworks
-	url = https://github.com/danomatika/swig-openframeworks.git
 [submodule "libs/LuaBridge"]
 	path = libs/LuaBridge
 	url = https://github.com/vinniefalco/LuaBridge.git
