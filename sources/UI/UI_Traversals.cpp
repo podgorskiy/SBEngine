@@ -62,7 +62,6 @@ namespace UI
 			              alt_cst_values, mask);
 
 			InterpolateTransitionValues(&tcnst[0], &ctrl[0], ctrl.size(), alt_cst_values, cst_values, time);
-
 			if (!ttcnst.empty())
 			{
 				for (auto& c: ttcnst)
@@ -70,6 +69,24 @@ namespace UI
 					block->UpdateProp(c.type, c.unit, c.value, time);
 				}
 				ttcnst.clear();
+			}
+			if (!block->m_on_complete.empty())
+			{
+				for (int i = 0, count = ctrl.size(); i < count; ++i)
+				{
+					if (ctrl[i].IsFinished())
+					{
+						for (int j = 0; j < block->m_on_complete.size(); ++j)
+						{
+							if (tcnst[i].type == block->m_on_complete[j].first)
+							{
+								block->m_on_complete[j].second();
+								block->m_on_complete.erase(block->m_on_complete.begin() + j);
+								--j;
+							}
+						}
+					}
+				}
 			}
 		}
 

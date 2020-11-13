@@ -51,6 +51,22 @@ namespace UI
 		PushConstraint(c);
 	}
 
+	void Block::UpdateTransitionConstraint(Constraint c, float duration)
+	{
+		for (int i = 0, l = m_transition_constraints.size(); i < l; ++i)
+		{
+			if (m_transition_constraints[i].type == c.type)
+			{
+				m_transition_constraints[i].unit = c.unit;
+				m_transition_constraints[i].value = c.value;
+				m_controllers[i].SetDuration(duration);
+				return;
+			}
+		}
+		m_controllers.push_back(MController<float>(duration));
+		m_transition_constraints.push_back(c);
+	}
+
 	void Block::SetTransitionProperty(Constraint::Type type, float duration)
 	{
 		for (int i = 0, l = m_constraints.size(); i < l; ++i)
@@ -58,12 +74,34 @@ namespace UI
 			if (m_constraints[i].type == type)
 			{
 				m_transition_mask |= Constraint::to_mask(type);
-				m_controllers.push_back(MController<float>(duration));
-				m_transition_constraints.push_back(m_constraints[i]);
+				UpdateTransitionConstraint(m_constraints[i], duration);
 				return;
 			}
 		}
 		spdlog::error("SetTransitionProperty {}, but it does not exist", int(type));
+	}
+
+	void Block::ClearTransitionProperty(Constraint::Type type)
+	{
+		for (int j = 0; j < m_on_complete.size(); ++j)
+		{
+			if (type == m_on_complete[j].first)
+			{
+				m_on_complete.erase(m_on_complete.begin() + j);
+				--j;
+			}
+		}
+		for (int i = 0, l = m_transition_constraints.size(); i < l; ++i)
+		{
+			if (m_transition_constraints[i].type == type)
+			{
+				m_transition_mask &= ~uint8_t(Constraint::to_mask(type));
+				m_transition_constraints.erase(m_transition_constraints.begin() + i);
+				m_controllers.erase(m_controllers.begin() + i);
+				return;
+			}
+		}
+		spdlog::error("ClearTransitionProperty {}, but it does not exist", int(type));
 	}
 
 	CnstBlockPtr Block::GetBlock(const std::string& name, bool recursive) const

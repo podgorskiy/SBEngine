@@ -29,16 +29,20 @@ namespace UI
 	class SImageEmitter : public IEmitter
 	{
 	public:
-		SImageEmitter(Render::TexturePtr tex, ImSize::Enum size, ImPos::Enum pos, ImTransform::Enum t);
+		SImageEmitter(Render::TexturePtr tex, ImSize::Enum size, ImPos::Enum pos, ImTransform::Enum t, int frames_count=0, int nrow=0);
 
 		virtual void operator()(Render::Encoder* encoder, const Block*, float time, int flags, float ppd);
 
+		void SetCurrentFrame(int frame) { current_frame = frame; }
 	private:
 		glm::ivec2 image_size;
 		Render::TexturePtr tex;
 		UI::ImSize::Enum size;
 		UI::ImPos::Enum pos;
 		ImTransform::Enum t;
+		uint8_t frames_count;
+		uint8_t nrow;
+		uint8_t current_frame;
 	};
 
 	class SShaderEmitter : public IEmitter

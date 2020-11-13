@@ -26,7 +26,10 @@ void UI::SImageEmitter::operator()(Render::Encoder* r, const UI::Block* block, f
 	auto box = block->GetBox();
 	glm::aabb2 uv;
 	glm::vec2 box_size = box.size();
-	glm::vec2 uv_size = box_size / glm::vec2(image_size);
+	int nx = std::min(frames_count, nrow);
+	int ny = frames_count / nrow;
+	auto img_size = glm::vec2(image_size) / glm::vec2(nx, ny);
+	glm::vec2 uv_size = box_size / img_size;
 
 	using namespace UI::lit;
 	switch(size)
@@ -48,6 +51,8 @@ void UI::SImageEmitter::operator()(Render::Encoder* r, const UI::Block* block, f
 		case P::CenterCenter: uv.minp = 0.5f - 0.5f * uv_size; break;
 		case P::CenterBottom: uv.minp = glm::vec2(0.5f - 0.5f * uv_size.x, 1.0f - uv_size.y); break;
 	}
+	uv_size /= glm::vec2(nx, ny);
+	uv.minp += glm::vec2(current_frame % nrow, current_frame / nrow) * uv_size;
 	uv.maxp = uv.minp + uv_size;
 	switch (t)
 	{
@@ -82,9 +87,17 @@ void UI::SShaderEmitter::operator()(Render::Encoder* r, const UI::Block* block, 
 	}
 }
 
-UI::SImageEmitter::SImageEmitter(Render::TexturePtr tex, ImSize::Enum size,  ImPos::Enum pos,  ImTransform::Enum t):
-	image_size(tex->GetSize()), tex(std::move(tex)), size(size), pos(pos), t(t)
+UI::SImageEmitter::SImageEmitter(Render::TexturePtr tex, ImSize::Enum size,  ImPos::Enum pos,  ImTransform::Enum t, int frames_count, int nrow):
+	image_size(tex->GetSize()), tex(std::move(tex)), size(size), pos(pos), t(t), frames_count(frames_count), nrow(nrow), current_frame(0)
 {
+	if (frames_count == 0)
+	{
+		this->frames_count = 1;
+	}
+	if (nrow == 0)
+	{
+		this->nrow = this->frames_count;
+	}
 }
 
 

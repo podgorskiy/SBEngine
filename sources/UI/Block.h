@@ -12,6 +12,7 @@
 #include <glm/matrix.hpp>
 
 #include <memory>
+#include <functional>
 #include <initializer_list>
 #include <inttypes.h>
 #include <2DEngine/Renderer2D.h>
@@ -29,6 +30,7 @@ namespace UI
 	{
 		friend void Traverse(const BlockPtr& block, const BlockPtr& parent, const std::function<void(Block* block, Block* parent)>& lambda);
 		friend void Traverse(const BlockPtr& block, const BlockPtr& parent, const std::function<void(Block* block, Block* parent)>& lambda_pre, const std::function<void(Block* block, Block* parent)>& lambda_post);
+		friend void Position(Block* block, Block* parent, const Render::View& view, float time);
 	public:
 		typedef stack::vector<MController<float>, 1> PropControllers;
 		typedef stack::vector<Constraint, 1> TransitionConstraints;
@@ -76,9 +78,11 @@ namespace UI
 		const TransitionConstraints& GetTransitionConstraints() const { return m_transition_constraints; };
 		TransitionConstraints& GetTransitionConstraintsTarget() { return m_transition_target_constraints; };
 		void PushTargetTransitionConstraints(const Constraint& cnst) { m_transition_target_constraints.push_back(cnst); };
+		void PushOnCompletionLambda(Constraint::Type type, std::function<void()> lambda) { m_on_complete.push_back(std::make_pair(type, lambda));}
 		uint8_t GetTransitionMask() { return m_transition_mask; }
 		void UpdateProp(Constraint::Type type, Constraint::Unit new_unit, float new_value, float time);
 		void SetTransitionProperty(Constraint::Type type, float duration);
+		void ClearTransitionProperty(Constraint::Type type);
 
 		// Emitters
 		void Emit(Render::Encoder* r, float time = 0.0f, int flags = 0, float ppd=1.0) { if (m_emitter) (*m_emitter)(r, this, time, flags, ppd); }
@@ -102,6 +106,8 @@ namespace UI
 		bool IsClipping() const { return clip_overflow; }
 
 	private:
+		void UpdateTransitionConstraint(Constraint c, float duration);
+
 		std::string m_name;
 		glm::aabb2 m_box;
 		glm::vec4 m_radius;
@@ -113,6 +119,7 @@ namespace UI
 		TransitionConstraints m_transition_target_constraints;
 		PropControllers m_controllers;
 		uint8_t m_transition_mask;
+		stack::vector<std::pair<Constraint::Type, std::function<void()> >, 1> m_on_complete;
 
 		stack::vector<BlockPtr, 4> m_childs;
 
