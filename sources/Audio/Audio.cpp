@@ -119,7 +119,7 @@ void AudioContext::Init()
 	if ((error = alGetError()) != AL_NO_ERROR)
 	{
 		spdlog::error("alGenBuffers :{}", error);
-		exit(-1);
+		// exit(-1);
 	}
 
 #define LOAD_PROC(T, x)  ((x) = (T)alGetProcAddress(#x))
@@ -156,11 +156,11 @@ PlaybackContext* AudioContext::PlayFile(fsal::File file, bool loop)
 	file.Seek(0);
 	if (magic[0] == 'I' && magic[1] == 'D' && magic[2] == '3')
 	{
-		PlayStream(MakeMP3Stream(file), loop);
+		return PlayStream(MakeMP3Stream(file), loop);
 	}
 	else if (magic[0] == 'O' && magic[1] == 'g' && magic[2] == 'g')
 	{
-		PlayStream(MakeOGGStream(file), loop);
+		return PlayStream(MakeOGGStream(file), loop);
 	}
 	else
 	{
@@ -170,7 +170,7 @@ PlaybackContext* AudioContext::PlayFile(fsal::File file, bool loop)
 
 PlaybackContext* AudioContext::PlayFile(fsal::Location file, bool loop)
 {
-	PlayFile(fsal::FileSystem().Open(file), loop);
+	return PlayFile(fsal::FileSystem().Open(file), loop);
 }
 
 PlaybackContext* AudioContext::PlayStream(const Audio::AudioStream& stream, bool loop)
@@ -236,7 +236,7 @@ void AudioContext::Update()
 	if ((error = alGetError()) != AL_NO_ERROR)
 	{
 		spdlog::error("alGenBuffers :{}", error);
-		exit(-1);
+		// exit(-1);
 	}
 	auto ptr = m_impl.get();
 	for (size_t i = 0; i < ptr->m_contexts.size(); ++i)
@@ -259,7 +259,7 @@ void AudioContext::Update()
 		if ((error = alGetError()) != AL_NO_ERROR)
 		{
 			spdlog::error("alGenBuffers :{}", error);
-			exit(-1);
+			// exit(-1);
 		}
 		while (ctx->buffers_in_queue < buffers_count - 1 && (!ctx->last_byte_was_decoded || ctx->loop))
 		{
@@ -291,7 +291,7 @@ void AudioContext::Update()
 		if ((error = alGetError()) != AL_NO_ERROR)
 		{
 			spdlog::error("alGenBuffers :{}", error);
-			exit(-1);
+			// exit(-1);
 		}
 		if (!ctx->is_playing && ctx->buffers_in_queue)
 		{
@@ -311,7 +311,7 @@ void AudioContext::Update()
 		if ((error = alGetError()) != AL_NO_ERROR)
 		{
 			spdlog::error("alGenBuffers :{}", error);
-			exit(-1);
+			// exit(-1);
 		}
 		if (ctx->buffers_in_queue == 0 && ctx->last_byte_was_decoded)
 		{

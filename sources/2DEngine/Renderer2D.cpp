@@ -424,6 +424,7 @@ void Renderer2D::Draw(float time)
 				bgfx::setIndexBuffer(&tib, 0, num_index);
 
 				uint64_t state = 0
+								 | BGFX_STATE_WRITE_A
 				                 | BGFX_STATE_WRITE_RGB
 				                 | BGFX_STATE_BLEND_FUNC(BGFX_STATE_BLEND_SRC_ALPHA, BGFX_STATE_BLEND_INV_SRC_ALPHA);
 				bgfx::setState(state);

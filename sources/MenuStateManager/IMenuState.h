@@ -4,6 +4,12 @@
 #include <memory>
 #include <string>
 
+namespace UI
+{
+	class Block;
+
+	typedef std::shared_ptr<Block> BlockPtr;
+}
 
 class IMenuState
 {
