@@ -1,3 +1,2 @@
 #!/usr/bin/env bash
-cloc sources libs/fsal/sources  libs/scriberlib/sources  libs/scriberlib/include
-cloc sources/Game
+cloc sources libs/fsal/sources  libs/scriberlib/sources  libs/scriberlib/include shaders
