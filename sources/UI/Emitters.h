@@ -34,6 +34,9 @@ namespace UI
 		virtual void operator()(Render::Encoder* encoder, const Block*, float time, int flags, float ppd);
 
 		void SetCurrentFrame(int frame) { current_frame = frame; }
+
+		void SetTransform(ImTransform::Enum t) { this->t = t; }
+		ImTransform::Enum GetTransform() const { return t; }
 	private:
 		glm::ivec2 image_size;
 		Render::TexturePtr tex;

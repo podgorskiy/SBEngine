@@ -52,7 +52,9 @@ void UI::SImageEmitter::operator()(Render::Encoder* r, const UI::Block* block, f
 		case P::CenterBottom: uv.minp = glm::vec2(0.5f - 0.5f * uv_size.x, 1.0f - uv_size.y); break;
 	}
 	uv_size /= glm::vec2(nx, ny);
-	uv.minp += glm::vec2(current_frame % nrow, current_frame / nrow) * uv_size;
+	uv.minp += glm::vec2(
+			t & T::FlipX ? nx - 1 - current_frame % nrow : current_frame % nrow ,
+			t & T::FlipY ? ny - 1 - current_frame / nrow : current_frame / nrow) * uv_size;
 	uv.maxp = uv.minp + uv_size;
 	switch (t)
 	{
